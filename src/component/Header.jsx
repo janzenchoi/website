@@ -102,7 +102,6 @@ export const Header = () => {
     <Link to="/" style={{ textDecoration: "none" }}>
       <div style={logoStyle}>JANZEN</div>
     </Link>
-    <ReactToggle input={Boolean(isMobile)} onChange={(next) => setMobileMode(next)} disabled={Boolean(isMobile)}/>
 
     {!mobileMode && 
       <div style={tabMenuStyle}>
