@@ -24,8 +24,9 @@ const BurgerDropdown = ({ children }) => {
   // Define styles
   const barContainerStyle = {
     position: "relative",
-    width: "24px",
-    height: "2rem",
+    marginTop: "4px",
+    width: "26px",
+    height: "22px",
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
