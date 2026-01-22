@@ -18,10 +18,10 @@ function ReactToggle({ input, onChange, disabled=false }) {
 
   // Handles toggle
   const toggleHandler = () => {
-    if (disabled) return;
-    const next = !localInput;
-    setLocalInput(next);
-    onChange(next);
+    if (!disabled) {
+      setLocalInput(!localInput);
+      onChange(!localInput);
+    }
   };
 
   // Define styles

@@ -1,5 +1,6 @@
-// Width to define the width breakpoint of the mobile version
+// Constants
 export const MOBILE_WIDTH = "800px";
+export const MIN_WIDTH = "240px";
 
 // Outer container that depends on header / footer size
 export const outerContainerStyle = {

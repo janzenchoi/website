@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { MOBILE_WIDTH } from "../helper/layout";
+import { MOBILE_WIDTH } from "./layout";
 
 const ViewportContext = createContext(null);
 

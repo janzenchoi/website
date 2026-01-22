@@ -1,25 +1,24 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import BurgerDropdown from "./BurgerDropdown";
-import { useViewport } from "../context/Viewport";
+import BurgerDropdown from "./button/BurgerDropdown";
+import TextDropdown from "./button/TextDropdown";
+import { dropdownItemStyle, dropdownDividerStyle } from "./button/Dropdown";
 import ColourThemeToggle from './button/ColourThemeToggle';
 import ReactToggle from './button/ReactToggle';
+import { useViewport } from "../helper/Viewport";
+import { MIN_WIDTH } from "../helper/layout";
 
 /**
- * Creates a fixed header
- * @returns header object
+ * Fixed header
+ * @param {boolean} mobileMode whether to use mobile or desktop view
+ * @param {boolean} forceMobile whether to force mobile mode
+ * @param {function} setForceMobile function to set mobile mode
+ * @returns fixed header object
  */
-export const Header = () => {
-  const { isMobile } = useViewport();
-  const [ mobileMode, setMobileMode ] = useState(isMobile);
-
-  // // Change mode on viewport change
-  useEffect(() => {
-    setMobileMode(isMobile);
-  }, [isMobile]);
+export const Header = ({ mobileMode, forceMobile, setForceMobile }) => {
 
   // Define header style
   const headerStyle = {
+    minWidth: MIN_WIDTH,
     position: "fixed",
     top: 0,
     left: 0,
@@ -28,7 +27,7 @@ export const Header = () => {
     backgroundColor: "var(--colour-1)",
     transition: "all 0.3s",
     boxShadow: "0 0px 6px var(--colour-3)",
-    zIndex: 2000,
+    zIndex: 1000,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -68,41 +67,11 @@ export const Header = () => {
     opacity: 0.8,
   }
 
-  // Define burger menu styles
-  const burgerItemStyle = {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: "0px 4px 0px 4px",
-    width: "100%",
-    height: "30px",
-  };
-  const burgerDividerStyle = {
-    width: "100%",
-    height: "1px",
-    margin: "8px 0px 8px 0px",
-    boxShadow: "0 1px 4px var(--colour-3)",
-    backgroundColor: "var(--colour-4)",
-    opacity: 0.8,
-  };
-
-  // Other styles
-  const textStyle = {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    fontWeight: 400,
-    fontSize: "1rem",
-    color: "var(--colour-5)",
-    cursor: "pointer",
-  }
-
   // Return header object
   return <div style={headerStyle}>
     <Link to="/" style={{ textDecoration: "none" }}>
       <div style={logoStyle}>JANZEN</div>
     </Link>
-    {/* <ReactToggle input={Boolean(isMobile)} onChange={(next) => setMobileMode(next)} disabled={Boolean(isMobile)}/> */}
 
     {!mobileMode && 
       <div style={tabMenuStyle}>
@@ -124,39 +93,82 @@ export const Header = () => {
         </div>
         <div style={tabDividerStyle}/>
         <div style={tabItemStyle}>
-          <div style={textStyle}>Settings</div>
+          <TextDropdown text={"Settings"} style={textStyle}>
+            <DarkModeItem/>
+            <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
+          </TextDropdown>
         </div>
       </div>
     }
 
     {mobileMode && 
       <BurgerDropdown>
-        <div style={burgerItemStyle}>
+        <div style={dropdownItemStyle}>
           <div style={textStyle}>About</div>
         </div>
-        <div style={burgerItemStyle}>
+        <div style={dropdownItemStyle}>
           <div style={textStyle}>Experience</div>
         </div>
-        <div style={burgerItemStyle}>
+        <div style={dropdownItemStyle}>
           <div style={textStyle}>Projects</div>
         </div>
-        <div style={burgerItemStyle}>
+        <div style={dropdownItemStyle}>
           <div style={textStyle}>Contact</div>
         </div>
-        <div style={burgerDividerStyle}/>
-        <div style={burgerItemStyle}>
+        <div style={dropdownDividerStyle}/>
+        <div style={dropdownItemStyle}>
           <div style={textStyle}>Activities</div>
         </div>
-        <div style={burgerDividerStyle}/>
-        <div style={burgerItemStyle}>
-          <div style={textStyle}>Dark Mode</div>
-          <ColourThemeToggle/>
-        </div>
-        <div style={burgerItemStyle}>
-          <div style={textStyle}>Mobile Mode</div>
-          <ReactToggle input={Boolean(isMobile)} onChange={(next) => setMobileMode(next)} disabled={Boolean(isMobile)}/>
-        </div>
+        <div style={dropdownDividerStyle}/>
+        <DarkModeItem/>
+        <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
       </BurgerDropdown>
     }
   </div>;
 };
+
+/**
+ * General text style
+ */
+const textStyle = {
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  fontWeight: 400,
+  fontSize: "1rem",
+  color: "var(--colour-5)",
+  cursor: "pointer",
+}
+
+/**
+ * Item containing toggle for dark mode
+ * @returns dark mode toggle item
+ */
+const DarkModeItem = () => {
+  return <div style={dropdownItemStyle}>
+    <div style={textStyle}>Dark Mode</div>
+    <ColourThemeToggle/>
+  </div>;
+}
+
+/**
+ * Item containing toggle for mobile mode
+ * @param {boolean} forceMobile whether to force mobile mode
+ * @param {function} setForceMobile function for forcing mobile mode 
+ * @returns mobile mode toggle item
+ */
+const MobileModeItem = ({ forceMobile, setForceMobile }) => {
+  const { isMobile } = useViewport();
+  const onChange = () => {
+    const nextForce = !forceMobile;
+    setForceMobile(nextForce);
+  };
+  return <div style={dropdownItemStyle}>
+    <div style={textStyle}>Mobile Mode</div>
+    <ReactToggle
+      input    = {isMobile || forceMobile}
+      onChange = {onChange}
+      disabled = {Boolean(isMobile)}
+    />
+  </div>
+}
