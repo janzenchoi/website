@@ -13,16 +13,14 @@ export const Body = ({ mobileMode, colourTheme }) => {
 
   // Main style for the body
   const outerStyle = {
-    position: "fixed",
     paddingTop: "var(--header-height)",
-    minHeight: "calc(100vh - var(--header-height))",
-    width: "calc(100% - 2rem)",
+    width: "calc(100%)",
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    margin: "1rem",
     boxSizing: "border-box",
-    backgroundColor: "var(--colour-0)",
+    backgroundColor: "var(--colour-1)",
+    boxShadow: "0 0px 4px var(--colour-4)",
   }
   const innerStyle = {
     maxWidth: MAX_WIDTH,

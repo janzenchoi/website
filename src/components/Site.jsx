@@ -27,7 +27,7 @@ export const Site = () => {
 
   // Define style for site
   const siteStyle = {
-    backgroundColor: "var(--colour-0)",
+    backgroundColor: "var(--colour-1)",
     transition: "background-color 0.3s",
   };
 

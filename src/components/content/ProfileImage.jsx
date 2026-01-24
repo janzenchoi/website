@@ -13,7 +13,7 @@ export const ProfileImage = ({toggle}) => {
     position: "relative",
     height: "100px",
     width: "100px",
-    border: "1px solid var(--colour-3)",
+    border: "1px solid var(--colour-4)",
   };
   const imageStyle = {
     position: "absolute",

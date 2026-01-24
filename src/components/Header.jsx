@@ -26,11 +26,10 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     left: 0,
     right: 0,
     height: "var(--header-height)",
-    backgroundColor: "var(--colour-0)",
+    backgroundColor: "var(--colour-1)",
     transition: "all 0.3s",
-    boxShadow: "0 0px 6px var(--colour-4)",
+    boxShadow: "0 0px 2px var(--colour-5)",
     zIndex: 1000,
-    opacity: 0.9,
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
@@ -41,8 +40,8 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
-    marginLeft: "1rem",
-    marginRight: "1rem",
+    paddingLeft: "1rem",
+    paddingRight: "1rem",
   };
 
   // Define logo style
@@ -50,7 +49,7 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: "2rem",
     color: "var(--colour-6)",
     cursor: "pointer",
