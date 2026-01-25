@@ -3,14 +3,13 @@ import profileDarkImage from "../../assets/profile_dark_far.png";
 
 /**
  * Profile image
- * @param {boolean} toggle first variable that toggles the image
+ * @param {boolean} darkMode whether dark mode is used
  * @returns profile image object
  */
-export const ProfileImage = ({toggle}) => {
+export const ProfileImage = ({darkMode}) => {
 
   // Style of images
   const imageContainerStyle = {
-    minWidth: "100px",
     width: "100%",
     height: "100%",
     position: "relative",
@@ -24,15 +23,15 @@ export const ProfileImage = ({toggle}) => {
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    objectPosition: "65% 35%",
+    objectPosition: "65% 30%",
     transition: "opacity 0.3s ease"
   };
 
   // Return image object
   return (
     <div style={imageContainerStyle}>
-      <img src={profileDarkImage}  style={{ ...imageStyle, opacity: toggle ? 1 : 0}}/>
-      <img src={profileLightImage} style={{ ...imageStyle, opacity: !toggle ? 1 : 0}}/>
+      <img src={profileDarkImage}  style={{ ...imageStyle, opacity: darkMode ? 1 : 0}}/>
+      <img src={profileLightImage} style={{ ...imageStyle, opacity: !darkMode ? 1 : 0}}/>
     </div>
   );
 }

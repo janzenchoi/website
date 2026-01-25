@@ -20,6 +20,12 @@ export const Home = ({mobileMode, colourTheme}) => {
   return (
     <div>
       <AboutCard mobileMode={mobileMode} darkMode={darkMode}/>
+      <Card title="Education">
+        <div style={textStyle}>{lorem}</div>
+      </Card>
+      <Card title="Achievements">
+        <div style={textStyle}>{lorem}</div>
+      </Card>
       <Card title="Experience">
         <div style={textStyle}>{lorem}</div>
       </Card>
@@ -29,6 +35,10 @@ export const Home = ({mobileMode, colourTheme}) => {
       <Card title="Contact">
         <div style={textStyle}>{lorem}</div>
       </Card>
+      <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
+      <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
+      <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
+      <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
       <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
       <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
       <Card title="Temp"><div style={textStyle}>{lorem}</div></Card>
@@ -54,7 +64,7 @@ const AboutCard = ({ mobileMode, darkMode }) => {
   const DesktopObject = () => {
     return <div style={{ display: "flex", flexDirection: "row", gap: "1rem" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: "0 0 40%" }}>
-        <ProfileImage toggle={darkMode}/>
+        <ProfileImage darkMode={darkMode}/>
       </div>
       <div style={{ ...textStyle, display: "flex", flexDirection: "column", flex: 1 }}>
         <div style={{ marginBottom: "0.8rem" }}>{text1}</div>
@@ -68,8 +78,8 @@ const AboutCard = ({ mobileMode, darkMode }) => {
   const MobileObject = () => {
     return <div style={{ ...textStyle, display: "flex", flexDirection: "column", gap: "0.8rem" }}>
       <div>{text1}</div>
-      <div style={{ height: "160px" }}>
-        <ProfileImage toggle={darkMode}/>
+      <div style={{ height: "320px" }}>
+        <ProfileImage darkMode={darkMode}/>
       </div>
       <div style={{ color: "var(--colour-4)" }}>{text2}</div>
       <div style={{ color: "var(--colour-4)" }}>{text3}</div>
