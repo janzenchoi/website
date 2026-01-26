@@ -32,7 +32,7 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"University of New South Wales"}
-      subtitle={"Bachelor of Mechatronics Engineering (Honours)"}
+      subtitle={"Bachelor of Mechatronic Engineering (Honours)"}
       description={[
         "Graduated with First Class Honours and the University Medal (92HD)"
       ]}

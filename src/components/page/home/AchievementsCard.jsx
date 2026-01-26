@@ -21,14 +21,13 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"University of New South Wales"}
-      subtitle={"PhD in Mechanical Engineering"}
+      subtitle={"The RS Components Prize for Engineering Excellence"}
       description={[
-        "Focused on applying machine learning and optimisation techniques to develop and calibrate material models for predicting the creep and tensile deformation behaviour of Alloy 617"
+        "For the best performance in the final year of the undergraduate Mechatronic Engineering program"
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
-      dateStart={"May 2022"}
-      dateEnd={"Dec 2025"}
+      dateStart={"Dec 2022"}
     />
   };
   const Bullet2 = () => {
@@ -36,14 +35,13 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"University of New South Wales"}
-      subtitle={"Bachelor of Mechatronics Engineering (Honours)"}
+      subtitle={"University Medal in Mechatronic Engineering"}
       description={[
-        "Graduated with First Class Honours and the University Medal (92HD)"
+        "The University Medal is the most distinguished academic award to be bestowed on an undergraduate, and is recognition by the University of exceptional achievement"
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
-      dateStart={"Feb 2018"}
-      dateEnd={"May 2022"}
+      dateStart={"Jun 2022"}
     />
   };
   const Bullet3 = () => {
@@ -51,23 +49,56 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"University of New South Wales"}
-      subtitle={"Bachelor of Computer Science"}
+      subtitle={"Dean's Award (Stage 4)"}
       description={[
-        "Graduated with Distinction (92HD)"
+        "The UNSW Engineering Dean's Awards are designed to recognise the faculty's high-achieving students - those who have a minimum High Distinction average (an overall cumulative myUNSW WAM of 85)"
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
-      dateStart={"Feb 2018"}
-      dateEnd={"May 2022"}
+      dateStart={"May 2022"}
+    />
+  };
+  const Bullet4 = () => {
+    return <ThickBullet
+      mobileMode={mobileMode}
+      darkMode={darkMode}
+      title={"British Society for Strain Measurement"}
+      subtitle={"Young Stress Analyst 2021 Finalist"}
+      description={[
+        "The Young Stress Analyst competition is a prestigious competition run annually by the British Society for Strain Measurement, to recognise excellence in early career research"
+      ]}
+      iconLight={bssm}
+      iconDark={bssm}
+      dateStart={"Aug 2021"}
+    />
+  };
+  const Bullet5 = () => {
+    return <ThickBullet
+      mobileMode={mobileMode}
+      darkMode={darkMode}
+      title={"University of New South Wales"}
+      subtitle={"Dean's Award (Stage 3)"}
+      description={[
+        "The UNSW Engineering Dean's Awards are designed to recognise the faculty's high-achieving students - those who have a minimum High Distinction average (an overall cumulative myUNSW WAM of 85)"
+      ]}
+      iconLight={unswLight}
+      iconDark={unswDark}
+      dateStart={"May 2021"}
     />
   };
 
   // Return about card object
   return (
     <Card title={"Achievements"}>
-      <Bullet1/>
-      <Bullet2/>
-      <Bullet3/>
+      <div>
+        <Bullet1/>
+        <Bullet2/>
+        <Bullet3/>
+      </div>
+      {open && <div>
+        <Bullet4/>
+        <Bullet5/>
+      </div>}
       <Expander open={open} setOpen={setOpen}/>
     </Card>
   );

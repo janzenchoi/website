@@ -14,12 +14,16 @@ import { titleStyle, subtitleStyle, textStyle, horizontalDividerStyle } from "./
  * @param {string} dateEnd ending date
  * @returns thick bullet object
  */
-export const ThickBullet = ({ mobileMode, darkMode, iconLight, iconDark, title, subtitle, description="", dateStart, dateEnd }) => {
+export const ThickBullet = ({ mobileMode, darkMode, iconLight, iconDark, title, subtitle, description="", dateStart="", dateEnd="" }) => {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
   // Auxiliary
-  const dateText = mobileMode ? `(${dateStart} - ${dateEnd})` : `${dateStart} - ${dateEnd}`;
+  const dateText = Boolean(dateStart) || Boolean(dateEnd)
+  ? mobileMode
+    ? `(${[dateStart, dateEnd].filter(Boolean).join(" - ")})`
+    : `${[dateStart, dateEnd].filter(Boolean).join(" - ")}`
+  : "";
   const icon = darkMode ? iconDark : iconLight;
 
   // Container styles
