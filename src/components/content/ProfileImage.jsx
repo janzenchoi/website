@@ -1,5 +1,5 @@
-import profileLightImage from "../../assets/profile_light_far.png";
-import profileDarkImage from "../../assets/profile_dark_far.png";
+import profileLightImage from "../../assets/profile/light.png";
+import profileDarkImage from "../../assets/profile/dark.png";
 
 /**
  * Profile image
@@ -13,7 +13,7 @@ export const ProfileImage = ({darkMode}) => {
     width: "100%",
     height: "100%",
     position: "relative",
-    borderRadius: "4px",
+    borderRadius: "8px",
     overflow: "hidden",
     flexShrink: 0,
   };
@@ -23,7 +23,7 @@ export const ProfileImage = ({darkMode}) => {
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    objectPosition: "65% 30%",
+    objectPosition: "50% 50%",
     transition: "opacity 0.3s ease"
   };
 

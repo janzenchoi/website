@@ -5,7 +5,7 @@ import { dropdownItemStyle, dropdownDividerStyle } from "./dropdown/Dropdown";
 import ColourThemeToggle from './toggle/ColourThemeToggle';
 import ReactToggle from './toggle/ReactToggle';
 import { useViewport } from "../helper/Viewport";
-import { MAX_WIDTH } from "../helper/layout";
+import { MAX_WIDTH } from "../helper/constant";
 import { setStoredValue } from "../helper/storage";
 
 /**

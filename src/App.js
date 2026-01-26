@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { ViewportProvider } from "./helper/Viewport";
 import { getStoredValue } from "./helper/storage";
-import { updateSafeAreaColour, DEFAULT_MODE } from "./helper/brightness";
+import { updateSafeAreaColour } from "./helper/brightness";
+import { DEFAULT_MODE } from "./helper/constant";
 import { Site } from "./components/Site";
 
 function App() {

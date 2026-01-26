@@ -18,8 +18,8 @@ code {
   --colour-0: rgb(255, 255, 255); /* For index.html safe area default colour: #ffffff */
   --colour-1: rgb(250, 250, 250);
   --colour-2: rgb(240, 240, 240);
-  --colour-3: rgb(200, 200, 200);
-  --colour-4: rgb(100, 100, 100);
+  --colour-3: rgb(180, 180, 180);
+  --colour-4: rgb(80, 80, 80);
   --colour-5: rgb(40, 40, 40);
   --colour-6: rgb(0, 0, 0);
   --switch-colour: rgb(140, 140, 140);
@@ -29,8 +29,8 @@ code {
   --colour-0: rgb(20, 20, 20);
   --colour-1: rgb(30, 30, 30);
   --colour-2: rgb(50, 50, 50);
-  --colour-3: rgb(80, 80, 80);
-  --colour-4: rgb(160, 160, 160);
+  --colour-3: rgb(100, 100, 100);
+  --colour-4: rgb(180, 180, 180);
   --colour-5: rgb(200, 200, 200);
   --colour-6: rgb(240, 240, 240);
   --switch-colour: rgb(45, 193, 136);

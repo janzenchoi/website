@@ -1,6 +1,3 @@
-// Default colour theme
-export const DEFAULT_MODE = "light";
-
 /**
  * Alternates between dark and light mode
  * @param {boolean} enabled whether to turn on dark mode 

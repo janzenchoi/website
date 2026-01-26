@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { HashRouter } from "react-router-dom";
 import { Header } from "./Header";
 import { useViewport } from "../helper/Viewport";
-import { DEFAULT_MODE } from "../helper/brightness";
+import { DEFAULT_MODE } from "../helper/constant";
 import { getStoredValue } from "../helper/storage";
 import { Body } from "./Body";
 
