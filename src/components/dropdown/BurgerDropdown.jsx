@@ -26,7 +26,7 @@ const BurgerDropdown = ({ style, closeOnChange, children }) => {
   const barStyle = {
     width: "100%",
     height: "4px",
-    backgroundColor: "var(--colour-6)",
+    backgroundColor: "var(--colour-7)",
     borderRadius: "2px",
     transition: "transform 0.3s ease, opacity 0.3s ease",
   };

@@ -12,7 +12,7 @@ export const Card = ({ title, children }) => {
     backgroundColor: "var(--colour-0)",
     marginTop: "0.4rem",
     marginBottom: "0.4rem",
-    boxShadow: "0 0px 3px var(--colour-3)",
+    boxShadow: "0 0px 3px var(--colour-4)",
     borderRadius: "8px",
     overflow: "hidden",
   };
@@ -22,7 +22,7 @@ export const Card = ({ title, children }) => {
     width: "100%",
     fontWeight: 600,
     fontSize: "1.2rem",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     paddingBottom: "0.6rem",
   };
 
@@ -39,11 +39,11 @@ export const Card = ({ title, children }) => {
 /**
  * Horizontal divider style
  */
-const horizontalDividerStyle = {
+export const horizontalDividerStyle = {
   width: "100%",
   height: "1px",
   margin: "0 0 1rem 0",
-  backgroundColor: "var(--colour-3)",
+  backgroundColor: "var(--colour-4)",
   opacity: 0.8,
 }
 
@@ -57,7 +57,16 @@ export const titleStyle = {
   textAlign: "justify",
   fontWeight: 500,
   fontSize: "1.1rem",
-  color: "var(--colour-5)",
+  color: "var(--colour-6)",
+};
+
+/**
+ * Subtitle style
+ */
+export const subtitleStyle = {
+  ...titleStyle,
+  fontWeight: 400,
+  fontSize: "1rem",
 };
 
 /**
@@ -67,5 +76,5 @@ export const textStyle = {
   ...titleStyle,
   fontWeight: 400,
   fontSize: "1rem",
-  color: "var(--colour-4)",
+  color: "var(--colour-5)",
 };

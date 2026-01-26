@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { Home } from "./page/Home";
+import { Home } from "./page/home/Home";
 import { Template } from "./page/Template";
 import { MAX_WIDTH } from "../helper/constant";
 

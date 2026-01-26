@@ -9,7 +9,7 @@ import { Dropdown } from "./Dropdown";
  * @param {*} children items of the dropdown
  * @returns text-triggered dropdown menu
  */
-const TextDropdown = ({ text, style, closeOnChange, children }) => {
+export const TextDropdown = ({ text, style, closeOnChange, children }) => {
   const [open, setOpen] = useState(false);
   const textRef = useRef(null);
 
@@ -23,16 +23,14 @@ const TextDropdown = ({ text, style, closeOnChange, children }) => {
   const arrowStyle = {
     marginLeft: "10px",
     marginRight: "-2px",
-    marginTop: "4px",
-    width: 0,
-    height: 0,
-    borderLeft: "5px solid transparent",
-    borderRight: "5px solid transparent",
-    borderTop: "4px solid currentColor",
-    transformOrigin: "50% 40%",
-    transform: open ? "scaleY(-1)" : "scaleY(1)",
-    transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-    willChange: "transform",
+    width: "5px",
+    height: "5px",
+    display: "inline-block",
+    borderLeft: "2px solid currentColor",
+    borderBottom: "2px solid currentColor",
+    transformOrigin: "50% 70%",
+    transition: "transform 0.3s ease",
+    transform: open ? "scaleX(-1) rotate(135deg)" : "rotate(-45deg)",
   };
   const dropdownStyle = {
     position: "absolute",
@@ -54,5 +52,3 @@ const TextDropdown = ({ text, style, closeOnChange, children }) => {
     </div>
   );
 };
-
-export default TextDropdown;

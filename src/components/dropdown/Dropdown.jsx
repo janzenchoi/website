@@ -41,7 +41,7 @@ export const Dropdown = ({ open, onClose, closeOnChange=null, ignoreRefs=[], chi
     borderLeft: "9px solid transparent",
     borderRight: "9px solid transparent",
     borderBottom: "9px solid var(--colour-2)",
-    filter: "drop-shadow(0 -1px 1px var(--colour-4))",
+    filter: "drop-shadow(0 -1px 1px var(--colour-5))",
   };
 
   // Dropdown menu style
@@ -56,7 +56,7 @@ export const Dropdown = ({ open, onClose, closeOnChange=null, ignoreRefs=[], chi
     padding: "8px 12px",
     backgroundColor: "var(--colour-2)",
     borderRadius: "4px",
-    boxShadow: "0 0 2px var(--colour-5)",
+    boxShadow: "0 0 2px var(--colour-6)",
     zIndex: 1000,
     opacity: open ? 1 : 0,
     pointerEvents: open ? "auto" : "none",
@@ -90,7 +90,7 @@ export const dropdownDividerStyle = {
   width: "100%",
   height: "1px",
   margin: "8px 0px 8px 0px",
-  boxShadow: "0 1px 4px var(--colour-3)",
-  backgroundColor: "var(--colour-4)",
+  boxShadow: "0 1px 4px var(--colour-4)",
+  backgroundColor: "var(--colour-5)",
   opacity: 0.8,
 };

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import BurgerDropdown from "./dropdown/BurgerDropdown";
-import TextDropdown from "./dropdown/TextDropdown";
+import { TextDropdown } from "./dropdown/TextDropdown";
 import { dropdownItemStyle, dropdownDividerStyle } from "./dropdown/Dropdown";
 import ColourThemeToggle from './toggle/ColourThemeToggle';
 import ReactToggle from './toggle/ReactToggle';
@@ -28,7 +28,7 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     height: "var(--header-height)",
     backgroundColor: "var(--colour-0)",
     transition: "all 0.3s",
-    boxShadow: "0 0px 2px var(--colour-4)",
+    boxShadow: "0 0px 2px var(--colour-5)",
     zIndex: 1000,
     display: "flex",
     flexDirection: "row",
@@ -51,7 +51,7 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     justifyContent: "center",
     fontWeight: 700,
     fontSize: "2rem",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     cursor: "pointer",
   };
 
@@ -74,18 +74,12 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     pointerEvents: mobileMode ? "none" : "auto",
     transition: "opacity 0.5s",
   };
-  const tabItemStyle = {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    padding: "0px 0.8rem 0px 0.8rem",
-  };
   const tabDividerStyle = {
     height: "100%",
     width: "1px",
     margin: "0px 8px 0px 8px",
-    boxShadow: "1px 0px 4px var(--colour-3)",
-    backgroundColor: "var(--colour-4)",
+    boxShadow: "1px 0px 4px var(--colour-4)",
+    backgroundColor: "var(--colour-5)",
     opacity: 0.8,
   };
 
@@ -97,60 +91,70 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
   };
 
   // Return header object
-  return <div style={outerHeaderStyle}>
-    <div style={headerStyle}>
+  return (
+    <div style={outerHeaderStyle}>
+      <div style={headerStyle}>
 
-      {/* Logo */}
-      <Link to="/" style={{ textDecoration: "none" }}>
-        <div style={logoStyle}>JANZEN</div>
-      </Link>
+        {/* Logo */}
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <div style={logoStyle}>JANZEN</div>
+        </Link>
 
-      {/* Right-side menu */}
-      <div style={rightMenuStyle}>
+        {/* Right-side menu */}
+        <div style={rightMenuStyle}>
 
-        {/* Desktop Mode Options */}
-        <div style={tabMenuStyle}>
-          <div style={tabItemStyle}>
-            <div style={textStyle}>Resume</div>
+          {/* Desktop Mode Options */}
+          <div style={tabMenuStyle}>
+            <TabItem>
+              <div style={textStyle}>Resume</div>
+            </TabItem>
+            <div style={tabDividerStyle}/>
+            <TabItem>
+              <div style={textStyle}>Activities</div>
+            </TabItem>
+            <div style={tabDividerStyle}/>
+            <TabItem>
+              <TextDropdown text={"Settings"} style={textStyle} closeOnChange={mobileMode}>
+              <DropdownItem>
+                <DarkModeItem colourTheme={colourTheme} setColourTheme={setColourTheme}/>
+              </DropdownItem>
+              <DropdownItem>
+                <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
+              </DropdownItem>
+              </TextDropdown>
+            </TabItem>
           </div>
-          <div style={tabDividerStyle}/>
-          <div style={tabItemStyle}>
-            <div style={textStyle}>Activities</div>
-          </div>
-          <div style={tabDividerStyle}/>
-          <div style={tabItemStyle}>
-            <TextDropdown text={"Settings"} style={textStyle} closeOnChange={mobileMode}>
+
+          {/* Mobile Mode Options */}
+          <BurgerDropdown style={burgerTransitionStyle} closeOnChange={mobileMode}>
+            <DropdownItem>
+              <div style={textStyle}>About</div>
+            </DropdownItem>
+            <DropdownItem>
+              <div style={textStyle}>Experience</div>
+            </DropdownItem>
+            <DropdownItem>
+              <div style={textStyle}>Projects</div>
+            </DropdownItem>
+            <DropdownItem>
+              <div style={textStyle}>Contact</div>
+            </DropdownItem>
+            <div style={dropdownDividerStyle}/>
+            <DropdownItem>
+              <div style={textStyle}>Activities</div>
+            </DropdownItem>
+            <div style={dropdownDividerStyle}/>
+            <DropdownItem>
               <DarkModeItem colourTheme={colourTheme} setColourTheme={setColourTheme}/>
+            </DropdownItem>
+            <DropdownItem>
               <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
-            </TextDropdown>
-          </div>
+            </DropdownItem>
+          </BurgerDropdown>
         </div>
-
-        {/* Mobile Mode Options */}
-        <BurgerDropdown style={burgerTransitionStyle} closeOnChange={mobileMode}>
-          <div style={dropdownItemStyle}>
-            <div style={textStyle}>About</div>
-          </div>
-          <div style={dropdownItemStyle}>
-            <div style={textStyle}>Experience</div>
-          </div>
-          <div style={dropdownItemStyle}>
-            <div style={textStyle}>Projects</div>
-          </div>
-          <div style={dropdownItemStyle}>
-            <div style={textStyle}>Contact</div>
-          </div>
-          <div style={dropdownDividerStyle}/>
-          <div style={dropdownItemStyle}>
-            <div style={textStyle}>Activities</div>
-          </div>
-          <div style={dropdownDividerStyle}/>
-          <DarkModeItem colourTheme={colourTheme} setColourTheme={setColourTheme}/>
-          <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
-        </BurgerDropdown>
       </div>
     </div>
-  </div>;
+  );
 };
 
 /**
@@ -162,9 +166,42 @@ const textStyle = {
   justifyContent: "center",
   fontWeight: 400,
   fontSize: "1rem",
-  color: "var(--colour-6)",
-  cursor: "pointer",
+  color: "var(--colour-7)",
+  cursor: "pointer"
 }
+
+/**
+ * Tab item object
+ * @param {*} children children objects
+ * @returns tab item object
+ */
+const TabItem = ({ children }) => {
+  const tabItemStyle = {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    padding: "0.1rem 0.8rem 0.3rem 0.8rem",
+    cursor: "pointer",
+  };
+  return (
+    <div style={tabItemStyle}>
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Dropdown item object
+ * @param {*} children children objects
+ * @returns dropdown item object
+ */
+const DropdownItem = ({ children }) => {
+  return (
+    <div style={dropdownItemStyle}>
+      {children}
+    </div>
+  );
+};
 
 /**
  * Item containing toggle for dark mode
@@ -173,10 +210,12 @@ const textStyle = {
  * @returns dark mode toggle item
  */
 const DarkModeItem = ({ colourTheme, setColourTheme }) => {
-  return <div style={dropdownItemStyle}>
-    <div style={textStyle}>Dark Mode</div>
-    <ColourThemeToggle colourTheme={colourTheme} setColourTheme={setColourTheme}/>
-  </div>;
+  return (
+    <div style={dropdownItemStyle}>
+      <div style={textStyle}>Dark Mode</div>
+      <ColourThemeToggle colourTheme={colourTheme} setColourTheme={setColourTheme}/>
+    </div>
+  );
 }
 
 /**
@@ -195,12 +234,14 @@ const MobileModeItem = ({ forceMobile, setForceMobile }) => {
   };
 
   // Return mobile mode item
-  return <div style={dropdownItemStyle}>
-    <div style={textStyle}>Mobile Mode</div>
-    <ReactToggle
-      input    = {isMobile || forceMobile}
-      onChange = {onChange}
-      disabled = {Boolean(isMobile)}
-    />
-  </div>
+  return (
+    <div style={dropdownItemStyle}>
+      <div style={textStyle}>Mobile Mode</div>
+      <ReactToggle
+        input    = {isMobile || forceMobile}
+        onChange = {onChange}
+        disabled = {Boolean(isMobile)}
+      />
+    </div>
+  );
 }
