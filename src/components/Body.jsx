@@ -1,7 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import { Home } from "./page/home/Home";
+import { Resume } from "./page/resume/Resume";
 import { Template } from "./page/Template";
-import { MAX_WIDTH } from "../helper/constant";
+import { HEADER_HEIGHT, FOOTER_HEIGHT, MAX_WIDTH } from "../helper/constant";
 
 /**
  * The body of the page
@@ -12,12 +13,14 @@ export const Body = ({ mobileMode, colourTheme }) => {
 
   // Container styles
   const outerStyle = {
-    paddingTop: "var(--header-height)",
+    paddingTop: HEADER_HEIGHT,
+    minHeight: `calc(100vh - ${FOOTER_HEIGHT})`,
     width: "100%",
     display: "flex",
     justifyContent: "center",
     boxSizing: "border-box",
     backgroundColor: "var(--colour-1)",
+    transition: "background-color 0.3s ease",
   };
   const innerStyle = {
     maxWidth: MAX_WIDTH,
@@ -31,6 +34,9 @@ export const Body = ({ mobileMode, colourTheme }) => {
       <div style={innerStyle}>
         <Routes>
           <Route path="/" element={<Home mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
+          <Route path="/home" element={<Home mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
+          <Route path="/resume" element={<Resume mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
+          <Route path="/activities" element={<Template mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
           <Route path="/template" element={<Template mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
         </Routes>
       </div>

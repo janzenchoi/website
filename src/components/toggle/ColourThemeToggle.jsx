@@ -33,7 +33,6 @@ function ColourThemeToggle({colourTheme, setColourTheme}) {
     height: "20px",
     borderRadius: "20px",
     backgroundColor: "var(--switch-colour)",
-    transition: "background-color 0.2s",
   };
   const circleStyle = {
     position: "absolute",

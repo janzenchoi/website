@@ -12,7 +12,7 @@ import unswLight from "../../../assets/logo/unsw_light.png";
 export const EducationCard = ({ mobileMode, darkMode }) => {
 
   // Define bullets
-  const Bullet1 = () => {
+  const Bullet3 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -42,7 +42,7 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
       dateEnd={"May 2022"}
     />
   };
-  const Bullet3 = () => {
+  const Bullet1 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -61,9 +61,9 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
   // Return about card object
   return (
     <Card title={"Education"}>
-      <Bullet1/>
-      <Bullet2/>
       <Bullet3/>
+      <Bullet2/>
+      <Bullet1/>
     </Card>
   );
 };

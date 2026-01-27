@@ -92,5 +92,6 @@ export const dropdownDividerStyle = {
   margin: "8px 0px 8px 0px",
   boxShadow: "0 1px 4px var(--colour-4)",
   backgroundColor: "var(--colour-5)",
+  transition: "background-color 0.3s ease",
   opacity: 0.8,
 };

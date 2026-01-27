@@ -40,7 +40,6 @@ function ReactToggle({ input, onChange, disabled=false }) {
     borderRadius: "20px",
     backgroundColor: localInput ? "rgb(45, 193, 136)" : "rgb(140, 140, 140)",
     opacity: disabled ? 0.5 : 1,
-    transition: "background-color 0.2s",
   };
   const circleStyle = {
     position: "absolute",
@@ -50,7 +49,7 @@ function ReactToggle({ input, onChange, disabled=false }) {
     height: "16px",
     borderRadius: "50%",
     backgroundColor: "#fff",
-    transition: "left 0.2s",
+    transition: "left 0.2s ease",
   };
 
   // Return reactive toggle

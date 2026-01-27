@@ -28,7 +28,7 @@ const BurgerDropdown = ({ style, closeOnChange, children }) => {
     height: "4px",
     backgroundColor: "var(--colour-7)",
     borderRadius: "2px",
-    transition: "transform 0.3s ease, opacity 0.3s ease",
+    transition: "background-color 0.3s ease transform 0.3s ease, opacity 0.3s ease",
   };
 
   // Return burger menu

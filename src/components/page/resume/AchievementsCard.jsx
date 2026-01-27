@@ -16,7 +16,7 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
   const [open, setOpen] = useState(false);
 
   // Define bullets
-  const Bullet1 = () => {
+  const Bullet5 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -30,7 +30,7 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       dateStart={"Dec 2022"}
     />
   };
-  const Bullet2 = () => {
+  const Bullet4 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -58,7 +58,7 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       dateStart={"May 2022"}
     />
   };
-  const Bullet4 = () => {
+  const Bullet2 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -72,7 +72,7 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
       dateStart={"Aug 2021"}
     />
   };
-  const Bullet5 = () => {
+  const Bullet1 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -91,13 +91,13 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
   return (
     <Card title={"Achievements"}>
       <div>
-        <Bullet1/>
-        <Bullet2/>
+        <Bullet5/>
+        <Bullet4/>
         <Bullet3/>
       </div>
       {open && <div>
-        <Bullet4/>
-        <Bullet5/>
+        <Bullet2/>
+        <Bullet1/>
       </div>}
       <Expander open={open} setOpen={setOpen}/>
     </Card>

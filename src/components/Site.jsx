@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { HashRouter } from "react-router-dom";
 import { Header } from "./Header";
+import { Footer } from "./Footer";
 import { useViewport } from "../helper/Viewport";
 import { DEFAULT_MODE } from "../helper/constant";
 import { getStoredValue } from "../helper/storage";
@@ -28,7 +29,7 @@ export const Site = () => {
   // Define style for site
   const siteStyle = {
     backgroundColor: "var(--colour-0)",
-    transition: "background-color 0.3s",
+    transition: "all 0.3s ease",
   };
 
   // Returns the site
@@ -36,6 +37,7 @@ export const Site = () => {
     <HashRouter>
       <Header mobileMode={mobileMode} forceMobile={forceMobile} setForceMobile={setForceMobile} colourTheme={colourTheme} setColourTheme={setColourTheme}/>
       <div><Body mobileMode={mobileMode} colourTheme={colourTheme}/></div>
+      <Footer/>
     </HashRouter>
   </div>
 }

@@ -35,7 +35,6 @@ function LocalToggle({ field }) {
     height: "24px",
     borderRadius: "24px",
     backgroundColor: toggleValue ? "#2dc188ff": "#a0a0baff",
-    transition: "background-color 0.2s",
   };
   const circleStyle = {
     position: "absolute",
@@ -45,7 +44,7 @@ function LocalToggle({ field }) {
     height: "20px",
     borderRadius: "50%",
     backgroundColor: "#fff",
-    transition: "left 0.2s",
+    transition: "left 0.2s ease",
   };
 
   // Render toggle switch

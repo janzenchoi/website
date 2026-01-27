@@ -1,11 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BurgerDropdown from "./dropdown/BurgerDropdown";
 import { TextDropdown } from "./dropdown/TextDropdown";
 import { dropdownItemStyle, dropdownDividerStyle } from "./dropdown/Dropdown";
 import ColourThemeToggle from './toggle/ColourThemeToggle';
 import ReactToggle from './toggle/ReactToggle';
 import { useViewport } from "../helper/Viewport";
-import { MAX_WIDTH } from "../helper/constant";
+import { HEADER_HEIGHT, MAX_WIDTH } from "../helper/constant";
 import { setStoredValue } from "../helper/storage";
 
 /**
@@ -18,6 +18,7 @@ import { setStoredValue } from "../helper/storage";
  * @returns fixed header object
  */
 export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, setColourTheme }) => {
+  const navigate = useNavigate();
 
   // Define header style
   const outerHeaderStyle = {
@@ -25,9 +26,9 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     top: 0,
     left: 0,
     right: 0,
-    height: "var(--header-height)",
+    height: HEADER_HEIGHT,
     backgroundColor: "var(--colour-0)",
-    transition: "all 0.3s",
+    transition: "all 0.3s ease",
     boxShadow: "0 0px 2px var(--colour-5)",
     zIndex: 1000,
     display: "flex",
@@ -80,6 +81,7 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
     margin: "0px 8px 0px 8px",
     boxShadow: "1px 0px 4px var(--colour-4)",
     backgroundColor: "var(--colour-5)",
+    transition: "background-color 0.3s ease",
     opacity: 0.8,
   };
 
@@ -106,11 +108,13 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
           {/* Desktop Mode Options */}
           <div style={tabMenuStyle}>
             <TabItem>
-              <div style={textStyle}>Resume</div>
+              <div style={textStyle} onClick={() => navigate("/home")}>Home</div>
             </TabItem>
-            <div style={tabDividerStyle}/>
             <TabItem>
-              <div style={textStyle}>Activities</div>
+              <div style={textStyle} onClick={() => navigate("/resume")}>Resume</div>
+            </TabItem>
+            <TabItem>
+              <div style={textStyle} onClick={() => navigate("/activities")}>Activities</div>
             </TabItem>
             <div style={tabDividerStyle}/>
             <TabItem>
@@ -128,20 +132,13 @@ export const Header = ({ mobileMode, forceMobile, setForceMobile, colourTheme, s
           {/* Mobile Mode Options */}
           <BurgerDropdown style={burgerTransitionStyle} closeOnChange={mobileMode}>
             <DropdownItem>
-              <div style={textStyle}>About</div>
+              <div style={textStyle} onClick={() => navigate("/home")}>Home</div>
             </DropdownItem>
             <DropdownItem>
-              <div style={textStyle}>Experience</div>
+              <div style={textStyle} onClick={() => navigate("/resume")}>Resume</div>
             </DropdownItem>
             <DropdownItem>
-              <div style={textStyle}>Projects</div>
-            </DropdownItem>
-            <DropdownItem>
-              <div style={textStyle}>Contact</div>
-            </DropdownItem>
-            <div style={dropdownDividerStyle}/>
-            <DropdownItem>
-              <div style={textStyle}>Activities</div>
+              <div style={textStyle} onClick={() => navigate("/activities")}>Activities</div>
             </DropdownItem>
             <div style={dropdownDividerStyle}/>
             <DropdownItem>

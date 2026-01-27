@@ -24,7 +24,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
   const [open, setOpen] = useState(false);
 
   // Define bullets
-  const Bullet1 = () => {
+  const Bullet7 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -40,7 +40,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       dateEnd={"Dec 2025"}
     />
   };
-  const Bullet2 = () => {
+  const Bullet6 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -56,7 +56,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       dateEnd={"Oct 2024"}
     />
   };
-  const Bullet3 = () => {
+  const Bullet5 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -88,7 +88,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       dateEnd={"Sep 2023"}
     />
   };
-  const Bullet5 = () => {
+  const Bullet3 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -104,7 +104,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       dateEnd={"Nov 2022"}
     />
   };
-  const Bullet6 = () => {
+  const Bullet2 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -120,7 +120,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       dateEnd={"May 2022"}
     />
   };
-  const Bullet7 = () => {
+  const Bullet1 = () => {
     return <ThickBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -141,15 +141,15 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
   return (
     <Card title={"Experience"}>
       <div>
-        <Bullet1/>
-        <Bullet2/>
-        <Bullet3/>
+        <Bullet7/>
+        <Bullet6/>
+        <Bullet5/>
       </div>
       {open && <div>
         <Bullet4/>
-        <Bullet5/>
-        <Bullet6/>
-        <Bullet7/>
+        <Bullet3/>
+        <Bullet2/>
+        <Bullet1/>
       </div>}
       <Expander open={open} setOpen={setOpen}/>
     </Card>

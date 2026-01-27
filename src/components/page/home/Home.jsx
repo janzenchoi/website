@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, titleStyle } from "../../content/Card";
 import { AboutCard } from "./AboutCard";
-import { EducationCard } from "./EducationCard";
-import { ExperienceCard } from "./ExperienceCard";
-import { AchievementsCard } from "./AchievementsCard";
 
 /**
  * Home page
@@ -23,13 +20,6 @@ export const Home = ({mobileMode, colourTheme}) => {
   return (
     <div>
       <AboutCard mobileMode={mobileMode} darkMode={darkMode}/>
-      <EducationCard mobileMode={mobileMode} darkMode={darkMode}/>
-      <ExperienceCard mobileMode={mobileMode} darkMode={darkMode}/>
-      <Card title="Projects">
-        <div style={titleStyle}>{lorem}</div>
-      </Card>
-      <AchievementsCard mobileMode={mobileMode} darkMode={darkMode}/>
-
       <Card title="Contact">
         <div style={titleStyle}>{lorem}</div>
       </Card>
