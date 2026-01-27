@@ -11,9 +11,9 @@ export const Footer = ({ mobileMode }) => {
   const footerStyle = {
     height: FOOTER_HEIGHT,
     width: "100%",
-    backgroundColor: "var(--colour-1)",
+    backgroundColor: "var(--colour-0)",
     transition: "background-color 0.3s ease",
-    // boxShadow: "0 0px 2px var(--colour-5)",
+    boxShadow: "0 0px 2px var(--colour-5)",
   };
 
   // Return header object
