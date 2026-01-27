@@ -8,7 +8,7 @@ export const Card = ({ title, children }) => {
 
   // Container style for the card
   const containerStyle = {
-    padding: "0.6rem 1rem 1rem 1rem",
+    padding: "0.6rem 1rem 0.8rem 1rem",
     backgroundColor: "var(--colour-0)",
     transition: "background-color 0.3s ease",
     marginTop: "0.4rem",
@@ -43,7 +43,7 @@ export const Card = ({ title, children }) => {
 export const horizontalDividerStyle = {
   width: "100%",
   height: "1px",
-  margin: "0 0 1rem 0",
+  margin: "0 0 0.4rem 0",
   backgroundColor: "var(--colour-4)",
   transition: "background-color 0.3s ease",
   opacity: 0.8,
@@ -58,7 +58,7 @@ export const titleStyle = {
   justifyContent: "center",
   textAlign: "justify",
   fontWeight: 500,
-  fontSize: "1.1rem",
+  fontSize: "1rem",
   color: "var(--colour-6)",
 };
 

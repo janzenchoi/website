@@ -3,10 +3,12 @@ import { horizontalDividerStyle } from "../content/Card";
 
 /**
  * A button to press to expand a list of thick bullets
+ * @param {boolean} mobileMode whether to use mobile or desktop view
  * @param {*} open whether to open the expander or not
+ * @param {*} setOpen the callback function for opening the expander
  * @returns expander object
  */
-export const Expander = ({ open, setOpen }) => {
+export const Expander = ({ mobileMode, open, setOpen }) => {
   const [hover, setHover] = useState(false);
 
   // Styles
@@ -18,8 +20,8 @@ export const Expander = ({ open, setOpen }) => {
   const containerStyle = {
     width: "100%",
     height: "24px",
-    backgroundColor: hover ? "var(--colour-1)" : "var(--colour-0)",
-    marginBottom: "-0.6rem",
+    backgroundColor: hover ? "var(--colour-1)" : "transparent",
+    marginBottom: "-0.4rem",
     cursor: "pointer",
     display: "flex",
     flexDirection: "row",
@@ -40,17 +42,35 @@ export const Expander = ({ open, setOpen }) => {
     color: "var(--colour-6)",
   };
 
-  // Return expander object
-  return (
-    <div>
-      <div style={dividerStyle}/>
-      <div
-        style={containerStyle}
-        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-        onClick={() => setOpen(!open)}
-      >
-        <div style={arrowStyle}/>
+  // Expander for mobile mode
+  const MobileExpander = () => {
+    return (
+      <div>
+        <div style={dividerStyle}/>
+        <div style={containerStyle} onClick={() => setOpen(!open)}>
+          <div style={arrowStyle}/>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // Expander for desktop mode
+  const DesktopExpander = () => {
+    return (
+      <div>
+        <div style={dividerStyle}/>
+        <div
+          style={containerStyle}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          onClick={() => setOpen(!open)}
+        >
+          <div style={arrowStyle}/>
+        </div>
+      </div>
+    );
+  };
+
+  // Return expander object
+  return (mobileMode ? <MobileExpander/> : <DesktopExpander/>);
 };

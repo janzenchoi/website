@@ -1,5 +1,5 @@
 import { Card } from "../../content/Card";
-import { ThickBullet } from "../../content/ThickBullet";
+import { IconBullet } from "../../content/IconBullet";
 import unswDark from "../../../assets/logo/unsw_dark.png";
 import unswLight from "../../../assets/logo/unsw_light.png";
 
@@ -13,13 +13,13 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
 
   // Define bullets
   const Bullet3 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"University of New South Wales"}
-      subtitle={"PhD in Mechanical Engineering"}
+      title={"PhD in Mechanical Engineering"}
+      subtitle={"University of New South Wales"}
       description={[
-        "Focused on applying machine learning and optimisation techniques to develop and calibrate material models for predicting the creep and tensile deformation behaviour of Alloy 617"
+        "Focused on applying machine learning and optimisation techniques to develop and calibrate material models for predicting the creep and tensile deformation behaviour of Alloy 617."
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
@@ -28,13 +28,13 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet2 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"University of New South Wales"}
-      subtitle={"Bachelor of Mechatronic Engineering (Honours)"}
+      title={"Bachelor of Mechatronic Engineering (Honours)"}
+      subtitle={"University of New South Wales"}
       description={[
-        "Graduated with First Class Honours and the University Medal (92HD)"
+        "Graduated with First Class Honours and the University Medal (92HD)."
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
@@ -43,13 +43,13 @@ export const EducationCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet1 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"University of New South Wales"}
-      subtitle={"Bachelor of Computer Science"}
+      title={"Bachelor of Computer Science"}
+      subtitle={"University of New South Wales"}
       description={[
-        "Graduated with Distinction (92HD)"
+        "Graduated with Distinction (92HD)."
       ]}
       iconLight={unswLight}
       iconDark={unswDark}

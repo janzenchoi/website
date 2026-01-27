@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card } from "../../content/Card";
-import { ThickBullet } from "../../content/ThickBullet";
+import { IconBullet } from "../../content/IconBullet";
 import { Expander } from "../../content/Expander";
 import anlDark from "../../../assets/logo/anl_dark.png";
 import anlLight from "../../../assets/logo/anl_light.png";
@@ -25,14 +25,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
 
   // Define bullets
   const Bullet7 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Australian Nuclear Science and Technology Organisation"}
-      subtitle={"Student Researcher"}
+      title={"Student Researcher"}
+      subtitle={"Australian Nuclear Science and Technology Organisation"}
       description={[
         "Hybrid (Sydney, Australia)",
-        "Developed and calibrated materials models for predicting the creep and tensile deformation behaviour of Alloy 617; the research was conducted as part of my Honours project and PhD candidature"
+        "Developed and calibrated materials models for predicting the creep and tensile deformation behaviour of Alloy 617. The research was conducted as part of my Honours project and PhD candidature."
       ]}
       iconLight={anstoLight}
       iconDark={anstoDark}
@@ -41,14 +41,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet6 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Argonne National Laboratory"}
-      subtitle={"Technical Research Aide"}
+      title={"Technical Research Aide"}
+      subtitle={"Argonne National Laboratory"}
       description={[
         "On-Site (Chicago, America)",
-        "Assisted with DOE-sponsored projects on modelling the deformation behaviour of Alloy 617 and 709"
+        "Assisted with DOE-sponsored projects on modelling the deformation behaviour of Alloy 617 and 709."
       ]}
       iconLight={anlLight}
       iconDark={anlDark}
@@ -57,14 +57,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet5 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Mission Systems"}
-      subtitle={"DevOps Engineer"}
+      title={"DevOps Engineer"}
+      subtitle={"Mission Systems"}
       description={[
         "On-Site (Sydney, Australia)",
-        "Maintained and upgraded Linux-based systems, with a primary focus on Ubuntu environments; helped maintain Jenkins pipelines and supported Blender-based workflows within production environments"
+        "Maintained and upgraded Linux-based systems, with a primary focus on Ubuntu environments. Helped maintain Jenkins pipelines and supported Blender-based workflows within production environments."
       ]}
       iconLight={ms}
       iconDark={ms}
@@ -73,14 +73,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet4 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Argonne National Laboratory"}
-      subtitle={"Technical Research Aide"}
+      title={"Technical Research Aide"}
+      subtitle={"Argonne National Laboratory"}
       description={[
         "On-Site (Chicago, America)",
-        "Assisted with the development and calibration of physics-based models to predict the deformation behaviour of 316H steel"
+        "Assisted with the development and calibration of physics-based models to predict the deformation behaviour of 316H steel."
       ]}
       iconLight={anlLight}
       iconDark={anlDark}
@@ -89,14 +89,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet3 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"University of New South Wales"}
-      subtitle={"Course Demonstrator"}
+      title={"Course Demonstrator"}
+      subtitle={"University of New South Wales"}
       description={[
         "Hybrid (Sydney, Australia)",
-        "Taught undergraduate students in DESN1000 (Introduction to Engineering Design and Innovation), MATH2089 (Numerical Methods and Statistics), and MTRN4010 (Advanced Autonomous Systems)"
+        "Taught undergraduate students in DESN1000 (Introduction to Engineering Design and Innovation), MATH2089 (Numerical Methods and Statistics), and MTRN4010 (Advanced Autonomous Systems)."
       ]}
       iconLight={unswLight}
       iconDark={unswDark}
@@ -105,14 +105,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet2 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Self-employed"}
-      subtitle={"Private Tutor"}
+      title={"Private Tutor"}
+      subtitle={"Self-employed"}
       description={[
         "On-Site (Sydney, Australia)",
-        "Taught secondary students in Maths, Physics, and Engineering in preparation for the highschool certificate (HSC)"
+        "Taught secondary students in Maths, Physics, and Engineering in preparation for the highschool certificate (HSC)."
       ]}
       iconLight={seLight}
       iconDark={seDark}
@@ -121,14 +121,14 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
     />
   };
   const Bullet1 = () => {
-    return <ThickBullet
+    return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Pre-Uni College"}
-      subtitle={"Primary School Tutor"}
+      title={"Primary School Tutor"}
+      subtitle={"Pre-Uni College"}
       description={[
         "On-Site (Sydney, Australia)",
-        "Taught primary students in English, Maths, and General Ability in preparation for the opportunity class (OC) and selective tests"
+        "Taught primary students in English, Maths, and General Ability in preparation for the opportunity class (OC) and selective tests."
       ]}
       iconLight={puLight}
       iconDark={puDark}
@@ -151,7 +151,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
         <Bullet2/>
         <Bullet1/>
       </div>}
-      <Expander open={open} setOpen={setOpen}/>
+      <Expander mobileMode={mobileMode} open={open} setOpen={setOpen}/>
     </Card>
   );
 };
