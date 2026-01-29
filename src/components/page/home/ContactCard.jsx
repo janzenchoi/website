@@ -29,7 +29,7 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
     return <HyperlinkBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Phone"}
+      title={"Mobile"}
       text={"(+61) 404 202 202"}
       iconLight={phoneIcon}
       iconDark={phoneIcon}

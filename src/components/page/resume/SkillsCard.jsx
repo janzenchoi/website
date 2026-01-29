@@ -39,7 +39,7 @@ export const SkillsCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Multilingual"}
-      subtitle={"(Cantonese, English, German, Hokkien, Indonesian, Mandarin)"}
+      subtitle={"(Cantonese, English, Hokkien, Indonesian, Mandarin)"}
     />
   };
 
