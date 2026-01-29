@@ -5,7 +5,7 @@ import { Card, titleStyle, textStyle } from "../../content/Card";
  * About card
  * @param {boolean} mobileMode whether to use mobile or desktop view
  * @param {boolean} darkMode whether to use dark or light mode
- * @returns about card for mobile mode
+ * @returns about card
  */
 export const AboutCard = ({ mobileMode, darkMode }) => {
   

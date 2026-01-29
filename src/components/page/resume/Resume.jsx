@@ -11,7 +11,7 @@ import { PublicationsCard } from "./PublicationsCard";
  * @param {boolean} colourTheme the theme to colour the site
  * @returns home object
  */
-export const Resume = ({mobileMode, colourTheme}) => {
+export const Resume = ({ mobileMode, colourTheme }) => {
 
   // Monitor colour theme
   const [darkMode, setDarkMode] = useState(colourTheme === "dark");

@@ -9,10 +9,10 @@ import mailIcon from "../../../assets/icon/mail.png";
 import phoneIcon from "../../../assets/icon/phone.png";
 
 /**
- * About card
+ * Contact card
  * @param {boolean} mobileMode whether to use mobile or desktop view
  * @param {boolean} darkMode whether to use dark or light mode
- * @returns about card for mobile mode
+ * @returns contact card
  */
 export const ContactCard = ({ mobileMode, darkMode }) => {
   const Bullet1 = () => {

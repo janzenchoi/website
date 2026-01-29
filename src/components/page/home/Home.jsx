@@ -8,7 +8,7 @@ import { ContactCard } from "./ContactCard";
  * @param {boolean} colourTheme the theme to colour the site
  * @returns home object
  */
-export const Home = ({mobileMode, colourTheme}) => {
+export const Home = ({ mobileMode, colourTheme }) => {
 
   // Monitor colour theme
   const [darkMode, setDarkMode] = useState(colourTheme === "dark");
