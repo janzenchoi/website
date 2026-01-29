@@ -22,9 +22,7 @@ export const HyperlinkBullet = ({ mobileMode, darkMode, iconLight, iconDark, tit
     width: "calc(100% - 1rem)",
     display: "flex",
     flexDirection: "row",
-    backgroundColor: "transparent",
     gap: mobileMode ? "0.8rem" : "1rem",
-    // cursor: "pointer",
   };
   const imageContainer = {
     height: mobileMode ? "2.5rem" : "3rem",
@@ -45,7 +43,7 @@ export const HyperlinkBullet = ({ mobileMode, darkMode, iconLight, iconDark, tit
     display: "inline-block",
     width: "fit-content",
   };
-
+  
   // Return hyperlink object
   return (
     <div style={outerContainer}>

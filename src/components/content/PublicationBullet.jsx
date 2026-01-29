@@ -23,6 +23,7 @@ export const PublicationBullet = ({ mobileMode, darkMode, title, subtitle, descr
   // Container styles
   const outerContainer = {
     padding: "0.4rem",
+    marginBottom: open ? "0.4rem" : "0",
     width: "calc(100% - 1rem)",
     display: "flex",
     flexDirection: "row",
