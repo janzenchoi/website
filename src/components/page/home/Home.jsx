@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card, titleStyle } from "../../content/Card";
 import { AboutCard } from "./AboutCard";
+import { ContactCard } from "./ContactCard";
 
 /**
  * Home page
@@ -20,9 +20,7 @@ export const Home = ({mobileMode, colourTheme}) => {
   return (
     <div>
       <AboutCard mobileMode={mobileMode} darkMode={darkMode}/>
-      <Card mobileMode={mobileMode} title="Contact">
-        <div style={titleStyle}>{lorem}</div>
-      </Card>
+      <ContactCard mobileMode={mobileMode} darkMode={darkMode}/>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { Card } from "../../content/Card";
 import { IconBullet } from "../../content/IconBullet";
+import seDark from "../../../assets/icon/se_dark.png";
+import seLight from "../../../assets/icon/se_light.png";
 import anlDark from "../../../assets/logo/anl_dark.png";
 import anlLight from "../../../assets/logo/anl_light.png";
 import anstoDark from "../../../assets/logo/ansto_dark.png";
@@ -7,8 +9,6 @@ import anstoLight from "../../../assets/logo/ansto_light.png";
 import ms from "../../../assets/logo/ms.png";
 import puDark from "../../../assets/logo/pu_dark.png";
 import puLight from "../../../assets/logo/pu_light.png";
-import seDark from "../../../assets/logo/se_dark.png";
-import seLight from "../../../assets/logo/se_light.png";
 import unswDark from "../../../assets/logo/unsw_dark.png";
 import unswLight from "../../../assets/logo/unsw_light.png";
 
