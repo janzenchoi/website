@@ -34,7 +34,7 @@ export const IconBullet = ({
   // Container styles
   const outerContainer = {
     padding: mobileMode ? "0.3rem" : "0.4rem",
-    marginBottom: open ? "0.4rem" : "0",
+    // marginBottom: open ? "0.4rem" : "0",
     width: "calc(100% - 1rem)",
     display: "flex",
     flexDirection: "row",
@@ -94,7 +94,7 @@ export const IconBullet = ({
       whiteSpace: "nowrap"
     };
     return (
-      <div style={{ display: "flex", flexDirection: "row", justifyContent: "flex-start" }}>
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start" }}>
         <div style={verticalDividerStyle} />
         <div>{description.map((text, idx) => {
           return (
