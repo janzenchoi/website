@@ -184,6 +184,7 @@ const textStyle = {
   fontWeight: 400,
   fontSize: "1rem",
   color: "var(--colour-7)",
+  cursor: "default",
 };
 const itemTextStyle = {
   ...textStyle,
@@ -203,7 +204,6 @@ const TabItem = ({ children }) => {
     flexDirection: "row",
     justifyContent: "center",
     padding: "0.1rem 0.8rem 0.3rem 0.8rem",
-    cursor: "pointer",
   };
   return (
     <div style={tabItemStyle}>
