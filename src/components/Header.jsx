@@ -124,7 +124,7 @@ export const Header = ({
           <div style={itemTextStyle} onClick={() => navigate("/home")}>Home</div>
         </TabItem>
         <TabItem>
-          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
+          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Résumé</div>
         </TabItem>
         <TabItem>
           <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>
@@ -147,7 +147,7 @@ export const Header = ({
           <div style={itemTextStyle} onClick={() => navigate("/home")}>Home</div>
         </DropdownItem>
         <DropdownItem>
-          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
+          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Résumé</div>
         </DropdownItem>
         <DropdownItem>
           <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>

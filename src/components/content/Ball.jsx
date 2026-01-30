@@ -1,185 +1,235 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ballImage from "../../assets/stuff/ball.png";
 
-// Constants
-const BALL_SIZE = 100;
-const GRAVITY = 0.45;
-const FRICTION = 0.75;
-const AIR_FRICTION = 0.996;
-const GROUND_FRICTION = 0.95;
-const FRAME_MS = 16.6667;
+/* =======================
+   Physics constants
+======================= */
 
-const RELEASE_DAMPING = 0.25; // reduce speed on release
-const ROTATION_FACTOR = 50; // rotation multiplier for horizontal movement
+const BALL_SIZE = 100;
+const GRAVITY = 0.5;
+const RESTITUTION = 0.75;      // bounce energy
+const AIR_FRICTION = 0.995;
+const GROUND_FRICTION = 0.92;
+const RELEASE_DAMPING = 0.25;
+
+const FRAME_MS = 16.6667;
+const ROTATION_FACTOR = 0.5;
+
+/* =======================
+   Component
+======================= */
 
 export const Ball = () => {
-  const initialX = window.innerWidth / 2 - BALL_SIZE / 2;
-  const initialY = window.innerHeight / 2 - BALL_SIZE / 2;
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
+  /* ---------- Initial position ---------- */
+  const initial = {
+    x: window.innerWidth / 2 - BALL_SIZE / 2,
+    y: window.innerHeight / 2 - BALL_SIZE / 2,
+  };
+
+  /* ---------- Render state ---------- */
+  const [position, setPosition] = useState(initial);
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const ballRef = useRef({ x: initialX, y: initialY, vx: 0, vy: 0 });
-  const animationRef = useRef(null);
-
-  const lastPointerRef = useRef({
-    x: initialX,
-    y: initialY,
-    t: performance.now(),
+  /* ---------- Physics state (refs) ---------- */
+  const ball = useRef({
+    x: initial.x,
+    y: initial.y,
     vx: 0,
     vy: 0,
   });
 
-  const pointerTypeRef = useRef(null);
+  const offset = useRef({ x: 0, y: 0 });
+  const pointer = useRef({
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    t: 0,
+  });
 
-  const getEventCoords = (e) => {
-    if (e.touches && e.touches.length > 0) {
+  const pointerType = useRef(null);
+  const raf = useRef(null);
+
+  /* =======================
+     Helpers
+======================= */
+
+  const getCoords = (e) => {
+    if (e.touches?.length) {
       return { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
     return { x: e.clientX, y: e.clientY };
   };
 
+  /* =======================
+     Pointer handlers
+======================= */
+
   const handleDown = (e) => {
-    const { x, y } = getEventCoords(e);
-    pointerTypeRef.current = e.touches && e.touches.length > 0 ? "touch" : "mouse";
+    const { x, y } = getCoords(e);
+    pointerType.current = e.touches ? "touch" : "mouse";
+
+    offset.current = {
+      x: x - ball.current.x,
+      y: y - ball.current.y,
+    };
+
+    ball.current.vx = 0;
+    ball.current.vy = 0;
+
+    pointer.current = {
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      t: performance.now(),
+    };
+
     setIsDragging(true);
-    setOffset({ x: x - ballRef.current.x, y: y - ballRef.current.y });
-    ballRef.current.vx = 0;
-    ballRef.current.vy = 0;
-    lastPointerRef.current = { x, y, t: performance.now(), vx: 0, vy: 0 };
     e.preventDefault();
   };
 
   const handleMove = (e) => {
     if (!isDragging) return;
-    if (pointerTypeRef.current === "mouse") {
-      if ("buttons" in e && e.buttons === 0) return;
-    }
-    const { x, y } = getEventCoords(e);
-    const newX = x - offset.x;
-    const newY = y - offset.y;
+    if (pointerType.current === "mouse" && e.buttons === 0) return;
 
+    const { x, y } = getCoords(e);
     const now = performance.now();
-    const dt = now - lastPointerRef.current.t || 1;
-    const dx = x - lastPointerRef.current.x;
-    const dy = y - lastPointerRef.current.y;
 
-    const instantVx = (dx / dt) * FRAME_MS;
-    const instantVy = (dy / dt) * FRAME_MS;
-    const smoothedVx = lastPointerRef.current.vx * 0.3 + instantVx * 0.7;
-    const smoothedVy = lastPointerRef.current.vy * 0.3 + instantVy * 0.7;
+    const dx = x - pointer.current.x;
+    const dy = y - pointer.current.y;
+    const dt = Math.max(now - pointer.current.t, 1);
 
-    lastPointerRef.current = { x, y, t: now, vx: smoothedVx, vy: smoothedVy };
+    const vx = (dx / dt) * FRAME_MS;
+    const vy = (dy / dt) * FRAME_MS;
 
-    ballRef.current.x = newX;
-    ballRef.current.y = newY;
-    setPosition({ x: newX, y: newY });
+    pointer.current = {
+      x,
+      y,
+      vx: pointer.current.vx * 0.3 + vx * 0.7,
+      vy: pointer.current.vy * 0.3 + vy * 0.7,
+      t: now,
+    };
 
+    ball.current.x = x - offset.current.x;
+    ball.current.y = y - offset.current.y;
+
+    setPosition({ x: ball.current.x, y: ball.current.y });
     e.preventDefault();
   };
 
   const handleUp = () => {
-    ballRef.current.vx = (lastPointerRef.current.vx || 0) * RELEASE_DAMPING;
-    ballRef.current.vy = (lastPointerRef.current.vy || 0) * RELEASE_DAMPING;
+    ball.current.vx = pointer.current.vx * RELEASE_DAMPING;
+    ball.current.vy = pointer.current.vy * RELEASE_DAMPING;
+
     setIsDragging(false);
-    pointerTypeRef.current = null;
+    pointerType.current = null;
   };
+
+  /* =======================
+     Physics loop
+======================= */
 
   useEffect(() => {
     const animate = () => {
+      const b = ball.current;
+
       if (!isDragging) {
-        ballRef.current.vy += GRAVITY;
-        let newY = ballRef.current.y + ballRef.current.vy;
-        let newX = ballRef.current.x + ballRef.current.vx;
-
-        // Floor collision
         const floor = window.innerHeight - BALL_SIZE;
-        if (newY > floor) {
-          newY = floor;
-          ballRef.current.vy = -ballRef.current.vy * FRICTION;
-          if (Math.abs(ballRef.current.vy) < 0.5) ballRef.current.vy = 0;
-          ballRef.current.vx *= GROUND_FRICTION;
-        } 
-        // Roof collision
-        if (newY < 0) {
-          newY = 0;
-          ballRef.current.vy = -ballRef.current.vy * FRICTION;
+        const right = window.innerWidth - BALL_SIZE;
+
+        /* --- Gravity --- */
+        if (b.y < floor || b.vy < 0) {
+          b.vy += GRAVITY;
+        }
+
+        /* --- Integrate --- */
+        b.x += b.vx;
+        b.y += b.vy;
+
+        /* --- Floor / ceiling --- */
+        if (b.y >= floor) {
+          b.y = floor;
+          b.vy *= -RESTITUTION;
+          b.vx *= GROUND_FRICTION;
+
+          if (Math.abs(b.vy) < 0.5) b.vy = 0;
+        } else if (b.y <= 0) {
+          b.y = 0;
+          b.vy *= -RESTITUTION;
         } else {
-          ballRef.current.vx *= AIR_FRICTION;
+          b.vx *= AIR_FRICTION;
         }
 
-        // Wall collisions
-        const rightLimit = window.innerWidth - BALL_SIZE;
-        if (newX < 0) {
-          newX = 0;
-          ballRef.current.vx = -ballRef.current.vx * FRICTION;
-        } else if (newX > rightLimit) {
-          newX = rightLimit;
-          ballRef.current.vx = -ballRef.current.vx * FRICTION;
+        /* --- Walls --- */
+        if (b.x <= 0) {
+          b.x = 0;
+          b.vx *= -RESTITUTION;
+        } else if (b.x >= right) {
+          b.x = right;
+          b.vx *= -RESTITUTION;
         }
 
-        if (Math.abs(ballRef.current.vx) < 0.01) ballRef.current.vx = 0;
+        if (Math.abs(b.vx) < 0.01) b.vx = 0;
 
-        ballRef.current.x = newX;
-        ballRef.current.y = newY;
-        setPosition({ x: newX, y: newY });
-
-        // Rotate ball based on horizontal velocity
-        setRotation(prev => prev + ballRef.current.vx * ROTATION_FACTOR * 0.01);
+        setPosition({ x: b.x, y: b.y });
+        setRotation((r) => r + b.vx * ROTATION_FACTOR);
       }
 
-      animationRef.current = requestAnimationFrame(animate);
+      raf.current = requestAnimationFrame(animate);
     };
 
     animate();
-    return () => cancelAnimationFrame(animationRef.current);
+    return () => cancelAnimationFrame(raf.current);
   }, [isDragging]);
+
+  /* =======================
+     Mouse capture
+======================= */
 
   useEffect(() => {
-    const handleDocumentMouseMove = (e) => {
-      if (!isDragging || pointerTypeRef.current !== "mouse") return;
-      handleMove(e);
-    };
-    const handleDocumentMouseUp = () => {
-      if (!isDragging || pointerTypeRef.current !== "mouse") return;
-      handleUp();
-    };
+    const move = (e) =>
+      isDragging && pointerType.current === "mouse" && handleMove(e);
+    const up = () =>
+      isDragging && pointerType.current === "mouse" && handleUp();
 
-    document.addEventListener("mousemove", handleDocumentMouseMove);
-    document.addEventListener("mouseup", handleDocumentMouseUp);
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+
     return () => {
-      document.removeEventListener("mousemove", handleDocumentMouseMove);
-      document.removeEventListener("mouseup", handleDocumentMouseUp);
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
     };
   }, [isDragging]);
 
-  const ballStyle = {
+  /* =======================
+     Render
+======================= */
+
+  const style = {
     position: "fixed",
     left: position.x,
     top: position.y,
-    width: `${BALL_SIZE}px`,
-    height: `${BALL_SIZE}px`,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    width: BALL_SIZE,
+    height: BALL_SIZE,
     cursor: isDragging ? "grabbing" : "grab",
-    zIndex: 1000,
     touchAction: "none",
-    transform: `rotate(${rotation}deg)`, // apply rotation
+    zIndex: 1000,
+    transform: `rotate(${rotation}deg)`,
   };
 
   return (
     <img
+      src={ballImage}
+      alt="ball"
+      style={style}
+      draggable={false}
       onMouseDown={handleDown}
       onTouchStart={handleDown}
       onTouchMove={handleMove}
       onTouchEnd={handleUp}
       onTouchCancel={handleUp}
-      onDragStart={(e) => e.preventDefault()}
-      style={ballStyle}
-      src={ballImage}
-      alt="bouncy ball"
     />
   );
 };
