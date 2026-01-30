@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import ballImage from "../../assets/stuff/ball.png";
+import { BasketBall } from "./BasketBall";
 
 /* =======================
    Physics constants
@@ -220,9 +220,7 @@ export const Ball = () => {
   };
 
   return (
-    <img
-      src={ballImage}
-      alt="ball"
+    <div
       style={style}
       draggable={false}
       onMouseDown={handleDown}
@@ -230,6 +228,8 @@ export const Ball = () => {
       onTouchMove={handleMove}
       onTouchEnd={handleUp}
       onTouchCancel={handleUp}
-    />
+    >
+      <BasketBall size={BALL_SIZE} />
+    </div>
   );
 };

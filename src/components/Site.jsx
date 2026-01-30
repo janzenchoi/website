@@ -6,7 +6,7 @@ import { useViewport } from "../helper/Viewport";
 import { DEFAULT_MODE, HEADER_HEIGHT } from "../helper/constant";
 import { getStoredValue } from "../helper/storage";
 import { Body } from "./Body";
-import { Ball } from "./content/Ball";
+import { Ball } from "./stuff/Ball";
 import fg_dark from "../assets/janzen/fg_dark.png";
 import fg_light from "../assets/janzen/fg_light.png";
 
