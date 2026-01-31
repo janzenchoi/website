@@ -5,11 +5,10 @@ import { Dropdown } from "./Dropdown";
  * Dropdown menu triggered by text
  * @param {String} text items of the dropdown
  * @param {*} style style for the text
- * @param {*} closeOnChange variable to monitor to close if changed
  * @param {*} children items of the dropdown
  * @returns text-triggered dropdown menu
  */
-export const TextDropdown = ({ text, style, closeOnChange, children }) => {
+export const TextDropdown = ({ text, style, children }) => {
   const [open, setOpen] = useState(false);
   const textRef = useRef(null);
 
@@ -45,7 +44,7 @@ export const TextDropdown = ({ text, style, closeOnChange, children }) => {
         <span style={arrowStyle}></span>
       </div>
       <div style={dropdownStyle}>
-        <Dropdown open={open} onClose={() => setOpen(false)} closeOnChange={closeOnChange} ignoreRefs={[textRef]}>
+        <Dropdown open={open} onClose={() => setOpen(false)} ignoreRefs={[textRef]}>
           {children}
         </Dropdown>
       </div>

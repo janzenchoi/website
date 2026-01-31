@@ -49,7 +49,7 @@ export const Site = () => {
       zIndex: 10,
     };
     const fg_image = colourTheme === "dark" ? fg_dark : fg_light;
-    return <img style={janzenFgStyle} src={fg_image}/>;
+    return <img style={janzenFgStyle} src={fg_image} alt={"Janzen as a French girl"}/>;
   };
 
   // Returns the site

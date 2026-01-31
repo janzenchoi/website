@@ -119,7 +119,7 @@ export const IconBullet = ({
         style={outerContainer}
         onClick={() => setOpen(!open)}
       >
-        <img style={imageContainer} src={icon}/>
+        <img style={imageContainer} src={icon} alt="Icon for mobile mode"/>
         <div style={textContainer}>
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>
@@ -142,7 +142,7 @@ export const IconBullet = ({
         onMouseLeave={() => setHover(false)}
         onClick={() => setOpen(!open)}
       >
-        <img style={imageContainer} src={icon}/>
+        <img style={imageContainer} src={icon} alt="Icon for desktop mode"/>
         <div style={textContainer}>
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>

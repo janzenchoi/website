@@ -131,7 +131,7 @@ export const Header = ({
         </TabItem>
         <div style={tabDividerStyle}/>
         <TabItem>
-          <TextDropdown text={"Settings"} style={textStyle} closeOnChange={mobileMode}>
+          <TextDropdown text={"Settings"} style={textStyle}>
             <DropdownItems/>
           </TextDropdown>
         </TabItem>
@@ -142,7 +142,7 @@ export const Header = ({
   // Mobile mode object
   const MobileObject = () => {
     return (
-      <BurgerDropdown style={burgerTransitionStyle} closeOnChange={mobileMode}>
+      <BurgerDropdown style={burgerTransitionStyle}>
         <DropdownItem>
           <div style={itemTextStyle} onClick={() => navigate("/home")}>Home</div>
         </DropdownItem>

@@ -1,4 +1,3 @@
-import { titleStyle } from "../../content/Card";
 import { Card } from "../../content/Card";
 
 /**

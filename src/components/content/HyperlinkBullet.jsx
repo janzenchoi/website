@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { titleStyle, textStyle } from "./Card";
 
 /**
@@ -49,7 +48,7 @@ export const HyperlinkBullet = ({ mobileMode, darkMode, iconLight, iconDark, tit
   // Return hyperlink object
   return (
     <div style={outerContainer}>
-      <img style={imageContainer} src={icon}/>
+      <img style={imageContainer} src={icon} alt={"Hyperlink Icon"}/>
       <div style={textContainer}>
         <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
         {hyperlink !== "" && <a href={fullHyperlink} target="_blank" rel="noopener noreferrer" style={hyperlinkStyle}>

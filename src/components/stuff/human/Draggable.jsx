@@ -6,33 +6,47 @@ export const Draggable = ({ children, initialX = 0, initialY = 0 }) => {
 
   const offset = useRef({ x: 0, y: 0 });
 
-  const handleMouseDown = (e) => {
+  // Helper to get coordinates from mouse or touch
+  const getEventPosition = (e) => {
+    if (e.touches) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      return { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const handleDragStart = (e) => {
+    const { x, y } = getEventPosition(e);
     setDragging(true);
-    offset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
+    offset.current = { x: x - position.x, y: y - position.y };
     e.preventDefault();
   };
 
-  const handleMouseMove = (e) => {
+  const handleDragMove = (e) => {
     if (!dragging) return;
+    const { x, y } = getEventPosition(e);
     setPosition({
-      x: e.clientX - offset.current.x,
-      y: e.clientY - offset.current.y,
+      x: x - offset.current.x,
+      y: y - offset.current.y,
     });
   };
 
-  const handleMouseUp = () => {
+  const handleDragEnd = () => {
     setDragging(false);
   };
 
   useEffect(() => {
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    // Listen for both mouse and touch events
+    document.addEventListener("mousemove", handleDragMove);
+    document.addEventListener("mouseup", handleDragEnd);
+    document.addEventListener("touchmove", handleDragMove, { passive: false });
+    document.addEventListener("touchend", handleDragEnd);
+
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleDragMove);
+      document.removeEventListener("mouseup", handleDragEnd);
+      document.removeEventListener("touchmove", handleDragMove);
+      document.removeEventListener("touchend", handleDragEnd);
     };
   }, [dragging]);
 
@@ -44,8 +58,10 @@ export const Draggable = ({ children, initialX = 0, initialY = 0 }) => {
         top: position.y,
         cursor: dragging ? "grabbing" : "grab",
         userSelect: "none",
+        touchAction: "none", // prevents touch scrolling
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={handleDragStart}
+      onTouchStart={handleDragStart}
     >
       {children}
     </div>

@@ -1,4 +1,4 @@
-import { titleStyle, subtitleStyle, textStyle, horizontalDividerStyle } from "./Card";
+import { titleStyle, subtitleStyle } from "./Card";
 
 /**
  * Text bullet point

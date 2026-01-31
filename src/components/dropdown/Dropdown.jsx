@@ -4,18 +4,12 @@ import { useRef, useEffect } from "react";
  * Controlled dropdown menu
  * @param {boolean} open whether dropdown is open
  * @param {function} onClose function to call when clicked outside
- * @param {*} closeOnChange variable to monitor to close if changed
  * @param {*} ignoreRefs areas to include as 'inside'
  * @param {*} children menu items
  * @returns dropdown object
  */
-export const Dropdown = ({ open, onClose, closeOnChange=null, ignoreRefs=[], children }) => {
+export const Dropdown = ({ open, onClose, ignoreRefs=[], children }) => {
   const dropdownRef = useRef(null);
-
-  // Close if variable changes
-  useEffect(() => {
-    onClose();
-  }, [closeOnChange]);
 
   // Close when clicking outside
   useEffect(() => {

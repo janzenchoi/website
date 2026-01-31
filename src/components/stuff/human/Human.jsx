@@ -23,14 +23,28 @@ const HUMAN_SCALE = 1;
  * Human object
  * @returns human object
  */
-export const Human = () => {
+export const Human = ({
+  headRotation = 0,           // [-40, 30]
+  torsoRotation = 0,
+  foreUpperArmRotation = 180,
+  foreLowerArmRotation = 0,
+  hindUpperArmRotation = 180,
+  hindLowerArmRotation = 0,
+  hipRotation = 200,          // [190, 220]
+  foreUpperLegRotation = -20, // [-60, 70]
+  foreLowerLegRotation = 0,   // [0, -150]
+  foreFootRotation = 90,      // [50, 110], 90
+  hindUpperLegRotation = -20, // [-60, 70]
+  hindLowerLegRotation = 0,   // [0, -150]
+  hindFootRotation = 90,      // [50, 110], 90
+}) => {
 
   // Define head
   const Head = () => {
     return <Stick
-      length={45 * HUMAN_SCALE}
-      rotation={0}
-      image={<img src={headImage} style={{ height: 63 * HUMAN_SCALE }} draggable={false} />}
+      length={45*HUMAN_SCALE}
+      rotation={headRotation}
+      image={<img src={headImage} style={{ height: 63 * HUMAN_SCALE }} draggable={false} alt="Janzen's head"/>}
       imageOffset={{ x: 3 * HUMAN_SCALE, y: -40 * HUMAN_SCALE, r: 90 }}
     />
   };
@@ -39,8 +53,8 @@ export const Human = () => {
   const Torso = () => {
     return <Stick
       length={90*HUMAN_SCALE}
-      rotation={0}
-      image={<img src={torsoImage} style={{ height: 100*HUMAN_SCALE }}/>}
+      rotation={torsoRotation}
+      image={<img src={torsoImage} style={{ height: 100*HUMAN_SCALE }} alt="Janzen's torso"/>}
       imageOffset={{ x: 25*HUMAN_SCALE, y: -55*HUMAN_SCALE, r: 90 }}
       childAxes={[90*HUMAN_SCALE, 80*HUMAN_SCALE]}
     />
@@ -50,20 +64,20 @@ export const Human = () => {
   const ForeUpperArm = ({ children }) => {
     return <Stick
       length={45*HUMAN_SCALE}
-      rotation={-80}
-      image={<img src={foreUpperArmImage} style={{ height: 60*HUMAN_SCALE }}/>}
+      rotation={foreUpperArmRotation}
+      image={<img src={foreUpperArmImage} style={{ height: 60*HUMAN_SCALE }} alt="Janzen's fore upper arm"/>}
       imageOffset={{ x: 12*HUMAN_SCALE, y: -30*HUMAN_SCALE, r: -90 }}
     >
       {children}
     </Stick>
   };
 
-  // Define fore lower upper
+  // Define fore lower arm
   const ForeLowerArm = () => {
     return <Stick
       length={45*HUMAN_SCALE}
-      rotation={10}
-      image={<img src={foreLowerArmImage} style={{ height: 75*HUMAN_SCALE }}/>}
+      rotation={foreLowerArmRotation}
+      image={<img src={foreLowerArmImage} style={{ height: 75*HUMAN_SCALE }} alt="Janzen's fore lower arm"/>}
       imageOffset={{ x: 22*HUMAN_SCALE, y: -36*HUMAN_SCALE, r: -90 }}
     />
   };
@@ -72,8 +86,8 @@ export const Human = () => {
   const HindUpperArm = ({ children }) => {
     return <Stick
       length={45*HUMAN_SCALE}
-      rotation={-120}
-      image={<img src={hindUpperArmImage} style={{ height: 58*HUMAN_SCALE }}/>}
+      rotation={hindUpperArmRotation}
+      image={<img src={hindUpperArmImage} style={{ height: 58*HUMAN_SCALE }} alt="Janzen's hind upper arm"/>}
       imageOffset={{ x: 12*HUMAN_SCALE, y: -28*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -84,8 +98,8 @@ export const Human = () => {
   const HindLowerArm = () => {
     return <Stick
       length={45*HUMAN_SCALE}
-      rotation={10}
-      image={<img src={hindLowerArmImage} style={{ height: 73*HUMAN_SCALE }}/>}
+      rotation={hindLowerArmRotation}
+      image={<img src={hindLowerArmImage} style={{ height: 73*HUMAN_SCALE }} alt="Janzen's hind lower arm"/>}
       imageOffset={{ x: 22*HUMAN_SCALE, y: -36*HUMAN_SCALE, r: -90 }}
     />
   };
@@ -94,8 +108,8 @@ export const Human = () => {
   const Hip = ({ children }) => {
     return <Stick
       length={15*HUMAN_SCALE}
-      rotation={220} // [190, 220]
-      image={<img src={hipImage} style={{ height: 50*HUMAN_SCALE }}/>}
+      rotation={hipRotation}
+      image={<img src={hipImage} style={{ height: 50*HUMAN_SCALE }} alt="Janzen's hip"/>}
       imageOffset={{ x: -20*HUMAN_SCALE, y: -20*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -106,8 +120,8 @@ export const Human = () => {
   const ForeUpperLeg = ({ children }) => {
     return <Stick
       length={60*HUMAN_SCALE}
-      rotation={70} // [0, 70]
-      image={<img src={foreUpperLegImage} style={{ height: 80*HUMAN_SCALE }}/>}
+      rotation={foreUpperLegRotation}
+      image={<img src={foreUpperLegImage} style={{ height: 80*HUMAN_SCALE }} alt="Janzen's fore upper leg"/>}
       imageOffset={{ x: 12*HUMAN_SCALE, y: -38*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -118,8 +132,8 @@ export const Human = () => {
   const ForeLowerLeg = ({ children }) => {
     return <Stick
       length={50*HUMAN_SCALE}
-      rotation={-90} // [0, -90]
-      image={<img src={foreLowerLegImage} style={{ height: 70*HUMAN_SCALE }}/>}
+      rotation={foreLowerLegRotation}
+      image={<img src={foreLowerLegImage} style={{ height: 70*HUMAN_SCALE }} alt="Janzen's fore lower leg"/>}
       imageOffset={{ x: 10*HUMAN_SCALE, y: -35*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -130,8 +144,8 @@ export const Human = () => {
   const ForeFoot = ({ children }) => {
     return <Stick
       length={20*HUMAN_SCALE}
-      rotation={90} // [50, 110], 90
-      image={<img src={foreFootImage} style={{ height: 20*HUMAN_SCALE }}/>}
+      rotation={foreFootRotation}
+      image={<img src={foreFootImage} style={{ height: 20*HUMAN_SCALE }} alt="Janzen's fore foot"/>}
       imageOffset={{ x:-15*HUMAN_SCALE, y: -15*HUMAN_SCALE, r: 180 }}
     >
       {children}
@@ -142,8 +156,8 @@ export const Human = () => {
   const HindUpperLeg = ({ children }) => {
     return <Stick
       length={60*HUMAN_SCALE}
-      rotation={0} // [0, 70]
-      image={<img src={hindUpperLegImage} style={{ height: 80*HUMAN_SCALE }}/>}
+      rotation={hindUpperLegRotation}
+      image={<img src={hindUpperLegImage} style={{ height: 80*HUMAN_SCALE }} alt="Janzen's hind upper leg"/>}
       imageOffset={{ x: 12*HUMAN_SCALE, y: -38*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -154,8 +168,8 @@ export const Human = () => {
   const HindLowerLeg = ({ children }) => {
     return <Stick
       length={50*HUMAN_SCALE}
-      rotation={-50} // [0, -90]
-      image={<img src={hindLowerLegImage} style={{ height: 70*HUMAN_SCALE }}/>}
+      rotation={hindLowerLegRotation}
+      image={<img src={hindLowerLegImage} style={{ height: 70*HUMAN_SCALE }} alt="Janzen's hind lower leg"/>}
       imageOffset={{ x: 10*HUMAN_SCALE, y: -35*HUMAN_SCALE, r: -90 }}
     >
       {children}
@@ -166,8 +180,8 @@ export const Human = () => {
   const HindFoot = ({ children }) => {
     return <Stick
       length={20*HUMAN_SCALE}
-      rotation={90} // [50, 110], 90
-      image={<img src={hindFootImage} style={{ height: 20*HUMAN_SCALE }}/>}
+      rotation={hindFootRotation}
+      image={<img src={hindFootImage} style={{ height: 20*HUMAN_SCALE }} alt="Janzen's hind foot"/>}
       imageOffset={{ x:-15*HUMAN_SCALE, y: -15*HUMAN_SCALE, r: 180 }}
     >
       {children}
@@ -180,7 +194,7 @@ export const Human = () => {
       <Stick
         length={10*HUMAN_SCALE}
         rotation={-90}
-        childAxes={[75*HUMAN_SCALE, 90*HUMAN_SCALE, 0*HUMAN_SCALE, 0*HUMAN_SCALE, 75*HUMAN_SCALE]}
+        childAxes={[82*HUMAN_SCALE, 90*HUMAN_SCALE, 0*HUMAN_SCALE, 0*HUMAN_SCALE, 82*HUMAN_SCALE]}
       >
 
         <HindUpperArm>
@@ -203,7 +217,6 @@ export const Human = () => {
         <ForeUpperArm>
           <ForeLowerArm/>
         </ForeUpperArm>
-
 
       </Stick>
     </Draggable>

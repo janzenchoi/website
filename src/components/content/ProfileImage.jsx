@@ -30,8 +30,8 @@ export const ProfileImage = ({darkMode}) => {
   // Return image object
   return (
     <div style={imageContainerStyle}>
-      <img src={profileDarkImage}  style={{ ...imageStyle, opacity: darkMode ? 1 : 0}}/>
-      <img src={profileLightImage} style={{ ...imageStyle, opacity: !darkMode ? 1 : 0}}/>
+      <img src={profileDarkImage}  style={{ ...imageStyle, opacity: darkMode ? 1 : 0}} alt={"Profie in dark mode"}/>
+      <img src={profileLightImage} style={{ ...imageStyle, opacity: !darkMode ? 1 : 0}} alt={"Profie in light mode"}/>
     </div>
   );
 }
