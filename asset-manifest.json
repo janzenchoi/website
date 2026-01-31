@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.6a6d2ed5.css",
-    "main.js": "/website/static/js/main.c001d52d.js",
+    "main.js": "/website/static/js/main.3723bd49.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -13,8 +13,8 @@
     "static/media/profile_light.png": "/website/static/media/profile_light.f87136944d63d71ee774.png",
     "static/media/head.png": "/website/static/media/head.349f07b8ccbe5197f8ab.png",
     "static/media/pu_dark.png": "/website/static/media/pu_dark.e5f946385ef429aa9cb4.png",
+    "static/media/torso.png": "/website/static/media/torso.449897efd818dae13ec7.png",
     "static/media/fore_upper_leg.png": "/website/static/media/fore_upper_leg.dad1fbbbb0d506ca9ed6.png",
-    "static/media/torso.png": "/website/static/media/torso.a61229f017f399bae38f.png",
     "static/media/fore_lower_leg.png": "/website/static/media/fore_lower_leg.2b2cee2304c7cd3d7961.png",
     "static/media/fg_light.png": "/website/static/media/fg_light.39385fc7318fcaeca27a.png",
     "static/media/hip.png": "/website/static/media/hip.e4ddfa07a20705640143.png",
@@ -45,11 +45,11 @@
     "static/media/se_dark.png": "/website/static/media/se_dark.355f603cc349c80505d0.png",
     "index.html": "/website/index.html",
     "main.6a6d2ed5.css.map": "/website/static/css/main.6a6d2ed5.css.map",
-    "main.c001d52d.js.map": "/website/static/js/main.c001d52d.js.map",
+    "main.3723bd49.js.map": "/website/static/js/main.3723bd49.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6a6d2ed5.css",
-    "static/js/main.c001d52d.js"
+    "static/js/main.3723bd49.js"
   ]
 }
