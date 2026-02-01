@@ -4,14 +4,14 @@ import { Puppet } from "../../stuff/human/Puppet";
 /**
  * Activities page
  * @param {boolean} mobileMode whether to use mobile or desktop view
- * @param {boolean} darkMode whether to use dark or light mode
+ * @param {boolean} colourTheme the theme to colour the site
  * @returns activities page
  */
-export const Activities = ({ mobileMode, darkMode }) => {
+export const Activities = ({ mobileMode, colourTheme }) => {
   return (
     <div>
       <Card mobileMode={mobileMode} title={"NOTHING"}/>
-      <Puppet/>
+      <Puppet darkMode={colourTheme === "dark"}/>
     </div>
   );
 }

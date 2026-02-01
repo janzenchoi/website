@@ -5,8 +5,10 @@ import { Draggable } from "./Draggable";
 /**
  * Puppet controller with fully functional sliders.
  * Panel header is the only drag handle; sliders slide smoothly and have reset buttons.
+ * @param {boolean} darkMode whether to use dark or light mode
+ * @returns puppet controller object
  */
-export const Puppet = () => {
+export const Puppet = ({ darkMode }) => {
   const DEFAULTS = {
     humanRotation: 0,
     headRotation: 0,
@@ -86,7 +88,7 @@ export const Puppet = () => {
     <>
       {/* Draggable Human */}
       <Draggable initialX={300} initialY={200}>
-        <Human {...joints} debug human_scale={2} />
+        <Human {...joints} debug={true} human_scale={2} darkMode={darkMode} />
       </Draggable>
 
       {/* Draggable Slider Panel */}
@@ -95,8 +97,8 @@ export const Puppet = () => {
         <div
           style={{
             width: 280,
-            background: "rgba(0,0,0,0.85)",
-            color: "#fff",
+            background: "var(--colour-6)",
+            color: "var(--colour-1)",
             fontFamily: "monospace",
             borderRadius: 6,
             padding: 12,
