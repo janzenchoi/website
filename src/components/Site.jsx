@@ -29,6 +29,7 @@ export const Site = () => {
   const [ forceMobile, setForceMobile ] = useState(getStoredValue("force-mobile") === "true");
   const [ mobileMode, setMobileMode ] = useState(isMobile || forceMobile);
   const [ ballExists, setBallExists ] = useState(false);
+  const [ janzenExists, setJanzenExists ] = useState(false);
   useEffect(() => {
     setMobileMode(isMobile || forceMobile);
   }, [isMobile, forceMobile]);
@@ -66,6 +67,8 @@ export const Site = () => {
         setColourTheme={setColourTheme}
         ballExists={ballExists}
         setBallExists={setBallExists}
+        janzenExists={janzenExists}
+        setJanzenExists={setJanzenExists}
         />
       <div>
         <Body
@@ -75,7 +78,7 @@ export const Site = () => {
       </div>
       <Footer/>
       {ballExists && <Ball/>}
-      {/* <Character darkMode={colourTheme === "dark"}/> */}
+      {janzenExists && <Character darkMode={colourTheme === "dark"}/>}
     </HashRouter>
   </div>
 }

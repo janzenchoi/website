@@ -15,14 +15,17 @@ import { setStoredValue } from "../helper/storage";
  * @param {function} setForceMobile function to set mobile mode
  * @param {boolean} colourTheme the theme to colour the site
  * @param {function} setColourTheme function to set colour theme
- * @param {boolean} ballExists the theme to colour the site
- * @param {function} setBallExists function to set colour theme
+ * @param {boolean} ballExists the ball's existence
+ * @param {function} setBallExists function to set ball's existence 
+ * @param {boolean} janzenExists the janzen's existence
+ * @param {function} setJanzenExists function to set janzen's existence
  * @returns fixed header object
  */
 export const Header = ({
-  mobileMode, forceMobile, setForceMobile, colourTheme, setColourTheme, ballExists, setBallExists
+  mobileMode, forceMobile, setForceMobile, colourTheme, setColourTheme, ballExists, setBallExists, janzenExists, setJanzenExists
 }) => {
   const navigate = useNavigate();
+  const { isMobile } = useViewport();
 
   // Define header style
   const outerHeaderStyle = {
@@ -110,6 +113,12 @@ export const Header = ({
           <div style={dropdownItemStyle}>
             <div style={textStyle}>Soccer Ball</div>
             <ReactToggle input={ballExists} onChange={setBallExists}/>
+          </div>
+        </DropdownItem>
+        <DropdownItem>
+          <div style={dropdownItemStyle}>
+            <div style={textStyle}>Spawn Janzen</div>
+            <ReactToggle input={janzenExists} onChange={setJanzenExists} disabled = {Boolean(isMobile)}/>
           </div>
         </DropdownItem>
       </div>

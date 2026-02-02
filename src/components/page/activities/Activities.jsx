@@ -12,10 +12,10 @@ import { Character } from "../../stuff/human/Character";
 export const Activities = ({ mobileMode, colourTheme }) => {
   return (
     <div>
-      <Card mobileMode={mobileMode} title={"NOTHING"}/>
-      {/* <Puppet darkMode={colourTheme === "dark"}/> */}
-      {/* <Controller/> */}
-      <Character darkMode={colourTheme === "dark"}/>
+      <Card mobileMode={mobileMode} title={"WORK IN PROGRESS"}/>
+      {/* <Puppet darkMode={colourTheme === "dark"}/>
+      <Controller/> */}
+      {/* <Character darkMode={colourTheme === "dark"}/> */}
     </div>
   );
 }

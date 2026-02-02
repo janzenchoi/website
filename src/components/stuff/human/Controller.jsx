@@ -5,7 +5,9 @@ import { standStraight, standCasual } from "./poses";
 import { walkStride1, walkStride2, walkStride3, walkStride4, walkStride5, walkStride6 } from "./poses";
 import { runStride1, runStride2, runStride3, runStride4, runStride5, runStride6 } from "./poses";
 import { jumpPrime, jumpFly, jumpPeak, jumpFall, jumpLand } from "./poses";
-import { standJumpPrime, standJumpFly, standJumpLand } from "./poses";
+import { standJumpPrime, standJumpFly, standJumpLand, walkJumpFly } from "./poses";
+import { crouch, crouchWalk1, crouchWalk2 } from "./poses";
+import { struggle1, struggle2 } from "./poses";
 
 /**
  * Controls the human to do poses
@@ -57,8 +59,8 @@ export const Controller = () => {
   // Walking Jumping animation
   const animateWalkJump = async (count=1) => {
     for (let i = 0; i < count; i++) {
-      await animate(jumpFly, 300);
-      await animate(standJumpFly, 300);
+      await animate(jumpPrime, 300);
+      await animate(walkJumpFly, 300);
       await animate(jumpLand, 300);
     }
   };
@@ -86,6 +88,23 @@ export const Controller = () => {
     }
   };
 
+  // Struggling animation
+  const animateStruggle = async (count=1) => {
+    for (let i = 0; i < count; i++) {
+      await animate(struggle1, 200);
+      await animate(struggle2, 200);
+    }
+  };
+
+  // Crouching animation
+  const animateCrouch = async (count=1) => {
+    await animate(crouch, 200);
+    // for (let i = 0; i < count; i++) {
+    //   await animate(crouchWalk1, 600);
+    //   await animate(crouchWalk2, 600);
+    // }
+  };
+
   return (
     <Draggable>
     <div
@@ -103,14 +122,16 @@ export const Controller = () => {
         humanScale={1}
       />
 
-      <div style={{ marginTop: "-200px" }}>
-        <button onClick={() => animateStand()}>STAND</button>
-        <button onClick={() => animateCasual()}>CASUAL</button>
-        <button onClick={() => animateWalk(2)}>WALK</button>
-        <button onClick={() => animateRun(2)}>RUN</button>
-        <button onClick={() => animateWalkJump(1)}>W.JUMP</button>
-        <button onClick={() => animateRunJump(1)}>R.JUMP</button>
-        <button onClick={() => animateStandJump(1)}>S.JUMP</button>
+      <div style={{ marginTop: "-300px" }}>
+        <button onClick={() => animateStand()}>Stand</button>
+        <button onClick={() => animateCasual()}>Casual</button>
+        <button onClick={() => animateWalk(2)}>Walk</button>
+        <button onClick={() => animateRun(2)}>Run</button>
+        <button onClick={() => animateWalkJump(1)}>W.Jump</button>
+        <button onClick={() => animateRunJump(1)}>R.Jump</button>
+        <button onClick={() => animateStandJump(1)}>S.Jump</button>
+        <button onClick={() => animateStruggle(5)}>Struggle</button>
+        <button onClick={() => animateCrouch(5)}>Crouch</button>
       </div>
     </div>
     </Draggable>

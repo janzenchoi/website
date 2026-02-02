@@ -46,11 +46,11 @@ export const Puppet = ({ darkMode }) => {
 
     foreUpperLegRotation: [-60, 70],
     foreLowerLegRotation: [-150, 0],
-    foreFootRotation: [30, 90],
+    foreFootRotation: [30, 120],
 
     hindUpperLegRotation: [-60, 70],
     hindLowerLegRotation: [-150, 0],
-    hindFootRotation: [30, 90],
+    hindFootRotation: [30, 120],
   };
 
   const OFFSET_RANGE = [-300, 300];
