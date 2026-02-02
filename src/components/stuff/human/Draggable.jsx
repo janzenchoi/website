@@ -5,36 +5,49 @@ export const Draggable = ({ children, initialX = 0, initialY = 0, handleSelector
   const [dragging, setDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
 
-  const handleMouseDown = (e) => {
-    // Only start drag if clicked on handle (or no handle specified)
+  const getEventPosition = (e) => {
+    // Handle both mouse and touch events
+    if (e.touches) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  };
+
+  const handleStart = (e) => {
     if (handleSelector && !e.target.closest(handleSelector)) return;
-    // Ignore interactive elements inside draggable
     if (["INPUT", "BUTTON", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
 
+    const pos = getEventPosition(e);
     setDragging(true);
     offset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      x: pos.x - position.x,
+      y: pos.y - position.y,
     };
     e.preventDefault();
   };
 
-  const handleMouseMove = (e) => {
+  const handleMove = (e) => {
     if (!dragging) return;
+    const pos = getEventPosition(e);
     setPosition({
-      x: e.clientX - offset.current.x,
-      y: e.clientY - offset.current.y,
+      x: pos.x - offset.current.x,
+      y: pos.y - offset.current.y,
     });
   };
 
-  const handleMouseUp = () => setDragging(false);
+  const handleEnd = () => setDragging(false);
 
   useEffect(() => {
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleEnd);
+    document.addEventListener("touchmove", handleMove, { passive: false });
+    document.addEventListener("touchend", handleEnd);
+
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("touchend", handleEnd);
     };
   }, [dragging]);
 
@@ -45,8 +58,10 @@ export const Draggable = ({ children, initialX = 0, initialY = 0, handleSelector
         transform: `translate(${position.x}px, ${position.y}px)`,
         cursor: dragging ? "grabbing" : "grab",
         userSelect: "none",
+        touchAction: "none", // prevent default scrolling on touch drag
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={handleStart}
+      onTouchStart={handleStart}
     >
       {children}
     </div>
