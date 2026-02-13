@@ -16,14 +16,17 @@ export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => 
   const subtitle = "Experience controlling Janzen before you hire him.";
   const mobileDescription = [
     "Hold and release Janzen to forcibly relocate him",
-    "Move joystick left / right to walk left / right",
+    "Move joystick left to walk left",
+    "Move joystick right to walk right",
     "Move joystick upward to jump",
     "Move joystick downward to crouch",
     "Move joystick outside the dashed ring to sprint",
+    "Drag the burger icon to relocate the joystick",
   ];
   const desktopDescription = [
     "Drag and release Janzen to forcibly relocate him",
-    "Press A / D to walk left / right",
+    "Press A to walk left",
+    "Press D to walk right",
     "Press W to jump",
     "Press S to crouch",
     "Press SHIFT to sprint",
