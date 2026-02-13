@@ -83,7 +83,7 @@ export const ActivityBullet = ({
   const AdditionalDescription = () => {
     const descriptionStyle = {
       ...textStyle,
-      marginTop: "0.4rem",
+      marginTop: "0.2rem",
       textAlign: mobileMode ? "start" : "justify",
       display: "block"
     };
