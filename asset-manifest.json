@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.6a6d2ed5.css",
-    "main.js": "/website/static/js/main.3ca11c3c.js",
+    "main.js": "/website/static/js/main.73be8dd4.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -9,6 +9,8 @@
     "static/media/paper_2.pdf": "/website/static/media/paper_2.f230d10f1cb9458522fb.pdf",
     "static/media/paper_3.pdf": "/website/static/media/paper_3.ad5db73f75047d8a7862.pdf",
     "static/media/paper_1.pdf": "/website/static/media/paper_1.424d510ffa78c3761fe7.pdf",
+    "static/media/wordle_light.png": "/website/static/media/wordle_light.1b76181df376675e470c.png",
+    "static/media/wordle_dark.png": "/website/static/media/wordle_dark.20c13300e0c9dda6c4f1.png",
     "static/media/profile_dark.png": "/website/static/media/profile_dark.05b71f2775a370f574f8.png",
     "static/media/profile_light.png": "/website/static/media/profile_light.f87136944d63d71ee774.png",
     "static/media/head.png": "/website/static/media/head.349f07b8ccbe5197f8ab.png",
@@ -19,21 +21,19 @@
     "static/media/fg_light.png": "/website/static/media/fg_light.39385fc7318fcaeca27a.png",
     "static/media/hip.png": "/website/static/media/hip.e4ddfa07a20705640143.png",
     "static/media/ig.png": "/website/static/media/ig.2bcd9096b694910eb5d8.png",
-    "static/media/ball_light_icon.png": "/website/static/media/ball_light_icon.e3acf160bde1744351f6.png",
+    "static/media/ball_icon.png": "/website/static/media/ball_icon.e3acf160bde1744351f6.png",
     "static/media/ball.png": "/website/static/media/ball.237ef91fce0eea841a2d.png",
     "static/media/hind_upper_leg.png": "/website/static/media/hind_upper_leg.18d87d9f3eb21decae59.png",
-    "static/media/ball_dark_icon.png": "/website/static/media/ball_dark_icon.19502fb6fd03d17f5f41.png",
     "static/media/mail.png": "/website/static/media/mail.38fc999bf547540af18b.png",
     "static/media/hind_lower_leg.png": "/website/static/media/hind_lower_leg.b43d771cb0001d9c822e.png",
     "static/media/fg_dark.png": "/website/static/media/fg_dark.cb0370575ea0e93967cc.png",
-    "static/media/janzen_light_icon.png": "/website/static/media/janzen_light_icon.89b73383bd12a6268943.png",
+    "static/media/janzen_icon.png": "/website/static/media/janzen_icon.89b73383bd12a6268943.png",
     "static/media/ms.png": "/website/static/media/ms.456cbb8a7a364cf61348.png",
     "static/media/fore_upper_arm.png": "/website/static/media/fore_upper_arm.3aa873c660e6e53d5a0e.png",
     "static/media/unsw_light.png": "/website/static/media/unsw_light.15fe325f8e3e20b3fa60.png",
     "static/media/pu_light.png": "/website/static/media/pu_light.03e37107e269bdf3de62.png",
     "static/media/anl_light.png": "/website/static/media/anl_light.3a7b0ee3327b8d93931a.png",
     "static/media/anl_dark.png": "/website/static/media/anl_dark.df80e136f2337ae7ff93.png",
-    "static/media/janzen_dark_icon.png": "/website/static/media/janzen_dark_icon.86361bc70ec43a7234a8.png",
     "static/media/hind_upper_arm.png": "/website/static/media/hind_upper_arm.5e17c644a71dfb6d548f.png",
     "static/media/unsw_dark.png": "/website/static/media/unsw_dark.22e477b1bcd4a285a8be.png",
     "static/media/phone.png": "/website/static/media/phone.dcb255ad53cdffcb6b82.png",
@@ -53,11 +53,11 @@
     "static/media/sf_light.png": "/website/static/media/sf_light.25cd087fab9fe1b36560.png",
     "index.html": "/website/index.html",
     "main.6a6d2ed5.css.map": "/website/static/css/main.6a6d2ed5.css.map",
-    "main.3ca11c3c.js.map": "/website/static/js/main.3ca11c3c.js.map",
+    "main.73be8dd4.js.map": "/website/static/js/main.73be8dd4.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6a6d2ed5.css",
-    "static/js/main.3ca11c3c.js"
+    "static/js/main.73be8dd4.js"
   ]
 }
