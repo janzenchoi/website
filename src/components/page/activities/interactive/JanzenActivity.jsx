@@ -24,11 +24,11 @@ export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => 
   ];
   const desktopDescription = [
     "Drag and release Janzen to forcibly relocate him",
-    "Press A to walk left",
-    "Press D to walk right",
-    "Press W to jump",
-    "Press S to crouch",
-    "Press SHIFT to sprint",
+    "Hold A to walk left",
+    "Hold D to walk right",
+    "Hold W to jump",
+    "Hold S to crouch",
+    "Hold SHIFT to sprint",
     "Press 2 to see what happens when Janzen receives a rejection email",
     // "Press 1-9 to emote."
   ];
