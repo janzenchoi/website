@@ -1,6 +1,5 @@
 import { ActivityBullet } from "../../../content/ActivityBullet";
-import ballLight from "../../../../assets/stuff/ball_light_icon.png";
-import ballDark from "../../../../assets/stuff/ball_dark_icon.png";
+import image from "../../../../assets/stuff/ball_icon.png";
 
 /**
  * Soccer activity card
@@ -13,12 +12,14 @@ export const SoccerActivity = ({ mobileMode, darkMode, activityController }) => 
   
   // Constants
   const title = "Soccer Ball";
-  const subtitle = "Throw a ball around while browsing Janzen's qualifications.";
+  const subtitle = "Kick a bouncy ball around.";
   const mobileDescription = [
-    "Swipe and release the soccer ball to throw it"
+    "Drag the soccer ball with a finger to move it",
+    "Swipe the soccer ball to launch it"
   ];
   const desktopDescription = [
-    "Drag and release the soccer ball to throw it"
+    "Drag the soccer ball with the cursor to move it",
+    "Flick the soccer ball to launch it"
   ];
 
   // Render
@@ -32,8 +33,8 @@ export const SoccerActivity = ({ mobileMode, darkMode, activityController }) => 
       title={title}
       subtitle={subtitle}
       description={mobileMode ? mobileDescription : desktopDescription}
-      iconLight={ballLight}
-      iconDark={ballDark}
+      iconLight={image}
+      iconDark={image}
     />
   );
 }

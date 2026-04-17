@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { titleStyle, subtitleStyle, textStyle, verticalDividerStyle } from "./Card";
+import { titleStyle, subtitleStyle, textStyle } from "./Card";
 
 /**
- * Activity bullet for the body
+ * Immersive bullet for the body
  * @param {boolean} mobileMode whether to use mobile or desktop view
  * @param {boolean} darkMode whether to use dark or light mode
  * @param {boolean} status defines the status of the activity
@@ -12,12 +12,11 @@ import { titleStyle, subtitleStyle, textStyle, verticalDividerStyle } from "./Ca
  * @param {string} iconDark bullet icon in dark mode
  * @param {string} title bullet title (must be unique)
  * @param {string} subtitle bullet subtitle
- * @param {string[]} description bullet subtext
  * @returns activity bullet object
  */
-export const ActivityBullet = ({
+export const ImmersiveBullet = ({
   mobileMode, darkMode, status, setStatus, setActivity,
-  title, subtitle, description=[], iconLight, iconDark
+  title, subtitle, iconLight, iconDark
 }) => {
 
   // Play status
@@ -30,7 +29,7 @@ export const ActivityBullet = ({
   // Auxiliary
   const icon = darkMode ? iconDark : iconLight;
   const statusText = mobileMode
-  ? (isActive ? "(click to stop)" : "(click to start)")
+  ? (isActive ? "(currently running)" : "(click to start)")
   : (isActive
       ? (hover ? "Deactivate" : "Active")
       : (hover ? "Activate" : "Inactive")
@@ -79,27 +78,6 @@ export const ActivityBullet = ({
     justifyContent: "flex-start",
   };
 
-  // For additional description
-  const AdditionalDescription = () => {
-    const descriptionStyle = {
-      ...textStyle,
-      marginTop: "0rem",
-      textAlign: mobileMode ? "start" : "justify",
-      display: "block"
-    };
-    return (
-      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start" }}>
-        <div style={verticalDividerStyle} />
-        <div style={{ marginTop: "0.4rem" }}>{description.map((text, idx) => {
-          return (
-            <div key={idx} style={descriptionStyle}>{text}
-            </div>
-          );
-        })}</div>
-      </div>
-    );
-  };
-
   // Mobile bullet
   const MobileBullet = () => {
     return (
@@ -112,7 +90,6 @@ export const ActivityBullet = ({
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>
           <div style={statusContainer}>{statusText}</div>
-          {isActive && <AdditionalDescription/>}
         </div>
       </div>
     );
@@ -131,7 +108,6 @@ export const ActivityBullet = ({
         <div style={textContainer}>
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>
-          {isActive && <AdditionalDescription/>}
         </div>
         <div style={{ position: "relative" }}>
           <div style={statusContainer}>{statusText}</div>

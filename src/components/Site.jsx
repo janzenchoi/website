@@ -5,13 +5,16 @@ import { Footer } from "./Footer";
 import { useViewport } from "../helper/Viewport";
 import { DEFAULT_MODE, HEADER_HEIGHT } from "../helper/constant";
 import { getStoredValue } from "../helper/storage";
-import { Body } from "./Body";
-import { Ball } from "./stuff/Ball";
-import { Character } from "./stuff/human/Character";
+import { updateSafeAreaColour, blendSafeAreaColour } from "../helper/brightness";
 
 import fg_dark from "../assets/janzen/fg_dark.png";
 import fg_light from "../assets/janzen/fg_light.png";
 
+import { Body } from "./Body";
+import { Ball } from "./stuff/Ball";
+import { Character } from "./stuff/human/Character";
+
+import { WordleImmersion } from "./stuff/immersive/WordleImmersion";
 
 /**
  * Site
@@ -36,11 +39,32 @@ export const Site = () => {
   const [status, setStatus] = useState("none");
   const [ ballExists, setBallExists ] = useState(false);
   const [ janzenExists, setJanzenExists ] = useState(false);
+  const [ wordleExists, setWordleExists ] = useState(false);
   const activityController = {
     status,
     setStatus,
     setBallExists,
-    setJanzenExists
+    setJanzenExists,
+    setWordleExists
+  };
+
+  // Function update safe area colour upon entering immersive activity
+  useEffect(() => {
+    if (wordleExists) {
+      blendSafeAreaColour();
+      document.body.style.overflow = "hidden"; // stops scrolling
+    } else {
+      updateSafeAreaColour();
+      document.body.style.overflow = "";
+    }
+  }, [wordleExists]);
+
+  // Function to leave all activities
+  const leaveActivities = () => {
+    setBallExists(false);
+    setJanzenExists(false);
+    setWordleExists(false);
+    setStatus("none");
   };
 
   // Define style for site
@@ -84,7 +108,15 @@ export const Site = () => {
       </div>
       <Footer/>
       {ballExists && <Ball/>}
-      {janzenExists && <Character mobileMode={mobileMode} darkMode={colourTheme === "dark"}/>}
+      {janzenExists && <Character
+        mobileMode={mobileMode}
+        darkMode={colourTheme === "dark"}
+      />}
+      {wordleExists && <WordleImmersion
+        mobileMode={mobileMode}
+        darkMode={colourTheme === "dark"} 
+        leaveActivities={leaveActivities}
+      />}
     </HashRouter>
   </div>
 }

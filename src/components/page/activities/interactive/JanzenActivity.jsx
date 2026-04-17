@@ -1,6 +1,5 @@
 import { ActivityBullet } from "../../../content/ActivityBullet";
-import lightImage from "../../../../assets/stuff/janzen_light_icon.png";
-import darkImage from "../../../../assets/stuff/janzen_dark_icon.png";
+import image from "../../../../assets/stuff/janzen_icon.png";
 
 /**
  * Janzen activity card
@@ -12,8 +11,8 @@ import darkImage from "../../../../assets/stuff/janzen_dark_icon.png";
 export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => {
   
   // Constants
-  const title = "Tiny Janzen";
-  const subtitle = "Experience controlling Janzen before you hire him.";
+  const title = "Puppet";
+  const subtitle = "Control a Janzen marionette.";
   const mobileDescription = [
     "Hold and release Janzen to forcibly relocate him",
     "Move joystick left to walk left",
@@ -30,7 +29,7 @@ export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => 
     "Press W to jump",
     "Press S to crouch",
     "Press SHIFT to sprint",
-    "Press 2 to see what happens when you reject Janzen",
+    "Press 2 to see what happens when Janzen receives a rejection email",
     // "Press 1-9 to emote."
   ];
 
@@ -45,8 +44,8 @@ export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => 
       title={title}
       subtitle={subtitle}
       description={mobileMode ? mobileDescription : desktopDescription}
-      iconLight={lightImage}
-      iconDark={darkImage}
+      iconLight={image}
+      iconDark={image}
     />
   );
 }

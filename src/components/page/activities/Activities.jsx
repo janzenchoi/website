@@ -25,8 +25,8 @@ export const Activities = ({ mobileMode, colourTheme, activityController }) => {
     <div>
       <InteractiveCard mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>
       <ImmersiveCard mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>
-      {/* <Puppet darkMode={colourTheme === "dark"}/>
-      <Controller darkMode={colourTheme === "dark"}/> */}
+      {/* <Puppet darkMode={colourTheme === "dark"}/> */}
+      {/* <Controller darkMode={colourTheme === "dark"}/> */}
       {/* <Joystick/> */}
     </div>
   );

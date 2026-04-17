@@ -1,4 +1,5 @@
-import { Card, textStyle } from "../../content/Card";
+import { Card } from "../../content/Card";
+import { WordleActivity } from "./immersive/WordleActivity";
 
 /**
  * Immersive card
@@ -9,10 +10,10 @@ import { Card, textStyle } from "../../content/Card";
  */
 export const ImmersiveCard = ({ mobileMode, darkMode, activityController }) => {
 
+  const Bullet1 = () => <WordleActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>
+
   // Return about card object
   return <Card mobileMode={mobileMode} title="Immersive">
-    <div style={{ ...textStyle, marginBottom: "0.8em" }}>
-      Come back later to play clones of some popular games
-    </div>
+    <Bullet1/>
   </Card>
 };

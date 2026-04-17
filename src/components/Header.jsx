@@ -80,7 +80,7 @@ export const Header = ({
   const tabDividerStyle = {
     height: "100%",
     width: "1px",
-    margin: "0px 8px 0px 8px",
+    margin: "0rem 0.8rem 0rem 0.8rem",
     boxShadow: "1px 0px 4px var(--colour-4)",
     backgroundColor: "var(--colour-5)",
     transition: "background-color 0.3s ease",
@@ -195,7 +195,7 @@ const TabItem = ({ children }) => {
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    padding: "0.1rem 0.8rem 0.3rem 0.8rem",
+    padding: "0.1rem 0rem 0.3rem 0.8rem",
   };
   return (
     <div style={tabItemStyle}>
