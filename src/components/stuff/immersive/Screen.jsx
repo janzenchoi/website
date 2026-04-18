@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CleanButton } from "../../content/CleanButton";
 
 /**
  * Generic menu object for activities
@@ -88,7 +89,7 @@ export const GenericMenu = ({ mobileMode, darkMode, title, description, icons, i
         <div style={descriptionStyle}>{description ?? "NO DESCRIPTION"}</div>
         <div style={{ ...colContainer, gap: "1rem" }}>
           {buttons.map(({ label, onClick }) => (
-            <button key={label} onClick={onClick}>{label}</button>
+            <CleanButton key={label} text={label} onClick={onClick}/>
           ))}
         </div>
       </div>
