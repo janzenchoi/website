@@ -297,15 +297,14 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
 
     setColours(newColours);
 
-    // Update key colours
+    // Store hex in keyColours state
     setKeyColours(prev => {
       const next = { ...prev };
       guess.forEach((letter, i) => {
         const gridColour = newColours[row][i];
-        const newKeyColour = KEY_COLOUR_MAP[gridColour];
         const existing = next[letter];
         if (!existing || COLOUR_PRIORITY[gridColour] > COLOUR_PRIORITY[existing]) {
-          next[letter] = newKeyColour;
+          next[letter] = gridColour; // store hex, not rgba
         }
       });
       return next;
@@ -452,7 +451,8 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     gap: "calc(var(--key-size) * 0.15)",
   };
   const keyStyle = (key) => {
-    const guessedColour = keyColours[key];
+    const hexColour = keyColours[key];
+    const guessedColour = hexColour ? KEY_COLOUR_MAP[hexColour] : null;
     const isPressed = pressedKey === key;
     return {
       minWidth: key === "ENTER" || key === "BACKSPACE" ? "calc(var(--key-size) * 1.8)" : "var(--key-size)",
