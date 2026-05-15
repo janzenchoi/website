@@ -32,7 +32,7 @@ const CHANNELS = [
   { src: ch6, frame: { x: -12, y: 5, w: 145, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } },
   { src: ch7, frame: { x: -20, y: 0, w: 180, h: 130 }, crop: { x: 0, y: 0, scale: 0.6 } },
   { src: ch8, frame: { x: -10, y: 0, w: 145, h: 124 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch9, frame: { x: -20, y: 5, w: 180, h: 120 }, crop: { x: 0, y: 0, scale: 0.6 } }
+  { src: ch9, frame: { x: -10, y: 8, w: 180, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } }
 ];
 
 export const TelevisionObject = ({ mobileMode, onInteract }) => {
