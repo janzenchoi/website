@@ -12,17 +12,6 @@ import ch7 from "../../assets/stuff/tv/surfer.mp4";
 import ch8 from "../../assets/stuff/tv/jerry.mp4";
 import ch9 from "../../assets/stuff/tv/bean.mp4";
 
-const shuffle = (arr) => {
-  const next = [...arr];
-
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-
-  return next;
-};
-
 const CHANNELS = [
   { src: ch1, frame: { x: -20, y: 0, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.8 } },
   { src: ch2, frame: { x: 0, y: 5, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } },
@@ -35,6 +24,17 @@ const CHANNELS = [
   { src: ch9, frame: { x: -10, y: 8, w: 180, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } }
 ];
 
+const shuffle = (arr) => {
+  const next = [...arr];
+
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+
+  return next;
+};
+
 export const TelevisionObject = ({ mobileMode, onInteract }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -44,8 +44,11 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
 
   const containerRef = useRef(null);
   const offset = useRef({ x: 0, y: 0 });
+
   const queueRef = useRef([]);
   const queueIndexRef = useRef(0);
+  const switchLockRef = useRef(false);
+  const switchTimeoutRef = useRef(null);
 
   const current = CHANNELS[channel];
   const tvWidth = mobileMode ? "50vw" : "20vw";
@@ -71,10 +74,28 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
     setHoverDragZone(getRelativeX(e) >= rect.width * 0.8);
   };
 
+  const canSwitch = () => {
+    if (switchLockRef.current) return false;
+
+    switchLockRef.current = true;
+
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current);
+    }
+
+    switchTimeoutRef.current = setTimeout(() => {
+      switchLockRef.current = false;
+      switchTimeoutRef.current = null;
+    }, 500);
+
+    return true;
+  };
+
   const startNewCycle = () => {
     const nextQueue = shuffle([...Array(CHANNELS.length).keys()]);
     queueRef.current = nextQueue;
     queueIndexRef.current = 0;
+
     setChannel(nextQueue[0]);
     setTvState("on");
   };
@@ -102,6 +123,8 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
     const isDragZone = relativeX >= rect.width * 0.8;
 
     if (!isDragZone) {
+      if (!canSwitch()) return;
+
       if (tvState === "off" || queueRef.current.length === 0) {
         startNewCycle();
       } else {
@@ -149,6 +172,14 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
       window.removeEventListener("touchcancel", handleUp);
     };
   }, [dragging]);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) {
+        clearTimeout(switchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const wrapperStyle = {
     position: "fixed",
@@ -212,15 +243,15 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
 
   return (
     <div style={wrapperStyle}>
-      <img
-        src={tvBuzz}
-        alt="tuning"
-        style={buzzStyle}
-        draggable={false}
-      />
-      {tvState === "on" && (
-        <div style={screenStyle}>
+      <div style={screenStyle}>
+        <img
+          src={tvBuzz}
+          alt="tuning"
+          style={buzzStyle}
+          draggable={false}
+        />
 
+        {tvState === "on" && (
           <div style={frameStyle}>
             <video
               key={channel}
@@ -232,8 +263,8 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
               style={videoStyle}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <img
         ref={containerRef}
