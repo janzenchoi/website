@@ -17,6 +17,8 @@ import frame8 from "../../../assets/stuff/wordle/frame_8.png";
 import frame9 from "../../../assets/stuff/wordle/frame_9.png";
 import frame10 from "../../../assets/stuff/wordle/frame_10.png"
 
+const NUM_GUESSES = 6;
+
 /**
  * Wordle Immersion
  */
@@ -92,7 +94,7 @@ export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
 /**
  * Wordle game screen
  */
-const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
+const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = NUM_GUESSES }) => {
 
   const PADDING = window.innerWidth * 0.05;
   const wordLength = word.length;
@@ -542,6 +544,20 @@ const WordleResults = ({ result, onMenu }) => {
     "transparent": null,
   };
 
+  // const wordLength = word.length;
+  // const emojiRows = [];
+  // for (let r = 0; r < NUM_GUESSES; r++) {
+  //   const rowColours = colours[r];
+  //   const hasGuess = rowColours.some(c => c !== "transparent");
+  //   if (hasGuess) {
+  //     const letters = guesses[r].slice(0, wordLength).join("");
+  //     const emojis = rowColours.slice(0, wordLength).map(c => COLOUR_EMOJI[c] ?? "⬛").join("");
+  //     emojiRows.push(`${emojis} (${letters})`);
+  //   } else {
+  //     emojiRows.push("⬛".repeat(wordLength));
+  //   }
+  // }
+
   const wordLength = word.length;
   const emojiRows = [];
   for (let r = 0; r < guesses.length; r++) {
@@ -553,7 +569,6 @@ const WordleResults = ({ result, onMenu }) => {
   }
 
   const shareText = emojiRows.join("\n");
-
   const handleCopy = () => {
     navigator.clipboard.writeText(shareText).then(() => {
       setCopied(true);
@@ -593,6 +608,9 @@ const WordleResults = ({ result, onMenu }) => {
     whiteSpace: "pre",
     color: "var(--colour-6)",
     userSelect: "all",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
     textAlign: "left",
   };
 
