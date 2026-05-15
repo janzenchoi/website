@@ -11,8 +11,8 @@ import image from "../../../../assets/stuff/wordle_icon.png";
 export const WordleActivity = ({ mobileMode, darkMode, activityController }) => {
   
   // Constants
-  const title = "Wooordle (WIP)";
-  const subtitle = "Wordle but with looonger words.";
+  const title = "Wooordle";
+  const subtitle = "Wordle but with longer words.";
   
   // Render
   return (

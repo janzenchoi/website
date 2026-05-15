@@ -1,5 +1,6 @@
 import { Immersion } from "./Immersion";
 import { GenericMenu } from "./Screen";
+import { CleanButton } from "../../content/CleanButton";
 import { useState, useEffect, useRef } from "react";
 import { MAX_WIDTH } from "../../../helper/constant";
 import { WORDS } from "../../../assets/stuff/wordle/words";
@@ -18,28 +19,20 @@ import frame10 from "../../../assets/stuff/wordle/frame_10.png"
 
 /**
  * Wordle Immersion
- * @param {boolean} mobileMode whether to use mobile or desktop view
- * @param {boolean} darkMode whether to use dark or light mode
- * @param {function} leaveActivities leaves all activities
- * @returns wordle immersion space object
  */
 export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
 
-  // The screen to show
   const [screen, setScreen] = useState("menu");
-  
-  // Get daily word
+  const [gameResult, setGameResult] = useState(null);
+
   const getDailyEntry = () => {
     const today = new Date();
     const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
     return WORDS[seed % WORDS.length];
   };
   const daily = getDailyEntry(WORDS);
-  
-  // Get random word
   const entry = WORDS[Math.floor(Math.random() * WORDS.length)];
 
-  // Wordle container
   const outerContainer = {
     width: "100%",
     height: "100vh",
@@ -47,7 +40,6 @@ export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
     padding: "2rem"
   };
 
-  // Menu screen
   const icons = [frame1, frame2, frame3, frame4, frame5, frame6, frame7, frame8, frame9, frame10];
   const Menu = () => <GenericMenu
     mobileMode={mobileMode}
@@ -59,37 +51,32 @@ export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
     buttons={[
       { label: "Play Daily (📅)",  onClick: () => setScreen("daily") },
       { label: "Play Random (❓)", onClick: () => setScreen("random") },
-      { label: "Settings (⚙️)",    onClick: () => setScreen("settings") },
     ]}
   />
 
-  // Game screens
+  const handleGameEnd = (result) => {
+    setGameResult(result);
+    setScreen("results");
+  };
+
   const Daily = () => <WordleGame
     word={daily.word.toUpperCase()}
     hint={daily.hint}
-    onEnd={() => setScreen("results")}
+    onEnd={handleGameEnd}
+    numLetters={daily.word.length}
   />
   const Random = () => <WordleGame
     word={entry.word.toUpperCase()}
     hint={entry.hint}
-    onEnd={() => setScreen("results")}
+    onEnd={handleGameEnd}
+    numLetters={entry.word.length}
   />
 
-  // Settings screen
-  const Settings = () => <WordleSettings
-    onWin={() => {
-      setScreen("results");
-    }}
-    onLose={() => setScreen("results")}
-  />
-
-  // Results screen
   const Results = () => <WordleResults
-    onReplay={() => setScreen("game")}
+    result={gameResult}
     onMenu={() => setScreen("menu")}
   />
 
-  // Return wordle
   return (
     <Immersion mobileMode={mobileMode} darkMode={darkMode} leaveActivities={leaveActivities}>
       <div style={outerContainer}>
@@ -97,7 +84,6 @@ export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
         {screen === "daily"    && <Daily/>}
         {screen === "random"   && <Random/>}
         {screen === "results"  && <Results/>}
-        {screen === "settings" && <Settings/>}
       </div>
     </Immersion>
   );
@@ -105,16 +91,10 @@ export const WordleImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
 
 /**
  * Wordle game screen
- * @param {string} word the target word to guess
- * @param {string} hint clue displayed to the user
- * @param {function} onEnd callback when the game ends, called with true if won, false if lost
- * @param {number} numLetters number of columns in the grid (default 10)
- * @param {number} numGuesses number of allowed guesses (default 6)
- * @returns wordle game screen object
  */
 const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
 
-  const PADDING = window.innerWidth * 0.05; // 5% of screen width
+  const PADDING = window.innerWidth * 0.05;
   const wordLength = word.length;
 
   const [guesses, setGuesses] = useState(Array(numGuesses).fill(null).map(() => Array(numLetters).fill("")));
@@ -131,7 +111,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
   const [enterCooldown, setEnterCooldown] = useState(0);
   const submittingRef = useRef(false);
 
-  // Refs to avoid stale closures
   const currentRowRef = useRef(0);
   const currentColRef = useRef(0);
   const guessesRef = useRef(guesses);
@@ -146,7 +125,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
   useEffect(() => { gameOverRef.current = gameOver; }, [gameOver]);
   useEffect(() => { wordLengthRef.current = wordLength; }, [wordLength]);
 
-  // Inject animations
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -186,22 +164,24 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     return () => document.head.removeChild(style);
   }, []);
 
-  // CSS variables for sizing
   const maxWidth = parseInt(MAX_WIDTH);
   useEffect(() => {
     const compute = () => {
-      const available = Math.min(window.innerWidth, maxWidth) - PADDING * 2;
-      const letterPx = available / (numLetters * 1.1);
-      const keyPx = available / 12;
+      const availableW = Math.min(window.innerWidth, maxWidth) - PADDING * 2;
+      // Reserve ~40vh for the grid; factor in numGuesses rows each with a 10% gap
+      const availableH = window.innerHeight * 0.40;
+      const letterByWidth  = availableW / (numLetters * 1.1);
+      const letterByHeight = availableH / (numGuesses * 1.1);
+      const letterPx = Math.min(letterByWidth, letterByHeight);
+      const keyPx = availableW / 12;
       document.documentElement.style.setProperty("--letter-size", `${letterPx}px`);
       document.documentElement.style.setProperty("--key-size", `${keyPx}px`);
     };
     compute();
     window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
-  }, [numLetters, maxWidth]);
+  }, [numLetters, numGuesses, maxWidth]);
 
-  // Colours
   const COLOUR_PRIORITY = { "#538d4e": 2, "#b59f3b": 1, "#3a3a3c": 0 };
   const KEY_COLOUR_MAP = {
     "#538d4e": "rgba(83, 141, 78, 0.8)",
@@ -209,7 +189,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     "#3a3a3c": "rgba(58, 58, 60, 0.8)",
   };
 
-  // Show popup
   const showPopup = (message) => {
     setPopupMessage(message);
     setPopupVisible(false);
@@ -219,13 +198,11 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     }, 10);
   };
 
-  // Shake a row
   const shakeRow = (row) => {
     setShakenRow(row);
     setTimeout(() => setShakenRow(null), 400);
   };
 
-  // Validate word against dictionary API
   const validateWord = async (guess) => {
     try {
       const res = await fetch(
@@ -237,9 +214,8 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     }
   };
 
-  // Submit guess
   const submitGuess = async () => {
-    if (submittingRef.current) return;
+    if (submittingRef.current || enterCooldownRef.current) return;
     submittingRef.current = true;
 
     const row = currentRowRef.current;
@@ -270,12 +246,10 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     const wordArr = word.split("");
     const used = Array(wl).fill(false);
 
-    // Initial pass — all gray
     for (let i = 0; i < numLetters; i++) {
       newColours[row][i] = "#3a3a3c";
     }
 
-    // Green pass — only within word length
     guess.forEach((letter, i) => {
       if (i < wl && letter === wordArr[i]) {
         newColours[row][i] = "#538d4e";
@@ -283,7 +257,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
       }
     });
 
-    // Yellow / gray pass — all typed letters
     guess.forEach((letter, i) => {
       if (newColours[row][i] === "#538d4e") return;
       const j = wordArr.findIndex((l, idx) => l === letter && !used[idx]);
@@ -297,14 +270,13 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
 
     setColours(newColours);
 
-    // Store hex in keyColours state
     setKeyColours(prev => {
       const next = { ...prev };
       guess.forEach((letter, i) => {
         const gridColour = newColours[row][i];
         const existing = next[letter];
         if (!existing || COLOUR_PRIORITY[gridColour] > COLOUR_PRIORITY[existing]) {
-          next[letter] = gridColour; // store hex, not rgba
+          next[letter] = gridColour;
         }
       });
       return next;
@@ -314,7 +286,13 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     if (won || row + 1 >= numGuesses) {
       setGameOver(true);
       gameOverRef.current = true;
-      setTimeout(() => onEnd(won), 1000);
+      setTimeout(() => onEnd({
+        won,
+        word,
+        guesses: guessesRef.current,
+        colours: newColours,
+        numGuesses: row + 1,
+      }), 1200);
     } else {
       setCurrentRow(row + 1);
       setCurrentCol(0);
@@ -336,7 +314,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     submittingRef.current = false;
   };
 
-  // Handle key
   const handleKey = (key) => {
     if (gameOverRef.current) return;
     if (key === "ENTER" && (submittingRef.current || enterCooldownRef.current)) return;
@@ -349,10 +326,8 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
       next[row][col - 1] = "";
       setGuesses(next);
       setCurrentCol(col - 1);
-
     } else if (key === "ENTER") {
       submitGuess();
-
     } else if (/^[A-Z]$/.test(key) && col < numLetters) {
       const next = guessesRef.current.map(r => [...r]);
       next[row][col] = key;
@@ -361,7 +336,6 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     }
   };
 
-  // Physical keyboard
   useEffect(() => {
     const onKeyDown = (e) => {
       const key = e.key.toUpperCase();
@@ -379,14 +353,12 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
     };
   }, []);
 
-  // Keyboard rows
   const keyboardRows = [
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
     ["ENTER","Z","X","C","V","B","N","M","BACKSPACE"],
   ];
 
-  // Styles
   const colContainer = {
     display: "flex",
     flexDirection: "column",
@@ -520,15 +492,140 @@ const WordleGame = ({ word, hint, onEnd, numLetters = 10, numGuesses = 6 }) => {
   );
 };
 
-// Wordle Settings Screen
-const WordleSettings = ({ onWin, onLose }) => (
-  <div>Settings</div>
-);
+/**
+ * Wordle Results Screen
+ * Layout mirrors GenericMenu: title/subtitle → share grid → word reveal → buttons
+ */
+const WordleResults = ({ result, onMenu }) => {
+  const [copied, setCopied] = useState(false);
 
-// Wordle Results Screen
-const WordleResults = ({ onReplay, onMenu }) => (
-  <div>
-    <button onClick={onReplay}>Play again</button>
-    <button onClick={onMenu}>Menu</button>
-  </div>
-);
+  // Layout primitives — mirrors GenericMenu exactly
+  const rowContainer = {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+  };
+  const colContainer = {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  };
+  const outerContainer = {
+    ...rowContainer,
+    alignItems: "center",
+    height: "100vh",
+  };
+  const innerContainer = {
+    ...colContainer,
+    gap: "3rem",
+    width: "100vw",
+  };
+
+  // Fallback before a result exists
+  if (!result) {
+    return (
+      <div style={outerContainer}>
+        <div style={innerContainer}>
+          <CleanButton text="Back to Menu" onClick={onMenu} />
+        </div>
+      </div>
+    );
+  }
+
+  const { won, word, guesses, colours } = result;
+
+  // Build emoji share grid — only submitted rows, trimmed to word length
+  const COLOUR_EMOJI = {
+    "#538d4e": "🟩",
+    "#b59f3b": "🟨",
+    "#3a3a3c": "⬛",
+    "transparent": null,
+  };
+
+  const wordLength = word.length;
+  const emojiRows = [];
+  for (let r = 0; r < guesses.length; r++) {
+    const rowColours = colours[r];
+    if (!rowColours.some(c => c !== "transparent")) break;
+    const letters = guesses[r].slice(0, wordLength).join("");
+    const emojis = rowColours.slice(0, wordLength).map(c => COLOUR_EMOJI[c] ?? "⬛").join("");
+    emojiRows.push(`${emojis} (${letters})`);
+  }
+
+  const shareText = emojiRows.join("\n");
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    });
+  };
+
+  // Text styles — mirrors GenericMenu
+  const titleStyle = {
+    fontWeight: 700,
+    fontSize: "3rem",
+    color: "var(--colour-6)",
+    textAlign: "center",
+  };
+  const subtitleStyle = {
+    fontWeight: 500,
+    fontSize: "1.5rem",
+    color: won ? "#538d4e" : "#db1c1c",
+    textAlign: "center",
+  };
+  const descriptionStyle = {
+    fontWeight: 400,
+    fontSize: "1.4rem",
+    color: "var(--colour-5)",
+    textAlign: "center",
+  };
+
+  const shareBoxStyle = {
+    minWidth: "50%",
+    background: "var(--colour-2)",
+    border: "1px solid var(--colour-4)",
+    borderRadius: "10px",
+    padding: "1rem 1.5rem",
+    fontFamily: "monospace",
+    fontSize: "1.4rem",
+    lineHeight: "1.7",
+    whiteSpace: "pre",
+    color: "var(--colour-6)",
+    userSelect: "all",
+    textAlign: "left",
+  };
+
+  return (
+    <div style={outerContainer}>
+      <div style={innerContainer}>
+
+        {/* Title + outcome — mirrors title/author block */}
+        <div>
+          <div style={titleStyle}>Wooordle</div>
+          <div style={subtitleStyle}>{won ? "🎉 You got it! 🎉" : "😩 Better luck next time 😩"}</div>
+        </div>
+
+        {/* Emoji share grid — mirrors the icon block */}
+        <div style={rowContainer}>
+          <div style={shareBoxStyle}>{shareText}</div>
+        </div>
+
+        {/* Word reveal — mirrors description */}
+        <div style={descriptionStyle}>
+          The word was&nbsp;
+          <span style={{ fontWeight: 700, color: "var(--colour-6)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            {word}
+          </span>
+        </div>
+
+        {/* Buttons — mirrors button list */}
+        <div style={{ ...colContainer, gap: "1rem" }}>
+          <CleanButton text={copied ? "Copied to Clipboard!" : "Share Results (📋)"} onClick={handleCopy} />
+          <CleanButton text="Back to Menu (🏠)" onClick={onMenu} />
+        </div>
+
+      </div>
+    </div>
+  );
+};
