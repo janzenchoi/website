@@ -12,7 +12,7 @@ export const WordleActivity = ({ mobileMode, darkMode, activityController }) => 
   
   // Constants
   const title = "Wooordle";
-  const subtitle = "Wordle but with longer words.";
+  const subtitle = "Wordle but with longer words";
   
   // Render
   return (

@@ -12,7 +12,7 @@ export const SoccerActivity = ({ mobileMode, darkMode, activityController }) => 
   
   // Constants
   const title = "Soccer Ball";
-  const subtitle = "Kick a bouncy ball around.";
+  const subtitle = "Kick a bouncy ball around";
   const mobileDescription = [
     "Drag the soccer ball with a finger to move it",
     "Swipe the soccer ball to launch it"
