@@ -13,6 +13,7 @@ import fg_light from "../assets/janzen/fg_light.png";
 import { Body } from "./Body";
 import { Ball } from "./stuff/Ball";
 import { Character } from "./stuff/human/Character";
+import { TelevisionObject } from "./stuff/TelevisionObject";
 
 import { WordleImmersion } from "./stuff/immersive/WordleImmersion";
 
@@ -37,6 +38,7 @@ export const Site = () => {
 
   // Activities
   const [status, setStatus] = useState("none");
+  const [ televisionExists, setTelevisionExists ] = useState(false);
   const [ ballExists, setBallExists ] = useState(false);
   const [ janzenExists, setJanzenExists ] = useState(false);
   const [ wordleExists, setWordleExists ] = useState(false);
@@ -45,6 +47,7 @@ export const Site = () => {
     setStatus,
     setBallExists,
     setJanzenExists,
+    setTelevisionExists,
     setWordleExists
   };
 
@@ -63,6 +66,7 @@ export const Site = () => {
   const leaveActivities = () => {
     setBallExists(false);
     setJanzenExists(false);
+    setTelevisionExists(false);
     setWordleExists(false);
     setStatus("none");
   };
@@ -111,7 +115,11 @@ export const Site = () => {
       {janzenExists && <Character
         mobileMode={mobileMode}
         darkMode={colourTheme === "dark"}
-      />}
+        />}
+      {televisionExists && <TelevisionObject
+        mobileMode={mobileMode}
+        darkMode={colourTheme === "dark"}
+        />}
       {wordleExists && <WordleImmersion
         mobileMode={mobileMode}
         darkMode={colourTheme === "dark"} 

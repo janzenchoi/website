@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { InteractiveCard } from "./InteractiveCard";
 import { ImmersiveCard } from "./ImmersiveCard";
-import { Puppet } from "../../stuff/human/Puppet";
-import { Controller } from "../../stuff/human/Controller";
-import { Joystick } from "../../stuff/human/Joystick";
+// import { Puppet } from "../../stuff/human/Puppet";
+// import { Controller } from "../../stuff/human/Controller";
+// import { Joystick } from "../../stuff/human/Joystick";
 
 /**
  * Activities page

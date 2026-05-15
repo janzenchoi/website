@@ -53,7 +53,6 @@ export const Dropdown = ({ open, onClose, ignoreRefs=[], children }) => {
     boxShadow: "0 0 2px var(--colour-6)",
     zIndex: 1000,
     opacity: open ? 1 : 0,
-    pointerEvents: open ? "auto" : "none",
     transition: "opacity 0.3s ease",
     minWidth: "200px",
   };

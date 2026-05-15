@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { titleStyle, subtitleStyle, textStyle } from "./Card";
+import { useState } from "react";
+import { titleStyle } from "./Card";
 
 /**
  * Nice button
