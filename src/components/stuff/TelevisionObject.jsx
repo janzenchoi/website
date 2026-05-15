@@ -212,14 +212,14 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
 
   return (
     <div style={wrapperStyle}>
+      <img
+        src={tvBuzz}
+        alt="tuning"
+        style={buzzStyle}
+        draggable={false}
+      />
       {tvState === "on" && (
         <div style={screenStyle}>
-          <img
-            src={tvBuzz}
-            alt="tuning"
-            style={buzzStyle}
-            draggable={false}
-          />
 
           <div style={frameStyle}>
             <video
