@@ -12,24 +12,27 @@ import ch7 from "../../assets/stuff/tv/surfer.mp4";
 import ch8 from "../../assets/stuff/tv/jerry.mp4";
 import ch9 from "../../assets/stuff/tv/bean.mp4";
 
-const getRandomIndex = (len, exclude) => {
-  if (len <= 1) return 0;
+const shuffle = (arr) => {
+  const next = [...arr];
 
-  let idx = Math.floor(Math.random() * len);
-  while (idx === exclude) idx = Math.floor(Math.random() * len);
-  return idx;
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+
+  return next;
 };
 
 const CHANNELS = [
-  {src: ch1, frame: { x: -20, y: 0, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.8 }},
-  {src: ch2, frame: { x: 0, y: 5, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 }},
-  {src: ch3, frame: { x: -10, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.64 }},
-  {src: ch4, frame: { x: 0, y: 6, w: 140, h: 110 }, crop: { x: 0, y: 0, scale: 0.61 }},
-  {src: ch5, frame: { x: -5, y: 0, w: 115, h: 105 }, crop: { x: 0, y: 0, scale: 0.7 }},
-  {src: ch6, frame: { x: -12, y: 5, w: 145, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 }},
-  {src: ch7, frame: { x: -20, y: 0, w: 180, h: 130 }, crop: { x: 0, y: 0, scale: 0.6 }},
-  {src: ch8, frame: { x: -10, y: 0, w: 145, h: 124 }, crop: { x: 0, y: 0, scale: 0.6 }},
-  {src: ch9, frame: { x: -20, y: 5, w: 180, h: 120 }, crop: { x: 0, y: 0, scale: 0.6 }},
+  { src: ch1, frame: { x: -20, y: 0, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.8 } },
+  { src: ch2, frame: { x: 0, y: 5, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } },
+  { src: ch3, frame: { x: -10, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.64 } },
+  { src: ch4, frame: { x: 0, y: 6, w: 140, h: 110 }, crop: { x: 0, y: 0, scale: 0.61 } },
+  { src: ch5, frame: { x: -5, y: 0, w: 115, h: 105 }, crop: { x: 0, y: 0, scale: 0.7 } },
+  { src: ch6, frame: { x: -12, y: 5, w: 145, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } },
+  { src: ch7, frame: { x: -20, y: 0, w: 180, h: 130 }, crop: { x: 0, y: 0, scale: 0.6 } },
+  { src: ch8, frame: { x: -10, y: 0, w: 145, h: 124 }, crop: { x: 0, y: 0, scale: 0.6 } },
+  { src: ch9, frame: { x: -20, y: 5, w: 180, h: 120 }, crop: { x: 0, y: 0, scale: 0.6 } }
 ];
 
 export const TelevisionObject = ({ mobileMode, onInteract }) => {
@@ -41,6 +44,8 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
 
   const containerRef = useRef(null);
   const offset = useRef({ x: 0, y: 0 });
+  const queueRef = useRef([]);
+  const queueIndexRef = useRef(0);
 
   const current = CHANNELS[channel];
   const tvWidth = mobileMode ? "50vw" : "20vw";
@@ -66,6 +71,28 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
     setHoverDragZone(getRelativeX(e) >= rect.width * 0.8);
   };
 
+  const startNewCycle = () => {
+    const nextQueue = shuffle([...Array(CHANNELS.length).keys()]);
+    queueRef.current = nextQueue;
+    queueIndexRef.current = 0;
+    setChannel(nextQueue[0]);
+    setTvState("on");
+  };
+
+  const advanceChannel = () => {
+    const nextIndex = queueIndexRef.current + 1;
+
+    if (nextIndex < queueRef.current.length) {
+      queueIndexRef.current = nextIndex;
+      setChannel(queueRef.current[nextIndex]);
+      return;
+    }
+
+    queueRef.current = [];
+    queueIndexRef.current = 0;
+    setTvState("off");
+  };
+
   const handleDown = (e) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -75,8 +102,12 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
     const isDragZone = relativeX >= rect.width * 0.8;
 
     if (!isDragZone) {
-      setTvState("on");
-      setChannel((c) => getRandomIndex(CHANNELS.length, c));
+      if (tvState === "off" || queueRef.current.length === 0) {
+        startNewCycle();
+      } else {
+        advanceChannel();
+      }
+
       onInteract?.();
       return;
     }
