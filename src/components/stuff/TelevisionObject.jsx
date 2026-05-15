@@ -11,17 +11,19 @@ import ch6 from "../../assets/stuff/tv/comedy.mp4";
 import ch7 from "../../assets/stuff/tv/surfer.mp4";
 import ch8 from "../../assets/stuff/tv/jerry.mp4";
 import ch9 from "../../assets/stuff/tv/bean.mp4";
+import ch10 from "../../assets/stuff/tv/meme.mp4";
 
 const CHANNELS = [
   { src: ch1, frame: { x: -20, y: 0, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.8 } },
   { src: ch2, frame: { x: 0, y: 5, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } },
   { src: ch3, frame: { x: -10, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.64 } },
-  { src: ch4, frame: { x: 0, y: 6, w: 140, h: 110 }, crop: { x: 0, y: 0, scale: 0.61 } },
+  { src: ch4, frame: { x: 0, y: 6, w: 140, h: 115 }, crop: { x: 0, y: 0, scale: 0.61 } },
   { src: ch5, frame: { x: -5, y: 0, w: 115, h: 105 }, crop: { x: 0, y: 0, scale: 0.7 } },
-  { src: ch6, frame: { x: -12, y: 5, w: 145, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } },
+  { src: ch6, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.6 } },
   { src: ch7, frame: { x: -20, y: 0, w: 180, h: 130 }, crop: { x: 0, y: 0, scale: 0.6 } },
   { src: ch8, frame: { x: -10, y: 0, w: 145, h: 124 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch9, frame: { x: -10, y: 8, w: 180, h: 110 }, crop: { x: 0, y: 0, scale: 0.6 } }
+  { src: ch9, frame: { x: -10, y: 6, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.6 } },
+  { src: ch10, frame: { x: -22, y: 5, w: 180, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } }
 ];
 
 const shuffle = (arr) => {
