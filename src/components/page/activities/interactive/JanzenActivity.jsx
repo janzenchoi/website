@@ -15,19 +15,15 @@ export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => 
   const subtitle = "Control a Janzen marionette";
   const mobileDescription = [
     "Hold and release Janzen to forcibly relocate him",
-    "Move joystick left to walk left",
-    "Move joystick right to walk right",
-    "Move joystick upward to jump",
-    "Move joystick downward to crouch",
+    "Move joystick left / right to walk left / right",
+    "Move joystick upward /downward to jump / crouch",
     "Move joystick outside the dashed ring to sprint",
     "Drag the burger icon to relocate the joystick",
   ];
   const desktopDescription = [
     "Drag and release Janzen to forcibly relocate him",
-    "Hold A to walk left",
-    "Hold D to walk right",
-    "Hold W to jump",
-    "Hold S to crouch",
+    "Hold A / D to walk left / right",
+    "Hold W / S to jump / crouch",
     "Hold SHIFT to sprint",
     "Press 2 to see what happens when Janzen receives a rejection email",
     // "Press 1-9 to emote."

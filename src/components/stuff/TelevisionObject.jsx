@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import tvOn from "../../assets/stuff/tv/tv_on.png";
 import tvOff from "../../assets/stuff/tv/tv_off.png";
 import tvBuzz from "../../assets/stuff/tv/tv_buzz.png";
+import tvAntenna from "../../assets/stuff/tv/tv_antenna.png";
 import ch1 from "../../assets/stuff/tv/subway.mp4";
 import ch2 from "../../assets/stuff/tv/simpsons.mp4";
 import ch3 from "../../assets/stuff/tv/butter.mp4";
@@ -11,19 +12,17 @@ import ch6 from "../../assets/stuff/tv/comedy.mp4";
 import ch7 from "../../assets/stuff/tv/surfer.mp4";
 import ch8 from "../../assets/stuff/tv/jerry.mp4";
 import ch9 from "../../assets/stuff/tv/bean.mp4";
-import ch10 from "../../assets/stuff/tv/meme.mp4";
 
 const CHANNELS = [
-  { src: ch1, frame: { x: -20, y: 0, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.8 } },
-  { src: ch2, frame: { x: 0, y: 5, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } },
-  { src: ch3, frame: { x: -10, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.64 } },
-  { src: ch4, frame: { x: 0, y: 6, w: 140, h: 115 }, crop: { x: 0, y: 0, scale: 0.61 } },
-  { src: ch5, frame: { x: -5, y: 0, w: 115, h: 105 }, crop: { x: 0, y: 0, scale: 0.7 } },
-  { src: ch6, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch7, frame: { x: -20, y: 0, w: 180, h: 130 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch8, frame: { x: -10, y: 0, w: 145, h: 124 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch9, frame: { x: -10, y: 6, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.6 } },
-  { src: ch10, frame: { x: -22, y: 5, w: 180, h: 100 }, crop: { x: 0, y: 0, scale: 0.7 } }
+  // { src: ch1, frame: { x: -20, y: 7, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
+  // { src: ch2, frame: { x: 0, y: 7, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
+  // { src: ch3, frame: { x: -15, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.80 } },
+  // { src: ch4, frame: { x: 0, y: 7, w: 140, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
+  // { src: ch5, frame: { x: -6, y: 7, w: 120, h: 105 }, crop: { x: 0, y: 0, scale: 0.80 } },
+  // { src: ch6, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  // { src: ch7, frame: { x: -20, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  // { src: ch8, frame: { x: -10, y: 5, w: 145, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  // { src: ch9, frame: { x: -10, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
 ];
 
 const shuffle = (arr) => {
@@ -53,7 +52,7 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
   const switchTimeoutRef = useRef(null);
 
   const current = CHANNELS[channel];
-  const tvWidth = mobileMode ? "50vw" : "20vw";
+  const tvWidth = mobileMode ? "75vw" : "20vw";
 
   const getCoords = (e) => {
     if (e.touches?.length) {
@@ -243,43 +242,61 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
     transformOrigin: "bottom left"
   };
 
-  return (
-    <div style={wrapperStyle}>
-      <div style={screenStyle}>
-        <img
-          src={tvBuzz}
-          alt="tuning"
-          style={buzzStyle}
-          draggable={false}
-        />
+  const antennaStyle = {
+    position: "absolute",
+    left: "50%",
+    top: "-28%",
+    width: "32%",
+    transform: "translateX(-50%)",
+    zIndex: 2,
+    pointerEvents: "none",
+    userSelect: "none"
+  };
 
-        {tvState === "on" && (
-          <div style={frameStyle}>
-            <video
-              key={channel}
-              src={current.src}
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={videoStyle}
-            />
-          </div>
-        )}
-      </div>
-
+return (
+  <div style={wrapperStyle}>
+    <div style={screenStyle}>
       <img
-        ref={containerRef}
-        src={tvState === "off" ? tvOff : tvOn}
-        alt="tv"
-        style={tvImageStyle}
+        src={tvBuzz}
+        alt="tuning"
+        style={buzzStyle}
         draggable={false}
-        onMouseDown={handleDown}
-        onTouchStart={handleDown}
-        onMouseMove={handleHover}
-        onTouchMove={handleHover}
-        onMouseLeave={() => setHoverDragZone(false)}
       />
+
+      {tvState === "on" && (
+        <div style={frameStyle}>
+          <video
+            key={channel}
+            src={current.src}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={videoStyle}
+          />
+        </div>
+      )}
     </div>
-  );
+
+    <img
+      src={tvAntenna}
+      alt="antenna"
+      style={antennaStyle}
+      draggable={false}
+    />
+
+    <img
+      ref={containerRef}
+      src={tvState === "off" ? tvOff : tvOn}
+      alt="tv"
+      style={tvImageStyle}
+      draggable={false}
+      onMouseDown={handleDown}
+      onTouchStart={handleDown}
+      onMouseMove={handleHover}
+      onTouchMove={handleHover}
+      onMouseLeave={() => setHoverDragZone(false)}
+    />
+  </div>
+);
 };
