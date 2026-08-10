@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AboutCard } from "./AboutCard";
 import { ContactCard } from "./ContactCard";
+import { LinksCard } from "./LinksCard";
 
 /**
  * Home page
@@ -21,6 +22,7 @@ export const Home = ({ mobileMode, colourTheme }) => {
     <div>
       <AboutCard mobileMode={mobileMode} darkMode={darkMode}/>
       <ContactCard mobileMode={mobileMode} darkMode={darkMode}/>
+      <LinksCard mobileMode={mobileMode} darkMode={darkMode}/>
     </div>
   );
 }
