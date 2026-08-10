@@ -7,6 +7,7 @@ import sfLight from "../../../assets/logo/sf_light.png";
 import sfDark from "../../../assets/logo/sf_dark.png";
 import ghDark from "../../../assets/logo/gh_dark.png";
 import ghLight from "../../../assets/logo/gh_light.png";
+import gsIcon from "../../../assets/logo/gs.png";
 import mailIcon from "../../../assets/icon/mail.png";
 import phoneIcon from "../../../assets/icon/phone.png";
 
@@ -51,13 +52,23 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
     return <HyperlinkBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
+      title={"Google Scholar"}
+      hyperlink={"scholar.google.com/citations?user=pR9IjEoAAAAJ"}
+      iconLight={gsIcon}
+      iconDark={gsIcon}
+    />
+  };
+  const Bullet5 = () => {
+    return <HyperlinkBullet
+      mobileMode={mobileMode}
+      darkMode={darkMode}
       title={"Instagram"}
       hyperlink={"instagram.com/janzenchoi/"}
       iconLight={igIcon}
       iconDark={igIcon}
     />
   };
-  const Bullet5 = () => {
+  const Bullet6 = () => {
     return <HyperlinkBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -67,7 +78,7 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
       iconDark={inIcon}
     />
   };
-  const Bullet6 = () => {
+  const Bullet7 = () => {
     return <HyperlinkBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -77,7 +88,7 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
       iconDark={rgIcon}
     />
   };
-  const Bullet7 = () => {
+  const Bullet8 = () => {
     return <HyperlinkBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
@@ -96,5 +107,6 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
     <Bullet5/>
     <Bullet6/>
     <Bullet7/>
+    <Bullet8/>
   </Card>
 };
