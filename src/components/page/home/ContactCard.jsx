@@ -1,4 +1,4 @@
-import { Card } from "../../content/Card";
+import { Card, horizontalDividerStyle } from "../../content/Card";
 import { HyperlinkBullet } from "../../content/HyperlinkBullet";
 import igIcon from "../../../assets/logo/ig.png";
 import inIcon from "../../../assets/logo/in.png";
@@ -102,6 +102,7 @@ export const ContactCard = ({ mobileMode, darkMode }) => {
   return <Card mobileMode={mobileMode} title={"Contact"}>
     <Bullet1/>
     <Bullet2/>
+    <div style={{ ...horizontalDividerStyle, marginTop: "0.4rem" }}></div>
     <Bullet3/>
     <Bullet4/>
     <Bullet5/>
