@@ -15,7 +15,7 @@ import { titleStyle, subtitleStyle, textStyle, verticalDividerStyle } from "./Ca
  * @param {string} imageCaption optional caption shown below the image
  * @returns project bullet object
  */
-export const PublicationBullet = ({
+export const ProjectBullet = ({
   mobileMode,
   darkMode,
   title,
@@ -76,7 +76,7 @@ export const PublicationBullet = ({
 
   // Figure: white background + rounded corners wrap both the image and its caption
   const figureStyle = {
-    margin: "0.6rem 0 0.4rem 0",
+    margin: "0.4rem 0 0.4rem 0",
     padding: "0.4rem",
     backgroundColor: "#fff",
     border: "1px solid var(--colour-4)",
@@ -118,7 +118,7 @@ export const PublicationBullet = ({
     return (
       <div style={hyperlinkStyle}>
         {link !== "" && <a href={fullLink} target="_blank" rel="noopener noreferrer">
-          <div style={{ ...textStyle, textDecoration: "underline" }}>{link}</div>
+          <div style={{ ...textStyle, textDecoration: "underline" }}>{"(more information)"}</div>
         </a>}
         {!mobileMode && link !== "" && <div style={{ width: "0.4rem" }}/>}
         {downloadable !== null && <a href={downloadable} download={"publication"}>
@@ -151,42 +151,10 @@ export const PublicationBullet = ({
       flex: 1,
       minWidth: 0,
     };
-
-    // Renders a single description line (bullet or plain), preserving its
-    // original index in `description` so bullet-run spacing stays correct
-    // even though the first line renders above the image and the rest below.
-    const renderLine = (text, idx) => {
-      const isBullet = text.startsWith("*");
-      const bodyText = isBullet ? text.slice(1).trimStart() : text;
-      const prevIsBullet = idx > 0 && description[idx - 1].startsWith("*");
-
-      if (isBullet) {
-        const isFirstBullet = !prevIsBullet;
-        return (
-          <div
-            key={idx}
-            style={{ ...bulletLineStyle, marginTop: isFirstBullet ? "0.4rem" : 0 }}
-          >
-            <span style={bulletMarkerStyle}>•</span>
-            <span style={bulletTextStyle}>{bodyText}</span>
-          </div>
-        );
-      }
-
-      return (
-        <div key={idx}>
-          <div style={descriptionStyle}>{bodyText}</div>
-        </div>
-      );
-    };
-
-    const [firstDescription, ...restDescription] = description;
-
     return (
       <div style={{ display: "flex", flexDirection: "row", justifyContent: "flex-start" }}>
         <div style={verticalDividerStyle}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {firstDescription !== undefined && renderLine(firstDescription, 0)}
           {image && (
             <figure style={figureStyle}>
               <div style={imageContainerStyle}>
@@ -197,7 +165,30 @@ export const PublicationBullet = ({
               )}
             </figure>
           )}
-          {restDescription.map((text, idx) => renderLine(text, idx + 1))}
+          {description.map((text, idx) => {
+            const isBullet = text.startsWith("*");
+            const bodyText = isBullet ? text.slice(1).trimStart() : text;
+            const prevIsBullet = idx > 0 && description[idx - 1].startsWith("*");
+
+            if (isBullet) {
+              const isFirstBullet = !prevIsBullet;
+              return (
+                <div
+                  key={idx}
+                  style={{ ...bulletLineStyle, marginTop: isFirstBullet ? "0.4rem" : 0 }}
+                >
+                  <span style={bulletMarkerStyle}>•</span>
+                  <span style={bulletTextStyle}>{bodyText}</span>
+                </div>
+              );
+            }
+
+            return (
+              <div key={idx}>
+                <div style={descriptionStyle}>{bodyText}</div>
+              </div>
+            );
+          })}
           <div style={{ marginTop: "0.4rem" }}/>
           <Hyperlink/>
         </div>

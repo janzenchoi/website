@@ -9,7 +9,7 @@ import { titleStyle, subtitleStyle, textStyle, verticalDividerStyle } from "./Ca
  * @param {string} iconDark bullet icon in dark mode
  * @param {string} title bullet title
  * @param {string} subtitle bullet subtitle
- * @param {string[]} description bullet subtext
+ * @param {string[]} description bullet subtext. Strings starting with "*" render as a bulleted line with a hanging indent.
  * @param {string[]} downloadable downloadable file
  * @param {string[]} downloadableName downloadable file name
  * @param {string} dateStart starting date
@@ -87,6 +87,21 @@ export const IconBullet = ({
       textAlign: mobileMode ? "start" : "justify",
       display: "block"
     };
+    const bulletLineStyle = {
+      ...textStyle,
+      textAlign: mobileMode ? "start" : "justify",
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "flex-start",
+    };
+    const bulletMarkerStyle = {
+      flexShrink: 0,
+      width: "1.2rem",
+    };
+    const bulletTextStyle = {
+      flex: 1,
+      minWidth: 0,
+    };
     const downloadStyle = {
       fontWeight: 400,
       fontSize: "1rem",
@@ -98,14 +113,31 @@ export const IconBullet = ({
       <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start" }}>
         <div style={verticalDividerStyle} />
         <div>{description.map((text, idx) => {
+          const isBullet = text.startsWith("*");
+          const bodyText = isBullet ? text.slice(1).trimStart() : text;
+          const isLast = idx === description.length - 1;
+          const prevIsBullet = idx > 0 && description[idx - 1].startsWith("*");
+          const downloadLink = isLast && downloadable !== null && (<>{" "}
+            <a href={downloadable} download={downloadableName}>
+              <span style={downloadStyle}>({downloadableName})</span>
+            </a></>);
+
+          if (isBullet) {
+            const isFirstBullet = !prevIsBullet;
+            return (
+              <div
+                key={idx}
+                style={{ ...bulletLineStyle, marginTop: isFirstBullet ? "0.4rem" : 0 }}
+              >
+                <span style={bulletMarkerStyle}>•</span>
+                <span style={bulletTextStyle}>{bodyText}{downloadLink}</span>
+              </div>
+            );
+          }
+
           return (
             <div key={idx}>
-              <div style={descriptionStyle}>{text}
-                {idx === description.length - 1 && downloadable !== null && (<>{" "}
-                  <a href={downloadable} download={downloadableName}>
-                    <span style={downloadStyle}>({downloadableName})</span>
-                  </a></>)}
-              </div>
+              <div style={descriptionStyle}>{bodyText}{downloadLink}</div>
             </div>
           );
         })}</div>

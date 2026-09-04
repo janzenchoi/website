@@ -119,6 +119,9 @@ export const Header = ({
           <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
         </TabItem>
         <TabItem>
+          <div style={itemTextStyle} onClick={() => navigate("/portfollio")}>Portfollio</div>
+        </TabItem>
+        <TabItem>
           <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>
         </TabItem>
         <div style={tabDividerStyle}/>
@@ -140,6 +143,9 @@ export const Header = ({
         </DropdownItem>
         <DropdownItem>
           <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
+        </DropdownItem>
+        <DropdownItem>
+          <div style={itemTextStyle} onClick={() => navigate("/portfollio")}>Portfollio</div>
         </DropdownItem>
         <DropdownItem>
           <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>

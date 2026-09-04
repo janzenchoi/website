@@ -29,7 +29,11 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       subtitle={"Australian Nuclear Science and Technology Organisation"}
       description={[
         "Hybrid (Sydney, Australia)",
-        "Developed and calibrated materials models for predicting the creep and tensile deformation behaviour of Alloy 617; the research was conducted as part of my Honours project and PhD candidature"
+        "Developed models to predict material behaviour under extreme conditions; research was conducted as part of my Honours project and PhD candidature",
+        "*Applied machine learning and optimisation techniques (e.g., genetic algorithms, surrogate modelling) to calibrate material models against experimental data",
+        "*Presented research findings at meetings and conferences to internal and external stakeholders",
+        "*Supported colleagues in their model development workflows",
+        "*Co-authored three first-author peer-reviewed publications on modelling behaviour of Alloy 617"
       ]}
       iconLight={anstoLight}
       iconDark={anstoDark}
@@ -45,7 +49,9 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       subtitle={"Argonne National Laboratory"}
       description={[
         "On-Site (Chicago, America)",
-        "Assisted with DOE-sponsored projects on modelling the deformation behaviour of Alloy 617 and 709"
+        "Assisted with DOE-sponsored projects on modelling the deformation behaviour of Alloy 617 and 709",
+        "*Built surrogate models using deep neural networks to reduce the evaluation of physics-based models from days to milliseconds",
+        "*Developed crystal plasticity finite element method (CPFEM) models to capture the mesoscale behaviour of Alloy 617",
       ]}
       iconLight={anlLight}
       iconDark={anlDark}
@@ -61,7 +67,12 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       subtitle={"Mission Systems"}
       description={[
         "On-Site (Sydney, Australia)",
-        "Maintained and upgraded Linux-based systems, with a primary focus on Ubuntu environments; helped maintain Jenkins pipelines and supported Blender-based workflows within production environments"
+        "Developed software to streamline the software development process",
+        "*Designed and built a physical inventory tracking system from scratch, deployed in-house",
+        "*Wrote automation scripts to streamline recurring operations tasks",
+        "*Upgraded in-house codebase from Ubuntu 18.04 to 20.04",
+        "*Helped build vehicle simulations in Blender to support internal workflows ",
+        "*Maintained Jenkins pipelines and used Docker to support CI/CD",
       ]}
       iconLight={ms}
       iconDark={ms}
@@ -77,7 +88,10 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       subtitle={"Argonne National Laboratory"}
       description={[
         "On-Site (Chicago, America)",
-        "Assisted with the development and calibration of physics-based models to predict the deformation behaviour of 316H steel"
+        "Assisted with the development and calibration of physics-based models to predict the deformation behaviour of Alloy 617 and 316H steel",
+        "*Developed elastic-viscoplastic models to simultaneously capture both creep and tensile behaviour of Alloy 617",
+        "*Tested and contributed to NEML, Argonne's open-source material modelling codebase",
+        "*Co-authored a peer-reviewed publication on the development of a mechanistic model for creep and thermal aging in Alloy 709"
       ]}
       iconLight={anlLight}
       iconDark={anlDark}
@@ -93,7 +107,10 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       subtitle={"University of New South Wales"}
       description={[
         "Hybrid (Sydney, Australia)",
-        "Taught undergraduate students in DESN1000 (Introduction to Engineering Design and Innovation), MATH2089 (Numerical Methods and Statistics), and MTRN4010 (Advanced Autonomous Systems)"
+        "Delivered labs, tutorials, and marking support across mechatronics, mathematics, and design engineering courses",
+        "*Ran lab sessions and tutorials for MTRN4010 (Advanced Robotics), MATH2089 (Numerical Methods & Statistics), and DESN1000 (Introduction to Engineering Design)",
+        "*Supported classes of up to 30 students, assisting with practical exercises and course material",
+        "*Marked assignments and provided feedback to students",
       ]}
       iconLight={unswLight}
       iconDark={unswDark}

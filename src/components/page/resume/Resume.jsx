@@ -3,7 +3,6 @@ import { SkillsCard } from "./SkillsCard";
 import { EducationCard } from "./EducationCard";
 import { ExperienceCard } from "./ExperienceCard";
 import { AchievementsCard } from "./AchievementsCard";
-import { PublicationsCard } from "./PublicationsCard";
 
 /**
  * Home page
@@ -26,7 +25,6 @@ export const Resume = ({ mobileMode, colourTheme }) => {
       <EducationCard mobileMode={mobileMode} darkMode={darkMode}/>
       <ExperienceCard mobileMode={mobileMode} darkMode={darkMode}/>
       <AchievementsCard mobileMode={mobileMode} darkMode={darkMode}/>
-      <PublicationsCard mobileMode={mobileMode} darkMode={darkMode}/>
     </div>
   );
 }

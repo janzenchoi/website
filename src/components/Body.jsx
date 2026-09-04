@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Home } from "./page/home/Home";
 import { Resume } from "./page/resume/Resume";
+import { Portfollio } from "./page/portfollio/Portfollio";
 import { Activities } from "./page/activities/Activities";
 import { HEADER_HEIGHT, FOOTER_HEIGHT, MAX_WIDTH } from "../helper/constant";
 
@@ -38,6 +39,7 @@ export const Body = ({ mobileMode, colourTheme, activityController }) => {
           <Route path="/" element={<Home mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
           <Route path="/home" element={<Home mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
           <Route path="/resume" element={<Resume mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
+          <Route path="/portfollio" element={<Portfollio mobileMode={mobileMode} colourTheme={colourTheme}/>}/>
           <Route path="/activities" element={<Activities mobileMode={mobileMode} colourTheme={colourTheme} activityController={activityController}/>}/>
         </Routes>
       </div>

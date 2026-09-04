@@ -41,7 +41,7 @@ export const LinksCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Instagram"}
-      hyperlink={"instagram.com/janzenchoi/"}
+      hyperlink={"instagram.com/janzenchoi"}
       iconLight={igIcon}
       iconDark={igIcon}
     />
