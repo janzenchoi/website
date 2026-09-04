@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.6a6d2ed5.css",
-    "main.js": "/website/static/js/main.a827b8c6.js",
+    "main.js": "/website/static/js/main.1553ea00.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -18,6 +18,8 @@
     "static/media/paper_1.pdf": "/website/static/media/paper_1.424d510ffa78c3761fe7.pdf",
     "static/media/rick.mp4": "/website/static/media/rick.9278d47e58ddb7f2a181.mp4",
     "static/media/robert.mp4": "/website/static/media/robert.39abd9b51e841d865083.mp4",
+    "static/media/image_4.png": "/website/static/media/image_4.9834ab8383371dfd56b5.png",
+    "static/media/image_5.png": "/website/static/media/image_5.a1258e15664f87680518.png",
     "static/media/profile_dark.png": "/website/static/media/profile_dark.05b71f2775a370f574f8.png",
     "static/media/tv_icon.png": "/website/static/media/tv_icon.157762f98f473b9f0105.png",
     "static/media/image_1.png": "/website/static/media/image_1.e1308a6988be577ea654.png",
@@ -67,11 +69,11 @@
     "static/media/sf_light.png": "/website/static/media/sf_light.25cd087fab9fe1b36560.png",
     "index.html": "/website/index.html",
     "main.6a6d2ed5.css.map": "/website/static/css/main.6a6d2ed5.css.map",
-    "main.a827b8c6.js.map": "/website/static/js/main.a827b8c6.js.map",
+    "main.1553ea00.js.map": "/website/static/js/main.1553ea00.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6a6d2ed5.css",
-    "static/js/main.a827b8c6.js"
+    "static/js/main.1553ea00.js"
   ]
 }
