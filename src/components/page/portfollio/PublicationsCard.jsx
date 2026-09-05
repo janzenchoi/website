@@ -31,7 +31,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
         "J. Choi, O. Muránsky, M.C. Messner, T. Wei, T. Hu, J.J. Kruzic, M.D. McMurtrey",
         "This study presents a multi-objective surrogate-assisted calibration workflow for crystal plasticity finite element method (CPFEM) models that combines a genetic algorithm with a deep neural network (DNN) surrogate to efficiently identify model parameters",
         "*The workflow is applied to three CPFEM formulations using in situ EBSD data from Alloy 617 under tensile loading",
-        "*All three formulations accurately captured the stress-strain response and texture evolution, and reasonably captured the reorientation trajectories of individual grains (see figure above)",
+        "*All three formulations accurately captured the stress-strain response and texture evolution, and reasonably captured the reorientation trajectories of individual grains (see figure)",
         "*The results also showed physically consistent parameters and good transferability of parameters to higher-fidelity microstructural models",
       ]}
       image={image5}
@@ -51,7 +51,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
       description={[
         "J. Choi, O. Muránsky, M.C. Messner, J.J. Kruzic, M.D. McMurtrey",
         "This study presents a multi-objective three-stage calibration workflow for elastic-viscoplastic (EVP) models that uses a genetic algorithm",
-        "The EVP models performed well at 800°C and 900°C (see figure above), but less accurate at 1000°C",
+        "The EVP models performed well at 800°C and 900°C (see figure), but less accurate at 1000°C",
         "*The workflow is applied to two EVP formulations using high-temperature creep and tensile data of Alloy 617 to failure",
         "*The results show accurate creep predictions and reasonable tensile predictions when using a work-based damage formulation at the cost of increased calibration complexity"
       ]}
@@ -73,7 +73,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
         "T. Hu, J. Choi, M.C. Messner",
         "The report develops a physics-based crystal plasticity finite element (CPFE) model to predict creep and thermal aging in Alloy 709, an advanced austenitic alloy for future reactors with limited test data",
         "*The model incorporates key deformation and failure mechanisms and calibrated stochastically",
-        "*Surrogate modelling techniques were employed to expedite calibration; surrogate accuracy shown in figure above",
+        "*Surrogate modelling techniques were employed to expedite calibration; surrogate accuracy shown in figure",
         "*The approach enabled more accurate long-term creep life predictions than traditional empirical methods"
       ]}
       image={image3}
@@ -93,7 +93,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
         "J. Choi, L.B. Neto, R.N. Wright, J.J. Kruzic, O. Muránsky",
         "This study combines the Kachanov-Rabotnov (K-R) creep model with a multi-objective genetic algorithm to predict the elevated-temperature creep behaviour of Alloy 617 under various stresses",
         "*The calibrated model accurately captured secondary and tertiary creep behaviour when oxidation effects were negligible",
-        "*Showed that MOGA optimisation can consistently find stress-independent material parameters (A, n, M, φ, and χ) for the K-R creep model; see figure above",
+        "*Showed that MOGA optimisation can consistently find stress-independent material parameters (A, n, M, φ, and χ) for the K-R creep model; see figure",
         "*Its predictions remain reliable only within the inherent limitations of the K-R formulation at higher temperatures (when creep mechanisms stayed constant)"
       ]}
       image={image2}
@@ -112,7 +112,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
       description={[
         "J. Choi, L.B. Neto, R.N. Wright, J.J. Kruzic, O. Muránsky",
         "The study presents a multi-objective calibration approach to predict long-term creep behaviour of Alloy 617 from short-term data by optimising the constitutive Kachanov-Rabotnov (K-R) model",
-        "*The method performs well at 800°C but loses accuracy at 900°C and 1000°C (see figure above)",
+        "*The method performs well at 800°C but loses accuracy at 900°C and 1000°C (see figure)",
         "*Accuracy reduction due to oxidation effects not captured by the K-R model",
       ]}
       image={image1}
