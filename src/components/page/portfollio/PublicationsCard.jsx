@@ -89,8 +89,9 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
       description={[
         "J. Choi, L.B. Neto, R.N. Wright, J.J. Kruzic, O. Muránsky",
         "This study combines the Kachanov-Rabotnov (K-R) creep model with a multi-objective genetic algorithm to predict the elevated-temperature creep behaviour of Alloy 617 under various stresses",
-        "*The calibrated model accurately captured creep behaviour where oxidation effects are negligible",
-        "*Its predictions remain reliable only within the inherent limitations of the K-R formulation at higher temperatures"
+        "*The calibrated model accurately captured secondary and tertiary creep behaviour when oxidation effects were negligible",
+        "*Showed that MOGA optimisation can consistently find stress-independent material parameters (A, n, M, φ, and χ) for the K-R creep model",
+        "*Its predictions remain reliable only within the inherent limitations of the K-R formulation at higher temperatures (when creep mechanisms stayed constant)"
       ]}
       image={image2}
       imageCaption={"Boxplots of optimised material parameters for the K-R model (A, n, M, φ, and χ) at 800°C when calibrated against all stress conditions (red) and limited stress conditions (blue). In the boxplots, the horizontal lines represent the mean, the boxes represent the standard deviations, and the whiskers represent the range. The green dotted lines represent the values of the A and n parameters obtained from Norton's power law."}

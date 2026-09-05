@@ -23,13 +23,13 @@ export const ProjectsCard = ({ mobileMode, darkMode }) => {
       title={"Project Prostheses"}
       subtitle={"Independent Student Project (10 members)"}
       description={[
-        "Designed modular, low-cost prostheses with interchangeable modules to accommodate different activities and physical growth.",
+        "Designed modular, low-cost prostheses with interchangeable modules to accommodate different activities and physical growth",
         "*Focused on research, model development (CAD), and testing of the knee-joint module in lower-limb prostheses",
         "*Produced reports and presentations for external stakeholders",
         "*Contributed to a working prototype through 3D printing",
       ]}
       image={image5}
-      imageCaption={"Panel a) shows a 3D-printed model of an early design for the knee-joint module while panel b) shows a CAD of the final design for the knee-joint module."}
+      imageCaption={"Panel a) shows a 3D-printed model of an early design for the knee-joint module; panel b) shows a CAD of a later design for the knee-joint module; and panel c) shows CAD variants of the assembled prostheses that include the developed knee-joint module."}
       imageMaxHeight={"200px"}
       link={""}
       date={"Sep 2021 - Sep 2022"}

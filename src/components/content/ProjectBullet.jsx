@@ -102,7 +102,7 @@ export const ProjectBullet = ({
     fontSize: "0.8rem",
     fontStyle: "italic",
     opacity: 0.7,
-    textAlign: "justify",
+    textAlign: mobileMode ? "start" : "justify",
     color: "#000",
   };
 
