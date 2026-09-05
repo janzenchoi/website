@@ -102,7 +102,7 @@ export const PublicationBullet = ({
     fontSize: "0.8rem",
     fontStyle: "italic",
     opacity: 0.7,
-    textAlign: mobileMode ? "start" : "justify",
+    textAlign: "justify",
     color: "#000",
   };
 
@@ -133,12 +133,12 @@ export const PublicationBullet = ({
     const descriptionStyle = {
       ...textStyle,
       marginTop: "0.4rem",
-      textAlign: "justify",
+      textAlign: mobileMode ? "start" : "justify",
     };
     const bulletLineStyle = {
       ...textStyle,
       marginTop: "0.4rem",
-      textAlign: "justify",
+      textAlign: mobileMode ? "start" : "justify",
       display: "flex",
       flexDirection: "row",
       alignItems: "flex-start",
