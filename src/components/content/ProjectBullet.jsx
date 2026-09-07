@@ -11,8 +11,9 @@ import { titleStyle, subtitleStyle, textStyle, verticalDividerStyle } from "./Ca
  * @param {*} link link to publication
  * @param {*} downloadable file to download
  * @param {string} date date
- * @param {string} image optional image to show below the authors/subtitle
- * @param {string} imageCaption optional caption shown below the image
+ * @param {string} image optional image to show below the authors/subtitle. Ignored if `video` is provided.
+ * @param {string} video optional video to show below the authors/subtitle, takes precedence over `image`
+ * @param {string} figureCaption optional caption shown below the image/video
  * @returns project bullet object
  */
 export const ProjectBullet = ({
@@ -25,14 +26,16 @@ export const ProjectBullet = ({
   downloadable = null,
   date = "",
   image = null,
-  imageCaption = "",
-  imageMaxHeight = "240px"
+  video = null,
+  figureCaption = "",
+  figureMaxHeight = "240px"
 }) => {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
   // Auxiliary
   const dateText = mobileMode ? `(${date})` : date;
+  const hasMedia = Boolean(video) || Boolean(image);
 
   // Container styles
   const outerContainer = {
@@ -74,7 +77,7 @@ export const ProjectBullet = ({
     right: 0
   };
 
-  // Figure: white background + rounded corners wrap both the image and its caption
+  // Figure: white background + rounded corners wrap both the media and its caption
   const figureStyle = {
     margin: "0.4rem 0 0.4rem 0",
     padding: "0.4rem",
@@ -83,21 +86,22 @@ export const ProjectBullet = ({
     borderRadius: "0.3rem",
     overflow: "hidden",
   };
-  const imageContainerStyle = {
+  const mediaContainerStyle = {
     width: "100%",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: "0.4rem",
     lineHeight: 0, // extra safety net against the inline baseline gap
   };
-  const imageStyle = {
+  const mediaStyle = {
     width: "auto",
     maxWidth: "100%",
-    maxHeight: imageMaxHeight,
+    maxHeight: figureMaxHeight,
     objectFit: "contain",
     display: "block",
   };
-  const imageCaptionStyle = {
+  const figureCaptionStyle = {
     ...textStyle,
     fontSize: "0.8rem",
     fontStyle: "italic",
@@ -128,6 +132,33 @@ export const ProjectBullet = ({
     );
   };
 
+  // For the image/video block
+  const Figure = () => {
+    if (!hasMedia) return null;
+    return (
+      <figure style={figureStyle}>
+        <div style={mediaContainerStyle}>
+          {video ? (
+            <video
+              src={video}
+              style={mediaStyle}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+            />
+          ) : (
+            <img src={image} alt={title} style={mediaStyle} />
+          )}
+        </div>
+        {figureCaption && (
+          <figcaption style={figureCaptionStyle}>{figureCaption}</figcaption>
+        )}
+      </figure>
+    );
+  };
+
   // For additional description
   const AdditionalDescription = () => {
     const descriptionStyle = {
@@ -155,16 +186,7 @@ export const ProjectBullet = ({
       <div style={{ display: "flex", flexDirection: "row", justifyContent: "flex-start" }}>
         <div style={verticalDividerStyle}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {image && (
-            <figure style={figureStyle}>
-              <div style={imageContainerStyle}>
-                <img src={image} alt={title} style={imageStyle} />
-              </div>
-              {imageCaption && (
-                <figcaption style={imageCaptionStyle}>{imageCaption}</figcaption>
-              )}
-            </figure>
-          )}
+          <Figure/>
           {description.map((text, idx) => {
             const isBullet = text.startsWith("*");
             const bodyText = isBullet ? text.slice(1).trimStart() : text;

@@ -73,7 +73,7 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
         "T. Hu, J. Choi, M.C. Messner",
         "The report develops a physics-based crystal plasticity finite element (CPFE) model to predict creep and thermal aging in Alloy 709, an advanced austenitic alloy for future reactors with limited test data",
         "*The model incorporates key deformation and failure mechanisms and calibrated stochastically",
-        "*Surrogate modelling techniques were employed to expedite calibration; surrogate accuracy shown in figure",
+        "*Surrogate modelling techniques were employed to expedite calibration; the performance of the developed surrogate model is shown in the figure above",
         "*The approach enabled more accurate long-term creep life predictions than traditional empirical methods"
       ]}
       image={image3}
@@ -93,7 +93,8 @@ export const PublicationsCard = ({ mobileMode, darkMode }) => {
         "J. Choi, L.B. Neto, R.N. Wright, J.J. Kruzic, O. Muránsky",
         "This study combines the Kachanov-Rabotnov (K-R) creep model with a multi-objective genetic algorithm to predict the elevated-temperature creep behaviour of Alloy 617 under various stresses",
         "*The calibrated model accurately captured secondary and tertiary creep behaviour when oxidation effects were negligible",
-        "*Showed that MOGA optimisation can consistently find stress-independent material parameters (A, n, M, φ, and χ) for the K-R creep model; see figure",
+        "*Showed that MOGA optimisation can consistently find stress-independent material parameters (A, n, M, φ, and χ) for the K-R creep model",
+        "*The material parameters showed relatively narrow spreads, as shown in the figure above",
         "*Its predictions remain reliable only within the inherent limitations of the K-R formulation at higher temperatures (when creep mechanisms stayed constant)"
       ]}
       image={image2}
