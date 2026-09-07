@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.6a6d2ed5.css",
-    "main.js": "/website/static/js/main.31811362.js",
+    "main.js": "/website/static/js/main.aa41ee4d.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -9,8 +9,10 @@
     "static/media/subway.mp4": "/website/static/media/subway.e0174e36a4cbbb8e0f17.mp4",
     "static/media/paper_2.pdf": "/website/static/media/paper_2.f230d10f1cb9458522fb.pdf",
     "static/media/jerry.mp4": "/website/static/media/jerry.2a607732ff7fcce4780c.mp4",
+    "static/media/video_2.mp4": "/website/static/media/video_2.20eddfc5ec4e6b029730.mp4",
     "static/media/surfer.mp4": "/website/static/media/surfer.9284f022fd59abb18cb9.mp4",
     "static/media/paper_3.pdf": "/website/static/media/paper_3.ad5db73f75047d8a7862.pdf",
+    "static/media/video_4.mp4": "/website/static/media/video_4.4d97d1624ac631a0ddde.mp4",
     "static/media/simpsons.mp4": "/website/static/media/simpsons.6875af889c588f5b662e.mp4",
     "static/media/comedy.mp4": "/website/static/media/comedy.86c1f9aa130dee2cc65b.mp4",
     "static/media/bean.mp4": "/website/static/media/bean.f44955227b5ae5356326.mp4",
@@ -19,15 +21,15 @@
     "static/media/rick.mp4": "/website/static/media/rick.9278d47e58ddb7f2a181.mp4",
     "static/media/robert.mp4": "/website/static/media/robert.39abd9b51e841d865083.mp4",
     "static/media/image_4.png": "/website/static/media/image_4.9834ab8383371dfd56b5.png",
+    "static/media/image_1.png": "/website/static/media/image_1.e1308a6988be577ea654.png",
+    "static/media/image_3.png": "/website/static/media/image_3.d9ba2890853195a6d9cc.png",
     "static/media/image_5.png": "/website/static/media/image_5.1e860dd747bd46741ed8.png",
     "static/media/profile_dark.png": "/website/static/media/profile_dark.05b71f2775a370f574f8.png",
     "static/media/tv_icon.png": "/website/static/media/tv_icon.157762f98f473b9f0105.png",
-    "static/media/image_1.png": "/website/static/media/image_1.e1308a6988be577ea654.png",
     "static/media/image_2.png": "/website/static/media/image_2.2b4e7cbf4715cd4e210e.png",
     "static/media/profile_light.png": "/website/static/media/profile_light.f87136944d63d71ee774.png",
     "static/media/tv_buzz.png": "/website/static/media/tv_buzz.881bf55cf5c7af236876.png",
     "static/media/head.png": "/website/static/media/head.349f07b8ccbe5197f8ab.png",
-    "static/media/image_3.png": "/website/static/media/image_3.d9ba2890853195a6d9cc.png",
     "static/media/pu_dark.png": "/website/static/media/pu_dark.e5f946385ef429aa9cb4.png",
     "static/media/torso.png": "/website/static/media/torso.449897efd818dae13ec7.png",
     "static/media/fore_upper_leg.png": "/website/static/media/fore_upper_leg.dad1fbbbb0d506ca9ed6.png",
@@ -69,11 +71,11 @@
     "static/media/sf_light.png": "/website/static/media/sf_light.25cd087fab9fe1b36560.png",
     "index.html": "/website/index.html",
     "main.6a6d2ed5.css.map": "/website/static/css/main.6a6d2ed5.css.map",
-    "main.31811362.js.map": "/website/static/js/main.31811362.js.map",
+    "main.aa41ee4d.js.map": "/website/static/js/main.aa41ee4d.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6a6d2ed5.css",
-    "static/js/main.31811362.js"
+    "static/js/main.aa41ee4d.js"
   ]
 }
