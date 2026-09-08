@@ -29,8 +29,8 @@ export const ProjectsCard = ({ mobileMode, darkMode }) => {
         "*Contributed to a working prototype through 3D printing",
       ]}
       image={image5}
-      figureCaption={"Panel a) shows a 3D-printed model of an early design for the knee-joint module; panel b) shows a CAD of a later design for the knee-joint module; and panel c) shows CAD variants of the assembled prostheses that include the developed knee-joint module."}
-      figureMaxHeight={"200px"}
+      figureCaption={"Panel a) shows a 3D-printed model of an early design for the knee-joint module; panel b) shows a CAD of a later design for the knee-joint module; panel c) shows CAD variants of the assembled prostheses that include the developed knee-joint module."}
+      figureMaxHeight={"160px"}
       link={""}
       date={"Sep 2021 - Sep 2022"}
     />
@@ -50,7 +50,7 @@ export const ProjectsCard = ({ mobileMode, darkMode }) => {
       ]}
       video={video4}
       figureCaption={"Panel a) shows a computer vision model (YOLOv5) detecting human victims in a simulated environment, presenting a confidence percentage for each detected victim; panel b) shows a visualisation of the SLAM-based navigation algorithm in a simulated environment"}
-      figureMaxHeight={"200px"}
+      figureMaxHeight={"160px"}
       link={"www.unsw.edu.au/challeng/vertically-integrated-projects/explore-vertically-integrated-projects/ai-4-everyone"}
       date={"Dec 2020 - Dec 2021"}
     />
@@ -59,51 +59,58 @@ export const ProjectsCard = ({ mobileMode, darkMode }) => {
     return <ProjectBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"AIAA Design, Build, Fly"}
+      title={"AIAA Design Build Fly"}
       subtitle={"ChallENG Aircraft Design Competition (~50 members)"}
       description={[
         "Participated in a university project for designing a competition remote-control aircraft tasked to transport payload figurines",
         "*Helped design and manufacture the mechanism for grabbing and securing the payload",
-        "*Collaborated within a large, multi-disciplinary team spanning aerodynamics, structures, and electronics, coordinating across sub-teams to integrate components ",
+        "*Collaborated within a large, multi-disciplinary team spanning aerodynamics, structures, and electronics, coordinating across sub-teams to integrate components",
         "*Authored technical reports and presentations to satisfy competition documentation and stakeholder requirements",
       ]}
-      image={image5}
-      figureCaption={""}
+      image={image3}
+      figureCaption={"Panel a) shows a payload figurine that was 3D printed for testing; panel b) shows the mechanism designed to secure the payload; panel c) shows the larger aircraft system that houses the payload components"}
       figureMaxHeight={"200px"}
-      link={""}
-      date={""}
+      link={"www.unsw.edu.au/challeng/student-projects/explore-student-projects/aiaa-design-build-fly"}
+      date={"Aug 2020 - Jun 2021"}
     />
   };
   const Bullet2 = () => {
     return <ProjectBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"AI 4 Everyone"}
-      subtitle={"ChallENG Vertically Integrated Project (~30 members)"}
+      title={"Coder One AI Sports Challenge"}
+      subtitle={"AI Bot Competition (3 members)"}
       description={[
-        "",
+        "Competed in a multiplayer, turn-based strategy game using a self-programmed AI agent; team reached the semi-finals (8/16 teams)",
+        "*Developed a reinforcement learning-based agent to compete against other teams' agents",
+        "*Programmed the agent's decision-making logic in Python against Coder One's game engine",
+        "*Designed objectives for navigation, hazard avoidance, and bomb placement",
       ]}
-      image={image5}
-      figureCaption={""}
+      video={video2}
+      figureCaption={"Recording of the developed AI agent (represented by the wizard) competing against another team's agent (represented by the knight)"}
       figureMaxHeight={"200px"}
-      link={""}
-      date={""}
+      link={"colab.research.google.com/drive/1M5-V9GR6FDWA8DrtK31HcHlCaPmw8rA6?usp=sharing&fbclid=IwY2xjawT0vk1wZG9mBWV4dG4DYWVtAjEwAGJyaWQRMVdzTTJiNVF1TGNnU2FVNVRzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEefYVwmF8zDwLfaFFTpScYnrSUV9dh1sCaPSQXNA0z-zcYyvh3Pi8YQS_TB0U_aem_3pdzvEpub-IGY1rnUDNxJQ#scrollTo=zhujRm4t6_wa"}
+      date={"Nov 2020 - Dec 2020"}
     />
   };
   const Bullet1 = () => {
     return <ProjectBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"AI 4 Everyone"}
-      subtitle={"ChallENG Vertically Integrated Project (~30 members)"}
+      title={"TEDI-London"}
+      subtitle={"Product Design Program (7 members)"}
       description={[
-        "",
+        "Participated in a program for designing a dementia-care product",
+        "*Designed mountable, triangular sensory (audio, visual, and tactile) tiles to support mood and engagement for people with dementia",
+        "*Organised and managed workflows across design, research, and reporting",
+        "*Authored reports and presentations to communicate decisions and progress to stakeholders",
+        "*Contributed to a working prototype through 3D printing and laser cutting",
       ]}
-      image={image5}
-      figureCaption={""}
-      figureMaxHeight={"200px"}
-      link={""}
-      date={""}
+      image={image1}
+      figureCaption={"Panel a) shows a 3D-printed prototype of a tactile tile; panel b) shows an annotated diagram of an audio-visual tile; panel c) shows the electronic components developed for the audio-visual tile"}
+      figureMaxHeight={"160px"}
+      link={"www.science.unsw.edu.au/sites/default/files/documents/TEDI%20London%20Virtual%20Placement%20Term%202%202020_Faculty%20of%20Science%20Information%20Pack_Final.pdf"}
+      date={"Apr 2020 - Aug 2020"}
     />
   };
 
@@ -112,6 +119,9 @@ export const ProjectsCard = ({ mobileMode, darkMode }) => {
     <Card mobileMode={mobileMode} title={"Projects"}>
       <Bullet5/>
       <Bullet4/>
+      <Bullet3/>
+      <Bullet2/>
+      <Bullet1/>
     </Card>
   );
 };

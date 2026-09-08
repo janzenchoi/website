@@ -26,9 +26,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Student Researcher"}
-      subtitle={"Australian Nuclear Science and Technology Organisation"}
+      subtitle={"Australian Nuclear Science and Technology Organisation (Sydney, Australia)"}
       description={[
-        "Hybrid (Sydney, Australia)",
         "Developed models to predict material behaviour under extreme conditions; research was conducted as part of my Honours project and PhD candidature",
         "*Applied machine learning and optimisation techniques (e.g., genetic algorithms, surrogate modelling) to calibrate material models against experimental data",
         "*Presented research findings at meetings and conferences to internal and external stakeholders",
@@ -46,9 +45,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Technical Research Aide"}
-      subtitle={"Argonne National Laboratory"}
+      subtitle={"Argonne National Laboratory (Illinois, America)"}
       description={[
-        "On-Site (Chicago, America)",
         "Assisted with DOE-sponsored projects on modelling the deformation behaviour of Alloy 617 and 709",
         "*Built surrogate models using deep neural networks to reduce the evaluation of physics-based models from days to milliseconds",
         "*Developed crystal plasticity finite element method (CPFEM) models to capture the mesoscale behaviour of Alloy 617",
@@ -64,9 +62,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"DevOps Engineer"}
-      subtitle={"Mission Systems"}
+      subtitle={"Mission Systems (Sydney, Australia)"}
       description={[
-        "On-Site (Sydney, Australia)",
         "Developed software to streamline the software development process",
         "*Designed and built a physical inventory tracking system from scratch, deployed in-house",
         "*Wrote automation scripts to streamline recurring operations tasks",
@@ -85,9 +82,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Technical Research Aide"}
-      subtitle={"Argonne National Laboratory"}
+      subtitle={"Argonne National Laboratory (Illinois, America)"}
       description={[
-        "On-Site (Chicago, America)",
         "Assisted with the development and calibration of physics-based models to predict the deformation behaviour of Alloy 617 and 316H steel",
         "*Developed elastic-viscoplastic models to simultaneously capture both creep and tensile behaviour of Alloy 617",
         "*Tested and contributed to NEML, Argonne's open-source material modelling codebase",
@@ -104,9 +100,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Course Demonstrator"}
-      subtitle={"University of New South Wales"}
+      subtitle={"University of New South Wales (Sydney, Australia)"}
       description={[
-        "Hybrid (Sydney, Australia)",
         "Delivered labs, tutorials, and marking support across mechatronics, mathematics, and design engineering courses",
         "*Ran lab sessions and tutorials for MTRN4010 (Advanced Robotics), MATH2089 (Numerical Methods & Statistics), and DESN1000 (Introduction to Engineering Design)",
         "*Supported classes of up to 30 students, assisting with practical exercises and course material",
@@ -123,9 +118,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Private Tutor"}
-      subtitle={"Self-employed"}
+      subtitle={"Self-employed (Sydney, Australia)"}
       description={[
-        "On-Site (Sydney, Australia)",
         "Taught secondary students in Maths, Physics, and Engineering in preparation for the highschool certificate (HSC)"
       ]}
       iconLight={seLight}
@@ -139,9 +133,8 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Primary School Tutor"}
-      subtitle={"Pre-Uni College"}
+      subtitle={"Pre-Uni College (Sydney, Australia)"}
       description={[
-        "On-Site (Sydney, Australia)",
         "Taught primary students in English, Maths, and General Ability in preparation for the opportunity class (OC) and selective tests"
       ]}
       iconLight={puLight}
