@@ -32,7 +32,7 @@ export const ExperienceCard = ({ mobileMode, darkMode }) => {
         "*Applied machine learning and optimisation techniques (e.g., genetic algorithms, surrogate modelling) to calibrate material models against experimental data",
         "*Presented research findings at meetings and conferences to internal and external stakeholders",
         "*Supported colleagues in their model development workflows",
-        "*Co-authored three first-author peer-reviewed publications on modelling behaviour of Alloy 617"
+        "*Co-authored three first-author peer-reviewed publications on modelling the behaviour of Alloy 617"
       ]}
       iconLight={anstoLight}
       iconDark={anstoDark}

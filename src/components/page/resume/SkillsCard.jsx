@@ -15,7 +15,7 @@ export const SkillsCard = ({ mobileMode, darkMode }) => {
       mobileMode={mobileMode}
       darkMode={darkMode}
       title={"Academic research"}
-      subtitle={"(machine learning, optimisation, computational modelling)"}
+      subtitle={"(machine learning, optimisation techniques, computational modelling)"}
     />
   };
   const Bullet3 = () => {
