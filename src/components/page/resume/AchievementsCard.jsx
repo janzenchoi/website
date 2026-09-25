@@ -59,7 +59,7 @@ export const AchievementsCard = ({ mobileMode, darkMode }) => {
     return <IconBullet
       mobileMode={mobileMode}
       darkMode={darkMode}
-      title={"Young Stress Analyst 2021 Finalist"}
+      title={"Young Stress Analyst Finalist"}
       subtitle={"British Society for Strain Measurement"}
       description={[
         "The Young Stress Analyst competition is a prestigious competition run annually by the British Society for Strain Measurement, to recognise excellence in early career research"

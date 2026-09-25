@@ -6,23 +6,19 @@ import tvAntenna from "../../assets/stuff/tv/tv_antenna.png";
 import ch1 from "../../assets/stuff/tv/subway.mp4";
 import ch2 from "../../assets/stuff/tv/simpsons.mp4";
 import ch3 from "../../assets/stuff/tv/butter.mp4";
-import ch4 from "../../assets/stuff/tv/robert.mp4";
-import ch5 from "../../assets/stuff/tv/rick.mp4";
-import ch6 from "../../assets/stuff/tv/comedy.mp4";
-import ch7 from "../../assets/stuff/tv/surfer.mp4";
-import ch8 from "../../assets/stuff/tv/jerry.mp4";
-import ch9 from "../../assets/stuff/tv/bean.mp4";
+import ch4 from "../../assets/stuff/tv/comedy.mp4";
+import ch5 from "../../assets/stuff/tv/surfer.mp4";
+import ch6 from "../../assets/stuff/tv/jerry.mp4";
+import ch7 from "../../assets/stuff/tv/bean.mp4";
 
 const CHANNELS = [
   { src: ch1, frame: { x: -20, y: 7, w: 120, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
   { src: ch2, frame: { x: 0, y: 7, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
   { src: ch3, frame: { x: -15, y: 7, w: 150, h: 105 }, crop: { x: 0, y: 0, scale: 0.80 } },
-  { src: ch4, frame: { x: 0, y: 7, w: 140, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
-  { src: ch5, frame: { x: -6, y: 7, w: 120, h: 105 }, crop: { x: 0, y: 0, scale: 0.80 } },
-  { src: ch6, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
-  { src: ch7, frame: { x: -20, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
-  { src: ch8, frame: { x: -10, y: 5, w: 145, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
-  { src: ch9, frame: { x: -10, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  { src: ch4, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  { src: ch5, frame: { x: -20, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  { src: ch6, frame: { x: -10, y: 5, w: 145, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  { src: ch7, frame: { x: -10, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
 ];
 
 const shuffle = (arr) => {
