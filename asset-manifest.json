@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.098545ee.css",
-    "main.js": "/website/static/js/main.0d74548c.js",
+    "main.js": "/website/static/js/main.2f066d5d.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -26,6 +26,7 @@
     "static/media/profile_light.png": "/website/static/media/profile_light.f87136944d63d71ee774.png",
     "static/media/tv_buzz.png": "/website/static/media/tv_buzz.881bf55cf5c7af236876.png",
     "static/media/head.png": "/website/static/media/head.349f07b8ccbe5197f8ab.png",
+    "static/media/paper.png": "/website/static/media/paper.9d884b5b93d721816798.png",
     "static/media/pu_dark.png": "/website/static/media/pu_dark.e5f946385ef429aa9cb4.png",
     "static/media/torso.png": "/website/static/media/torso.449897efd818dae13ec7.png",
     "static/media/fore_upper_leg.png": "/website/static/media/fore_upper_leg.dad1fbbbb0d506ca9ed6.png",
@@ -76,11 +77,11 @@
     "static/media/sf_light.png": "/website/static/media/sf_light.25cd087fab9fe1b36560.png",
     "index.html": "/website/index.html",
     "main.098545ee.css.map": "/website/static/css/main.098545ee.css.map",
-    "main.0d74548c.js.map": "/website/static/js/main.0d74548c.js.map",
+    "main.2f066d5d.js.map": "/website/static/js/main.2f066d5d.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.098545ee.css",
-    "static/js/main.0d74548c.js"
+    "static/js/main.2f066d5d.js"
   ]
 }
