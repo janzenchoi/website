@@ -8,6 +8,7 @@ import ch2 from "../../assets/stuff/tv/butter.mp4";
 import ch3 from "../../assets/stuff/tv/comedy.mp4";
 import ch4 from "../../assets/stuff/tv/surfer.mp4";
 import ch5 from "../../assets/stuff/tv/bean.mp4";
+import ch6 from "../../assets/stuff/tv/juggle.mp4";
 
 const CHANNELS = [
   { src: ch1, frame: { x: 0, y: 7, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
@@ -15,6 +16,7 @@ const CHANNELS = [
   { src: ch3, frame: { x: -15, y: 5, w: 155, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
   { src: ch4, frame: { x: -20, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
   { src: ch5, frame: { x: -10, y: 5, w: 180, h: 115 }, crop: { x: 0, y: 0, scale: 0.75 } },
+  { src: ch6, frame: { x: 5, y: -25, w: 100, h: 200 }, crop: { x: 0, y: 0, scale: 0.75 } },
 ];
 
 const shuffle = (arr) => {

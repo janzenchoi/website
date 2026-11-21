@@ -12,7 +12,7 @@ export const AboutCard = ({ mobileMode, darkMode }) => {
   // Text
   const text1 = "Hello, I'm Janzen.";
   const text2 = "I am a recent PhD graduate whose research focused on applying machine learning and optimisation techniques to model material behaviour. I have strong programming skills (Bash, C, C++, Java, JavaScript, MATLAB, Python, SQL) and software proficiency (CAD, FEM, Microsoft Suite). I have worked as an academic tutor, student researcher, DevOps engineer, and research aide.";
-  const text3 = "I currently seek employment.";
+  const text3 = "Give me a job please.";
 
   // Text object
   const TextObject = () => {
