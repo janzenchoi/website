@@ -1,6 +1,6 @@
 import { Card } from "../../content/Card";
 import { JanzenActivity } from "./interactive/JanzenActivity";
-import { SoccerActivity } from "./interactive/SoccerActivity";
+import { BallActivity } from "./interactive/BallActivity";
 import { TelevisionActivity } from "./interactive/TelevisionActivity";
 
 /**
@@ -13,7 +13,7 @@ import { TelevisionActivity } from "./interactive/TelevisionActivity";
 export const InteractiveCard = ({ mobileMode, darkMode, activityController }) => {
 
   const Bullet1 = () => <JanzenActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
-  const Bullet2 = () => <SoccerActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
+  const Bullet2 = () => <BallActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
   const Bullet3 = () => <TelevisionActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
 
   // Return about card object

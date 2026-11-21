@@ -37,6 +37,9 @@ export const Immersion = ({ mobileMode, darkMode, leaveActivities, children }) =
     cursor: "pointer",
     lineHeight: 1,
     padding: 0,
+    // Keep the button above positioned children (e.g. position: relative game screens),
+    // which would otherwise paint over it because they come later in the DOM
+    zIndex: 1,
   };
 
   // Inner container

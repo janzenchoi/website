@@ -111,7 +111,10 @@ export const Site = () => {
         />
       </div>
       <Footer/>
-      {ballExists && <Ball/>}
+      {ballExists && <Ball
+        mobileMode={mobileMode}
+        darkMode={colourTheme === "dark"}
+        />}
       {janzenExists && <Character
         mobileMode={mobileMode}
         darkMode={colourTheme === "dark"}

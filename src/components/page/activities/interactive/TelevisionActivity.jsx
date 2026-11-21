@@ -14,14 +14,12 @@ export const TelevisionActivity = ({ mobileMode, darkMode, activityController })
   const title = "Television";
   const subtitle = "Watch some normal TV";
   const mobileDescription = [
-    "Drag the right edge of the television with a finger to move it",
-    "Tap the television screen to turn it on",
-    "Once on, tap the screen again to change channels",
+    "Drag the television with a finger to move it",
+    "Bump the television to turn it on and change channels (3s cooldown)",
   ];
   const desktopDescription = [
-    "Drag the right edge of the television with the cursor to move it",
-    "Click the television screen to turn it on",
-    "Once on, click the screen again to change channels",
+    "Drag the television with the cursor to move it",
+    "Bump the television to turn it on and change channels (3s cooldown)",
   ];
 
   // Render
