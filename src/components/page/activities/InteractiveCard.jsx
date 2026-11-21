@@ -12,8 +12,8 @@ import { TelevisionActivity } from "./interactive/TelevisionActivity";
  */
 export const InteractiveCard = ({ mobileMode, darkMode, activityController }) => {
 
-  const Bullet1 = () => <JanzenActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
-  const Bullet2 = () => <BallActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
+  const Bullet1 = () => <BallActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
+  const Bullet2 = () => <JanzenActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
   const Bullet3 = () => <TelevisionActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>;
 
   // Return about card object

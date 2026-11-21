@@ -11,7 +11,7 @@ import image from "../../../../assets/stuff/janzen_icon.png";
 export const JanzenActivity = ({ mobileMode, darkMode, activityController }) => {
   
   // Constants
-  const title = "Puppet";
+  const title = "Puppet Janzen";
   const subtitle = "Control a Janzen marionette";
   const mobileDescription = [
     "Hold and release Janzen to forcibly relocate him",

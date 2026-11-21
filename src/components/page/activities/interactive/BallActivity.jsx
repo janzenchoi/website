@@ -11,8 +11,8 @@ import image from "../../../../assets/stuff/ball_icon.png";
 export const BallActivity = ({ mobileMode, darkMode, activityController }) => {
   
   // Constants
-  const title = "Ball";
-  const subtitle = "Throw different balls around";
+  const title = "Bouncy Ball";
+  const subtitle = "Throw different bouncy balls around";
   const mobileDescription = [
     "Drag the ball with a finger to move it",
     "Swipe the ball to launch it",
