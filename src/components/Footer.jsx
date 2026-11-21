@@ -29,7 +29,7 @@ export const Footer = ({ mobileMode }) => {
   return (
     <div style={footerStyle}>
       <div style={{ ...textStyle, ...innerContainer, color: "var(--colour-4)" }}>
-        Last updated in September 2026
+        Last updated in November 2026
       </div>
     </div>
   );
