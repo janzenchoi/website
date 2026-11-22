@@ -1,5 +1,5 @@
 import { ActivityBullet } from "../../../content/ActivityBullet";
-import image from "../../../../assets/stuff/ball_icon.png";
+import image from "../../../../assets/activities/ball_icon.png";
 
 /**
  * Ball activity card

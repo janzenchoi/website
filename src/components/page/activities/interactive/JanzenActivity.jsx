@@ -1,5 +1,5 @@
 import { ActivityBullet } from "../../../content/ActivityBullet";
-import image from "../../../../assets/stuff/janzen_icon.png";
+import image from "../../../../assets/activities/janzen_icon.png";
 
 /**
  * Janzen activity card

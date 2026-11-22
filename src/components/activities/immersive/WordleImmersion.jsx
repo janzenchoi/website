@@ -3,19 +3,19 @@ import { GenericMenu } from "./Screen";
 import { CleanButton } from "../../content/CleanButton";
 import { useState, useEffect, useRef } from "react";
 import { MAX_WIDTH } from "../../../helper/constant";
-import { WORDS } from "../../../assets/stuff/wordle/words";
+import { WORDS } from "../../../assets/activities/wordle/words";
 
 // Tiny GIF
-import frame1 from "../../../assets/stuff/wordle/frame_1.png";
-import frame2 from "../../../assets/stuff/wordle/frame_2.png";
-import frame3 from "../../../assets/stuff/wordle/frame_3.png";
-import frame4 from "../../../assets/stuff/wordle/frame_4.png";
-import frame5 from "../../../assets/stuff/wordle/frame_5.png";
-import frame6 from "../../../assets/stuff/wordle/frame_6.png";
-import frame7 from "../../../assets/stuff/wordle/frame_7.png";
-import frame8 from "../../../assets/stuff/wordle/frame_8.png";
-import frame9 from "../../../assets/stuff/wordle/frame_9.png";
-import frame10 from "../../../assets/stuff/wordle/frame_10.png"
+import frame1 from "../../../assets/activities/wordle/frame_1.png";
+import frame2 from "../../../assets/activities/wordle/frame_2.png";
+import frame3 from "../../../assets/activities/wordle/frame_3.png";
+import frame4 from "../../../assets/activities/wordle/frame_4.png";
+import frame5 from "../../../assets/activities/wordle/frame_5.png";
+import frame6 from "../../../assets/activities/wordle/frame_6.png";
+import frame7 from "../../../assets/activities/wordle/frame_7.png";
+import frame8 from "../../../assets/activities/wordle/frame_8.png";
+import frame9 from "../../../assets/activities/wordle/frame_9.png";
+import frame10 from "../../../assets/activities/wordle/frame_10.png"
 
 const NUM_GUESSES = 6;
 

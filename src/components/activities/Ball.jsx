@@ -1,16 +1,15 @@
-
 import { useEffect, useRef, useState } from "react";
-import soccerImage from "../../assets/stuff/ball/soccer.png";
-import bowlingImage from "../../assets/stuff/ball/bowling.png";
-import volleyImage from "../../assets/stuff/ball/volley.png";
-import beachImage from "../../assets/stuff/ball/beach.png";
-import eightImage from "../../assets/stuff/ball/eight.png";
-import paperImage from "../../assets/stuff/ball/paper.png";
-import pinImage from "../../assets/stuff/ball/pin.png";
-import bouncyImage from "../../assets/stuff/ball/bouncy.png";
-import baseImage from "../../assets/stuff/ball/base.png";
-import janzenImage from "../../assets/stuff/ball/janzen.png";
-import fatzenImage from "../../assets/stuff/ball/fatzen.png";
+import soccerImage from "../../assets/activities/ball/soccer.png";
+import bowlingImage from "../../assets/activities/ball/bowling.png";
+import volleyImage from "../../assets/activities/ball/volley.png";
+import beachImage from "../../assets/activities/ball/beach.png";
+import eightImage from "../../assets/activities/ball/eight.png";
+import paperImage from "../../assets/activities/ball/paper.png";
+import pinImage from "../../assets/activities/ball/pin.png";
+import bouncyImage from "../../assets/activities/ball/bouncy.png";
+import baseImage from "../../assets/activities/ball/base.png";
+import janzenImage from "../../assets/activities/ball/janzen.png";
+import fatzenImage from "../../assets/activities/ball/fatzen.png";
 
 /* =====================================
    GLOBAL PHYSICS SETTINGS
@@ -21,6 +20,8 @@ const GLOBAL = {
   frameMs: 16.6667,
   stopThreshold: 0.015,
   mobileScale: 2 / 3,
+  mobileTimeScale: 1.5, // how much faster the simulation runs on mobile (1 = same as desktop)
+  maxFrameSteps: 5,     // longest time step (in 60fps frames) simulated per animation frame
 };
 
 /* =====================================
@@ -28,13 +29,13 @@ const GLOBAL = {
 ===================================== */
 
 const BALL_TYPES = [
-  { name: "Soccer",     image: soccerImage,  size: 120, spawnWeight: 10, weight: 1,    gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.92,   bounce: 0.75, spin: 0.5,  wallBounce: 0.75 },
+  { name: "Soccer",     image: soccerImage,  size: 120, spawnWeight: 10, weight: 1,    gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.96,   bounce: 0.75, spin: 0.5,  wallBounce: 0.75 },
   { name: "Bowling",    image: bowlingImage, size: 120, spawnWeight: 10, weight: 4,    gravity: 0.9,  airFriction: 0.999,  groundFriction: 0.9999, bounce: 0.6,  spin: 0.7,  wallBounce: 0.6 },
   { name: "Volley",     image: volleyImage,  size: 120, spawnWeight: 10, weight: 0.8,  gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.96,   bounce: 0.8,  spin: 0.5,  wallBounce: 0.8 },
   { name: "Beach",      image: beachImage,   size: 240, spawnWeight: 10, weight: 0.1,  gravity: 0.25, airFriction: 0.995,  groundFriction: 0.92,   bounce: 0.7,  spin: 0.5,  wallBounce: 0.7 },
   { name: "Eight",      image: eightImage,   size: 90,  spawnWeight: 10, weight: 0.5,  gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.995,  bounce: 0.5,  spin: 1.0,  wallBounce: 0.7 },
-  { name: "Pin",        image: pinImage,     size: 80,  spawnWeight: 10, weight: 1,    gravity: 0.5,  airFriction: 0.9999, groundFriction: 0.9999, bounce: 0.6,  spin: 0,    wallBounce: 0.6 },
-  { name: "Bouncy",     image: bouncyImage,  size: 160, spawnWeight: 10, weight: 0.8,  gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.92,   bounce: 0.9,  spin: 0.5,  wallBounce: 0.9 },
+  { name: "Pin",        image: pinImage,     size: 80,  spawnWeight: 10, weight: 1,    gravity: 0.5,  airFriction: 0.9999, groundFriction: 0.9999, bounce: 0.7,  spin: 0,    wallBounce: 0.7 },
+  { name: "Bouncy",     image: bouncyImage,  size: 160, spawnWeight: 10, weight: 0.8,  gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.92,   bounce: 0.95, spin: 0.5,  wallBounce: 0.95 },
   { name: "Base",       image: baseImage,    size: 100, spawnWeight: 10, weight: 0.8,  gravity: 0.4,  airFriction: 0.999,  groundFriction: 0.95,   bounce: 0.6,  spin: 0.5,  wallBounce: 0.9 },
   { name: "Paper",      image: paperImage,   size: 100, spawnWeight: 5,  weight: 0.5,  gravity: 0.5,  airFriction: 0.995,  groundFriction: 0.5,    bounce: 0.1,  spin: 0.8,  wallBounce: 0.1 },
   { name: "Janzen",     image: janzenImage,  size: 180, spawnWeight: 5,  weight: 1.0,  gravity: 0.35, airFriction: 0.999,  groundFriction: 0.95,   bounce: 0.6,  spin: 0.25, wallBounce: 0.9 },
@@ -91,6 +92,9 @@ export const Ball = ({ mobileMode }) => {
   const size = settings.size * (
     mobileMode ? GLOBAL.mobileScale : 1
   );
+
+  // Simulation speed (mobile runs faster so it doesn't feel sluggish)
+  const timeScale = mobileMode ? GLOBAL.mobileTimeScale : 1;
 
   const mass = Math.max(weight, 0.01);
 
@@ -230,27 +234,34 @@ export const Ball = ({ mobileMode }) => {
 
   useEffect(() => {
     let raf;
+    let lastTime = null;
 
-    const animate = () => {
+    const animate = (time) => {
       const b = ball.current;
+
+      // Time step in "60fps frames", so the speed doesn't depend on the device's frame rate
+      const elapsed = lastTime == null ? GLOBAL.frameMs : time - lastTime;
+      lastTime = time;
+
+      const dt = Math.min(elapsed / GLOBAL.frameMs, GLOBAL.maxFrameSteps) * timeScale;
 
       if (!isDragging) {
         const floor = window.innerHeight - size;
         const right = window.innerWidth - size;
 
         // Gravity
-        b.vy += gravity;
+        b.vy += gravity * dt;
 
         // Movement
-        b.x += b.vx;
-        b.y += b.vy;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
 
         // Floor collision
         if (b.y >= floor) {
           b.y = floor;
 
           b.vy *= -bounce;
-          b.vx *= groundFriction;
+          b.vx *= Math.pow(groundFriction, dt);
 
           if (Math.abs(b.vy) < GLOBAL.stopThreshold) {
             b.vy = 0;
@@ -273,11 +284,12 @@ export const Ball = ({ mobileMode }) => {
         }
 
         // Air friction
-        b.vx *= airFriction;
-        b.vy *= airFriction;
+        const air = Math.pow(airFriction, dt);
+        b.vx *= air;
+        b.vy *= air;
 
         // Mass-dependent damping
-        const damping = 1 / (1 + (mass - 1) * 0.001);
+        const damping = Math.pow(1 / (1 + (mass - 1) * 0.001), dt);
 
         b.vx *= damping;
         b.vy *= damping;
@@ -294,19 +306,20 @@ export const Ball = ({ mobileMode }) => {
         // Update React state only when moving
         if (b.vx !== 0 || b.vy !== 0 || gravity !== 0) {
           setPosition({ x: b.x, y: b.y });
-          setRotation((r) => r + b.vx * spin * rotationSpeed.current);
+          setRotation((r) => r + b.vx * dt * spin * rotationSpeed.current);
         }
       }
 
       raf = requestAnimationFrame(animate);
     };
 
-    animate();
+    raf = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(raf);
   }, [
     isDragging,
     size,
+    timeScale,
     gravity,
     airFriction,
     groundFriction,

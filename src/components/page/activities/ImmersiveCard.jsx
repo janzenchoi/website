@@ -1,5 +1,6 @@
 import { Card } from "../../content/Card";
 import { WordleActivity } from "./immersive/WordleActivity";
+import { SnakeActivity } from "./immersive/SnakeActivity";
 
 /**
  * Immersive card
@@ -11,9 +12,11 @@ import { WordleActivity } from "./immersive/WordleActivity";
 export const ImmersiveCard = ({ mobileMode, darkMode, activityController }) => {
 
   const Bullet1 = () => <WordleActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>
+  const Bullet2 = () => <SnakeActivity mobileMode={mobileMode} darkMode={darkMode} activityController={activityController}/>
 
   // Return about card object
   return <Card mobileMode={mobileMode} title="Immersive">
     <Bullet1/>
+    <Bullet2/>
   </Card>
 };

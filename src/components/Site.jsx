@@ -11,11 +11,12 @@ import fg_dark from "../assets/janzen/fg_dark.png";
 import fg_light from "../assets/janzen/fg_light.png";
 
 import { Body } from "./Body";
-import { Ball } from "./stuff/Ball";
-import { Character } from "./stuff/human/Character";
-import { TelevisionObject } from "./stuff/TelevisionObject";
+import { Ball } from "./activities/Ball";
+import { Character } from "./activities/human/Character";
+import { TelevisionObject } from "./activities/TelevisionObject";
 
-import { WordleImmersion } from "./stuff/immersive/WordleImmersion";
+import { WordleImmersion } from "./activities/immersive/WordleImmersion";
+import { SnakeImmersion } from "./activities/immersive/SnakeImmersion";
 
 /**
  * Site
@@ -42,25 +43,27 @@ export const Site = () => {
   const [ ballExists, setBallExists ] = useState(false);
   const [ janzenExists, setJanzenExists ] = useState(false);
   const [ wordleExists, setWordleExists ] = useState(false);
+  const [ snakeExists, setSnakeExists ] = useState(false);
   const activityController = {
     status,
     setStatus,
     setBallExists,
     setJanzenExists,
     setTelevisionExists,
-    setWordleExists
+    setWordleExists,
+    setSnakeExists
   };
 
   // Function update safe area colour upon entering immersive activity
   useEffect(() => {
-    if (wordleExists) {
+    if (wordleExists || snakeExists) {
       blendSafeAreaColour();
       document.body.style.overflow = "hidden"; // stops scrolling
     } else {
       updateSafeAreaColour();
       document.body.style.overflow = "";
     }
-  }, [wordleExists]);
+  }, [wordleExists, snakeExists]);
 
   // Function to leave all activities
   const leaveActivities = () => {
@@ -68,6 +71,7 @@ export const Site = () => {
     setJanzenExists(false);
     setTelevisionExists(false);
     setWordleExists(false);
+    setSnakeExists(false);
     setStatus("none");
   };
 
@@ -91,6 +95,57 @@ export const Site = () => {
     const fg_image = colourTheme === "dark" ? fg_dark : fg_light;
     return <img style={janzenFgStyle} src={fg_image} alt={"Janzen as a French girl"}/>;
   };
+
+  // Close button shown while the ball, Janzen or television exists
+  const CloseButton = () => {
+    const closeButtonStyle = {
+      position: "fixed",
+      bottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+      left: "10px",
+      width: "40px",
+      height: "40px",
+      padding: 0,
+      boxSizing: "border-box",
+      lineHeight: 0,
+      borderRadius: "50%",
+      border: "2px solid var(--red-1)",
+      backgroundColor: "var(--colour-0)",
+      cursor: "pointer",
+      zIndex: 2000, // above the ball, Janzen and television (1000)
+    };
+
+    return <button
+      type="button"
+      style={closeButtonStyle}
+      onClick={leaveActivities}
+      aria-label="Close activities"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "block",
+          margin: 0,
+        }}
+      >
+        <path
+          d="M3 3 L15 15 M15 3 L3 15"
+          stroke="var(--red-1)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>;
+  };
+
+  const showCloseButton = ballExists || janzenExists || televisionExists;
 
   // Returns the site
   return <div style={siteStyle}>
@@ -128,6 +183,12 @@ export const Site = () => {
         darkMode={colourTheme === "dark"} 
         leaveActivities={leaveActivities}
       />}
+      {snakeExists && <SnakeImmersion
+        mobileMode={mobileMode}
+        darkMode={colourTheme === "dark"} 
+        leaveActivities={leaveActivities}
+      />}
+      {showCloseButton && <CloseButton/>}
     </HashRouter>
   </div>
 }

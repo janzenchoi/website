@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import tvOn from "../../assets/stuff/tv/tv_on.png";
-import tvOff from "../../assets/stuff/tv/tv_off.png";
-import tvBuzz from "../../assets/stuff/tv/tv_buzz.png";
-import tvAntenna from "../../assets/stuff/tv/tv_antenna.png";
-import ch1 from "../../assets/stuff/tv/simpsons.mp4";
-import ch2 from "../../assets/stuff/tv/butter.mp4";
-import ch3 from "../../assets/stuff/tv/comedy.mp4";
-import ch4 from "../../assets/stuff/tv/surfer.mp4";
-import ch5 from "../../assets/stuff/tv/bean.mp4";
-import ch6 from "../../assets/stuff/tv/juggle.mp4";
+import tvOn from "../../assets/activities/tv/tv_on.png";
+import tvOff from "../../assets/activities/tv/tv_off.png";
+import tvBuzz from "../../assets/activities/tv/tv_buzz.png";
+import tvAntenna from "../../assets/activities/tv/tv_antenna.png";
+import ch1 from "../../assets/activities/tv/simpsons.mp4";
+import ch2 from "../../assets/activities/tv/butter.mp4";
+import ch3 from "../../assets/activities/tv/comedy.mp4";
+import ch4 from "../../assets/activities/tv/surfer.mp4";
+import ch5 from "../../assets/activities/tv/bean.mp4";
+import ch6 from "../../assets/activities/tv/juggle.mp4";
 
 const CHANNELS = [
   { src: ch1, frame: { x: 0, y: 7, w: 110, h: 100 }, crop: { x: 0, y: 0, scale: 0.85 } },
@@ -527,9 +527,9 @@ export const TelevisionObject = ({ mobileMode, onInteract }) => {
               key={channel}
               src={current.src}
               autoPlay
-              loop
               muted
               playsInline
+              onEnded={advanceChannel}
               style={videoStyle}
             />
           </div>

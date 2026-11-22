@@ -1,5 +1,5 @@
 import { ActivityBullet } from "../../../content/ActivityBullet";
-import image from "../../../../assets/stuff/tv_icon.png";
+import image from "../../../../assets/activities/tv_icon.png";
 
 /**
  * Television activity card

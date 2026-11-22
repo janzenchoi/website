@@ -1,21 +1,21 @@
 import { Stick } from "./Stick";
 
 // Images
-import foreFootImage from "../../../assets/stuff/human/fore_foot.png";
-import foreHandImage from "../../../assets/stuff/human/fore_hand.png";
-import foreLowerArmImage from "../../../assets/stuff/human/fore_lower_arm.png";
-import foreLowerLegImage from "../../../assets/stuff/human/fore_lower_leg.png";
-import foreUpperArmImage from "../../../assets/stuff/human/fore_upper_arm.png";
-import foreUpperLegImage from "../../../assets/stuff/human/fore_upper_leg.png";
-import headImage from "../../../assets/stuff/human/head.png";
-import hindFootImage from "../../../assets/stuff/human/hind_foot.png";
-import hindHandImage from "../../../assets/stuff/human/hind_hand.png";
-import hindLowerArmImage from "../../../assets/stuff/human/hind_lower_arm.png";
-import hindLowerLegImage from "../../../assets/stuff/human/hind_lower_leg.png";
-import hindUpperArmImage from "../../../assets/stuff/human/hind_upper_arm.png";
-import hindUpperLegImage from "../../../assets/stuff/human/hind_upper_leg.png";
-import hipImage from "../../../assets/stuff/human/hip.png";
-import torsoImage from "../../../assets/stuff/human/torso.png";
+import foreFootImage from "../../../assets/activities/human/fore_foot.png";
+import foreHandImage from "../../../assets/activities/human/fore_hand.png";
+import foreLowerArmImage from "../../../assets/activities/human/fore_lower_arm.png";
+import foreLowerLegImage from "../../../assets/activities/human/fore_lower_leg.png";
+import foreUpperArmImage from "../../../assets/activities/human/fore_upper_arm.png";
+import foreUpperLegImage from "../../../assets/activities/human/fore_upper_leg.png";
+import headImage from "../../../assets/activities/human/head.png";
+import hindFootImage from "../../../assets/activities/human/hind_foot.png";
+import hindHandImage from "../../../assets/activities/human/hind_hand.png";
+import hindLowerArmImage from "../../../assets/activities/human/hind_lower_arm.png";
+import hindLowerLegImage from "../../../assets/activities/human/hind_lower_leg.png";
+import hindUpperArmImage from "../../../assets/activities/human/hind_upper_arm.png";
+import hindUpperLegImage from "../../../assets/activities/human/hind_upper_leg.png";
+import hipImage from "../../../assets/activities/human/hip.png";
+import torsoImage from "../../../assets/activities/human/torso.png";
 
 /**
  * A hierarchical human puppet composed of stick-based body parts.

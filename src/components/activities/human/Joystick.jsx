@@ -1,32 +1,43 @@
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * 8-direction joystick with:
- *  - Mouse + touch (Pointer Events)
- *  - Exactly TWO circles:
- *      1) Big circle: joystick base/interaction
- *      2) Small circle: draggable handle w/ three bars
- *
- * Key behavior:
- *  - Only intercepts pointer events within its own DOM (size x size)
- *  - Stops propagation so parents don't treat joystick input as "background drag"
+ * - Mouse + touch (Pointer Events)
+ * - Movable joystick (optional)
+ * - Burger handle visibility controlled by movable
+ * - Directional joystick works regardless of movable
  */
 export function Joystick({
   size = 140,
   deadZone = 10,
-  initialPosition = { x: 24, y: 24 }, // px within parent
+  initialPosition = { x: 24, y: 24 },
+  movable = true,
   onChange,
   onPositionChange
 }) {
-  /* ---------------- Dragging whole joystick (handle circle) ---------------- */
+  /* ---------------- Refs ---------------- */
+
   const containerRef = useRef(null);
+  const baseRef = useRef(null);
+
   const handlePointerIdRef = useRef(null);
+  const stickPointerIdRef = useRef(null);
+
   const handleDragOffsetRef = useRef({ dx: 0, dy: 0 });
 
-  const [pos, setPos] = useState({ x: initialPosition.x, y: initialPosition.y });
+  /* ---------------- Position ---------------- */
+
+  const [pos, setPos] = useState({
+    x: initialPosition.x,
+    y: initialPosition.y
+  });
 
   useEffect(() => {
-    setPos({ x: initialPosition.x, y: initialPosition.y });
+    setPos({
+      x: initialPosition.x,
+      y: initialPosition.y
+    });
   }, [initialPosition.x, initialPosition.y]);
 
   const setPosSafe = (x, y) => {
@@ -38,21 +49,26 @@ export function Joystick({
   const getParentRect = () => {
     const el = containerRef.current;
     if (!el) return null;
+
     const parent = el.offsetParent || document.body;
     return parent.getBoundingClientRect();
   };
 
+  /* ---------------- Event handling ---------------- */
+
   const swallow = (e) => {
-    // Prevent joystick interaction from triggering other screen listeners (e.g., Character drag).
     e.preventDefault();
     e.stopPropagation();
   };
 
+  /* ---------------- Dragging whole joystick ---------------- */
+
   const onHandlePointerDown = (e) => {
+    if (!movable) return;
+
     const el = containerRef.current;
     if (!el) return;
 
-    // Only left click / primary touch
     if (e.button != null && e.button !== 0) return;
 
     handlePointerIdRef.current = e.pointerId;
@@ -70,6 +86,7 @@ export function Joystick({
   };
 
   const onHandlePointerMove = (e) => {
+    if (!movable) return;
     if (handlePointerIdRef.current == null) return;
     if (e.pointerId !== handlePointerIdRef.current) return;
 
@@ -88,31 +105,38 @@ export function Joystick({
   const onHandlePointerUpOrCancel = (e) => {
     if (handlePointerIdRef.current == null) return;
     if (e.pointerId !== handlePointerIdRef.current) return;
+
     handlePointerIdRef.current = null;
     swallow(e);
   };
 
-  /* ---------------- Joystick knob dragging ---------------- */
-  const baseRef = useRef(null);
-  const stickPointerIdRef = useRef(null);
+  /* ---------------- Joystick knob ---------------- */
 
   const radius = size / 2;
   const knobRadius = Math.max(16, Math.round(size * 0.22));
   const maxKnobDist = radius - knobRadius;
 
-  const [knob, setKnob] = useState({ x: 0, y: 0 }); // px from center
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
 
   const emit = (xPx, yPx) => {
     const x = maxKnobDist === 0 ? 0 : xPx / maxKnobDist;
-    const y = maxKnobDist === 0 ? 0 : -yPx / maxKnobDist; // up positive
+    const y = maxKnobDist === 0 ? 0 : -yPx / maxKnobDist;
 
     const magnitude = Math.min(1, Math.hypot(x, y));
     const angleRad = Math.atan2(y, x);
 
     const magPx = Math.hypot(xPx, yPx);
-    const dir = magPx <= deadZone ? "center" : angleTo8Dir(angleRad);
+    const dir = magPx <= deadZone
+      ? "center"
+      : angleTo8Dir(angleRad);
 
-    onChange?.({ x, y, angleRad, magnitude, dir });
+    onChange?.({
+      x,
+      y,
+      angleRad,
+      magnitude,
+      dir
+    });
   };
 
   const setFromClientPoint = (clientX, clientY) => {
@@ -120,6 +144,7 @@ export function Joystick({
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
 
@@ -127,6 +152,7 @@ export function Joystick({
     let dy = clientY - cy;
 
     const dist = Math.hypot(dx, dy);
+
     if (dist > maxKnobDist && dist > 0) {
       const s = maxKnobDist / dist;
       dx *= s;
@@ -142,14 +168,17 @@ export function Joystick({
     emit(0, 0);
   };
 
+  /* ---------------- Stick pointer events ---------------- */
+
   const onStickPointerDown = (e) => {
-    // If user is dragging the joystick via handle, don't also drag the stick.
+    // Prevent simultaneous joystick movement and handle dragging.
     if (handlePointerIdRef.current != null) return;
 
     if (e.button != null && e.button !== 0) return;
 
     stickPointerIdRef.current = e.pointerId;
     e.currentTarget.setPointerCapture(e.pointerId);
+
     setFromClientPoint(e.clientX, e.clientY);
     swallow(e);
   };
@@ -171,10 +200,22 @@ export function Joystick({
     swallow(e);
   };
 
+  /* ---------------- Reset when disabled during dragging ---------------- */
+
+  useEffect(() => {
+    if (!movable && handlePointerIdRef.current != null) {
+      handlePointerIdRef.current = null;
+    }
+  }, [movable]);
+
+  /* ---------------- Initial joystick state ---------------- */
+
   useEffect(() => {
     emit(0, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* ---------------- Styles ---------------- */
 
   const styles = useMemo(() => {
     const border = 2;
@@ -189,11 +230,7 @@ export function Joystick({
         top: pos.y,
         width: size,
         height: size,
-
-        // Critical: joystick is only interactive within its own component
-        // (and safe to mount inside a parent overlay that is pointerEvents:none)
         pointerEvents: "auto",
-
         touchAction: "none",
         userSelect: "none",
         zIndex: 10000
@@ -209,12 +246,12 @@ export function Joystick({
         position: "absolute",
         inset: 0,
         borderRadius: 999,
-        background: "var(--colour-4)",
-        border: `${border}px solid var(--colour-5)`,
+        background: "var(--colour-3)",
+        border: `${border}px solid var(--colour-4)`,
         boxSizing: "border-box",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+        boxShadow: "0 0 10px var(--colour-5)",
         zIndex: 1,
-        pointerEvents: "none" // purely visual
+        pointerEvents: "none"
       },
 
       handle: {
@@ -224,10 +261,10 @@ export function Joystick({
         width: handleSize,
         height: handleSize,
         borderRadius: 999,
-        background: "var(--colour-4)",
-        border: `${border}px solid var(--colour-5)`,
+        background: "var(--colour-3)",
+        border: `${border}px solid var(--colour-4)`,
         boxSizing: "border-box",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.14)",
+        boxShadow: "0 0 5px var(--colour-5)",
         cursor: "grab",
         touchAction: "none",
         display: "grid",
@@ -285,7 +322,7 @@ export function Joystick({
         left: "50%",
         top: "50%",
         transform: `translate(-50%, -50%) translate(${knob.x}px, ${knob.y}px)`,
-        background: "var(--colour-6)",
+        background: "var(--colour-5)",
         border: "2px solid var(--colour-5)",
         boxSizing: "border-box",
         pointerEvents: "none"
@@ -293,23 +330,29 @@ export function Joystick({
     };
   }, [pos.x, pos.y, size, knob.x, knob.y, knobRadius]);
 
+  /* ---------------- Render ---------------- */
+
   return (
     <div ref={containerRef} style={styles.container}>
       <div style={styles.shellWrap}>
         <div style={styles.circle} />
 
-        <div
-          style={styles.handle}
-          onPointerDown={onHandlePointerDown}
-          onPointerMove={onHandlePointerMove}
-          onPointerUp={onHandlePointerUpOrCancel}
-          onPointerCancel={onHandlePointerUpOrCancel}
-          aria-label="Drag joystick"
-          title="Drag joystick"
-        >
-          <ThreeBarsIcon style={styles.handleIcon} />
-        </div>
+        {/* Burger handle: only visible and draggable when movable */}
+        {movable && (
+          <div
+            style={styles.handle}
+            onPointerDown={onHandlePointerDown}
+            onPointerMove={onHandlePointerMove}
+            onPointerUp={onHandlePointerUpOrCancel}
+            onPointerCancel={onHandlePointerUpOrCancel}
+            aria-label="Drag joystick"
+            title="Drag joystick"
+          >
+            <ThreeBarsIcon style={styles.handleIcon} />
+          </div>
+        )}
 
+        {/* Directional joystick: always usable */}
         <div
           ref={baseRef}
           style={styles.base}
@@ -331,7 +374,12 @@ export function Joystick({
 function ThreeBarsIcon({ style }) {
   return (
     <svg viewBox="0 0 24 24" style={style} aria-hidden="true">
-      <g fill="none" stroke="var(--colour-5)" strokeWidth="2.4" strokeLinecap="round">
+      <g
+        fill="none"
+        stroke="var(--colour-5)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      >
         <path d="M6 8h12" />
         <path d="M6 12h12" />
         <path d="M6 16h12" />
@@ -344,11 +392,12 @@ function ThreeBarsIcon({ style }) {
 function angleTo8Dir(angleRad) {
   const twoPi = Math.PI * 2;
   let a = angleRad % twoPi;
+
   if (a < 0) a += twoPi;
 
   const sector = Math.round((a / twoPi) * 8) % 8;
 
-  // 0=E,1=NE,2=N,3=NW,4=W,5=SW,6=S,7=SE
+  // 0=E, 1=NE, 2=N, 3=NW, 4=W, 5=SW, 6=S, 7=SE
   switch (sector) {
     case 0: return "e";
     case 1: return "ne";

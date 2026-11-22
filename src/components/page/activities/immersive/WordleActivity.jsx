@@ -1,5 +1,5 @@
 import { ImmersiveBullet } from "../../../content/ImmersiveBullet";
-import image from "../../../../assets/stuff/wordle_icon.png";
+import image from "../../../../assets/activities/wordle_icon.png";
 
 /**
  * Wordle activity card

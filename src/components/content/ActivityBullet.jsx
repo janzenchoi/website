@@ -58,13 +58,33 @@ export const ActivityBullet = ({
     cursor: "pointer",
     gap: mobileMode ? "0.8rem" : "1rem",
   };
+
+  // The box (border and background) stays on a wrapper...
   const imageContainer = {
     height: mobileMode ? "3rem" : "4.5rem",
     width: mobileMode ? "3rem" : "4.5rem",
     borderRadius: "8px",
     border: "1px solid var(--colour-4)",
     backgroundColor: "var(--colour-3)",
+    boxSizing: "content-box",
+    flexShrink: 0,
   };
+  // ...and the shadow goes on the image itself. drop-shadow follows the image's
+  // transparency, so a transparent icon casts a shadow in its own shape (an opaque
+  // one casts a box shadow). Adjust the offset, blur and opacity to taste.
+  const imageStyle = {
+    height: "100%",
+    width: "100%",
+    display: "block",
+    borderRadius: "8px",
+    filter: "drop-shadow(0 1px 1px var(--colour-5))",
+  };
+  const iconElement = (
+    <div style={imageContainer}>
+      <img style={imageStyle} src={icon} alt={`Icon for ${title}`} draggable={false}/>
+    </div>
+  );
+
   const textContainer = {
     display: "flex",
     marginTop: mobileMode ? "-0.2rem" : 0,
@@ -107,7 +127,7 @@ export const ActivityBullet = ({
         style={outerContainer}
         onClick={() => handleActivity()}
       >
-        <img style={imageContainer} src={icon} alt="Icon for mobile mode"/>
+        {iconElement}
         <div style={textContainer}>
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>
@@ -127,7 +147,7 @@ export const ActivityBullet = ({
         onMouseLeave={() => setHover(false)}
         onClick={() => handleActivity()}
       >
-        <img style={imageContainer} src={icon} alt="Icon for mobile mode"/>
+        {iconElement}
         <div style={textContainer}>
           <div style={{ ...titleStyle, textAlign: "start" }}>{title}</div>
           <div style={{ ...subtitleStyle, textAlign: "start" }}>{subtitle}</div>
