@@ -1744,7 +1744,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   const gridRectH = Math.max(
     GRID_CHROME + 60,
-    boxH - rowH - hungerH - controlsH - 3 * GAP
+    boxH - rowH - hungerH - controlsH - 2 * GAP
   );
 
   // The grid keeps at least OUTER_PAD between its border and the grid rectangle.
@@ -1952,6 +1952,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexBasis: 0,
     minHeight: 0,
     padding: OUTER_PAD,
+    // Join the controls panel below the grid and use its top border as the divider.
+    borderBottom: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   };
 
   // Holds the arena and the wall ring around it: no border, no shadow.
@@ -1985,6 +1989,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     minHeight: controlsH,
     padding: joystickMode ? JOY_PAD : keypadPad,
     position: "relative",
+    // Pull the panel up to meet the grid; this top border is the single divider line.
+    marginTop: -GAP,
+    borderTop: "1px solid var(--colour-5)",
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   };
 
   const directionGridStyle = {
@@ -2078,7 +2087,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // The prompt occupies 7 x 7 cells on desktop and 9 x 9 cells on mobile.
   // On narrow phones, reduce the horizontal padding and button gap so the three
   // full-size mode buttons still fit within the 9-cell-wide prompt.
-  const popupSide = (mobileMode ? 9 : 7) * cell;
+  const popupSide = (mobileMode ? 7.8 : 6.8) * cell;
   const popupBtnGap = mobileMode
     ? Math.max(4, Math.min(6, Math.floor((popupSide - 3 * rowH - 2) / 2)))
     : Math.max(6, Math.round(cell * 0.3));
@@ -2149,6 +2158,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Slightly smaller than the title, not bold, and in capitals.
   const popupBodyStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    paddingLeft: `${Math.max(4, cell * 0.35)}px`,
+    paddingRight: `${Math.max(4, cell * 0.35)}px`,
     fontSize: `${popupBodyFont}px`,
     lineHeight: 1.2,
     fontWeight: 400,
@@ -2430,7 +2443,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               aria-label={mobileControlMode === "joystick" ? "Use arrow keypad" : "Use joystick"}
               title={mobileControlMode === "joystick" ? "Use arrow keypad" : "Use joystick"}
             >
-              {renderIcon(mobileControlMode === "joystick" ? icons.keypad : icons.joystick)}
+              {renderIcon(mobileControlMode === "joystick" ? icons.keypad : icons.joystick, 0.68)}
             </button>
           )}
 
@@ -2441,7 +2454,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             aria-label="Exit activities"
             title="Exit activities"
           >
-            {renderIcon(icons.cross)}
+            {renderIcon(icons.cross, 0.68)}
           </button>
         </div>
       </div>
