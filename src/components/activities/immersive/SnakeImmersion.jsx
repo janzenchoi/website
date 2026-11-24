@@ -209,6 +209,7 @@ const DEATH_REASONS = {
    SETTINGS: SCREEN, PANELS AND CONTROLS
 ===================================== */
 const JOYSTICK_SIZE = 170;
+const AUTO_MANUAL_OVERRIDE_MS = 500; // After a manual turn in auto mode, ignore AI for this long.
 const FONT_FAMILY = "'Courier New', Courier, monospace";
 const GRID_SCALE = 0.925; // Grid is 7.5% smaller than the space available (was 10%, now 25% less padding).
 const OUTER_PAD = 5; // Gap between the outer border and the wall ring around the grid.
@@ -1149,7 +1150,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [deathElapsed, setDeathElapsed] = useState(0);
   const [measuredBox, setMeasuredBox] = useState(null);
   const [activeDirection, setActiveDirection] = useState(null);
-  const [mobileControlMode, setMobileControlMode] = useState("joystick");
+  const [mobileControlMode, setMobileControlMode] = useState("arrows");
   const [joyPos, setJoyPos] = useState(null);
   const [hungerShown, setHungerShown] = useState(1);
   const [pageBg, setPageBg] = useState(null);
@@ -1158,6 +1159,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [noSushiLosses, setNoSushiLosses] = useState(0);
   const [autoUnlocked, setAutoUnlocked] = useState(false);
   const autoPlayRef = useRef(false);
+  const autoManualUntilRef = useRef(0); // performance.now() until which auto is blocked after manual input
   const runAteSushiRef = useRef(false);
 
   const popupTimeoutRef = useRef(null);
@@ -1262,12 +1264,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       }
 
       let dir = g.dir;
-      if (autoPlayRef.current) {
+      // Manual input temporarily overrides auto; AI is blocked for AUTO_MANUAL_OVERRIDE_MS after each turn.
+      const queued = dirQueueRef.current.shift();
+      if (queued && !isOpposite(queued, dir)) {
+        dir = queued;
+      } else if (autoPlayRef.current && now >= autoManualUntilRef.current) {
         const planned = autoDirection(g);
         if (planned && !isOpposite(planned, dir)) dir = planned;
-      } else {
-        const queued = dirQueueRef.current.shift();
-        if (queued && !isOpposite(queued, dir)) dir = queued;
       }
 
       const facing = dir.x !== 0 ? (dir.x > 0 ? "right" : "left") : g.facing;
@@ -1969,6 +1972,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Clears everything left over from the previous run.
   const resetRun = () => {
     dirQueueRef.current = [];
+    autoManualUntilRef.current = 0;
     runAteSushiRef.current = false;
     mouthRef.current = newMouth();
     deathParticlesRef.current = [];
@@ -2025,6 +2029,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const handleDirection = (d) => {
     const g = gameRef.current;
     if (g.status !== "playing") return;
+
+    // In auto mode, any manual turn blocks the AI for a few seconds.
+    if (autoPlayRef.current) {
+      autoManualUntilRef.current = performance.now() + AUTO_MANUAL_OVERRIDE_MS;
+    }
 
     const queue = dirQueueRef.current;
     const last = queue.length ? queue[queue.length - 1] : g.dir;
@@ -2571,7 +2580,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = 8;
-  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
+  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 5 || popupInfo.botGame);
   const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : (showAutoButton ? 3 : 2);
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
