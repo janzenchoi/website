@@ -29,6 +29,8 @@ import icon_hard_light from "../../../assets/activities/symbols/hard_light.png";
 import icon_hard_dark from "../../../assets/activities/symbols/hard_dark.png";
 import icon_vhard_light from "../../../assets/activities/symbols/vhard_light.png";
 import icon_vhard_dark from "../../../assets/activities/symbols/vhard_dark.png";
+import icon_auto_light from "../../../assets/activities/symbols/auto_light.png";
+import icon_auto_dark from "../../../assets/activities/symbols/auto_dark.png";
 
 const THEME_ICONS = {
   light: {
@@ -40,6 +42,7 @@ const THEME_ICONS = {
     normal: icon_normal_light,
     hard: icon_hard_light,
     vhard: icon_vhard_light,
+    auto: icon_auto_light,
   },
   dark: {
     cross: icon_cross_dark,
@@ -50,6 +53,7 @@ const THEME_ICONS = {
     normal: icon_normal_dark,
     hard: icon_hard_dark,
     vhard: icon_vhard_dark,
+    auto: icon_auto_dark,
   },
 };
 
@@ -74,8 +78,8 @@ const FOOD_IMAGES = ALL_FOODS.map((f) => f.image);
 /* =====================================
    SETTINGS: ARENA AND BASE SPEED
 ===================================== */
-const ARENA_COLS = 13;
-const ARENA_ROWS = 13;
+const ARENA_COLS = 11;
+const ARENA_ROWS = 11;
 const CELL_SIZE = 50;
 const BASE_TICK_MS = 130; // Normal-mode time per move. Each difficulty scales it with speedMult.
 const START_LENGTH = 3;
@@ -90,9 +94,9 @@ const DIFFICULTIES = {
   normal: {
     label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
-    speedMult: 0.6, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
+    speedMult: 0.5, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
     hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
-    foodCount: 3, // How many GROUPS of food are on the board at once.
+    foodCount: 4, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
     straightWalls: 0, // Number of straight walls placed at the start of each game.
     cornerWalls: 0, // Number of L-shaped (corner) walls placed at the start of each game.
@@ -103,12 +107,12 @@ const DIFFICULTIES = {
   hard: {
     label: "NORMAL",
     icon: "hard",
-    speedMult: 0.6,
-    hungerMult: 1.5,
+    speedMult: 0.5,
+    hungerMult: 1.2,
     foodCount: 3,
-    respawnAllAtOnce: true,
-    straightWalls: 4,
-    cornerWalls: 2,
+    respawnAllAtOnce: false,
+    straightWalls: 3,
+    cornerWalls: 1,
     straightLength: [2, 4],
     cornerArm: [2, 3],
     borderTouchChance: 0.3,
@@ -116,12 +120,12 @@ const DIFFICULTIES = {
   veryHard: {
     label: "HARD",
     icon: "vhard",
-    speedMult: 0.6,
-    hungerMult: 2,
+    speedMult: 0.5,
+    hungerMult: 1.4,
     foodCount: 3,
     respawnAllAtOnce: true,
-    straightWalls: 7,
-    cornerWalls: 4,
+    straightWalls: 5,
+    cornerWalls: 2,
     straightLength: [2, 5],
     cornerArm: [2, 4],
     borderTouchChance: 0.4,
@@ -163,14 +167,14 @@ const DEFAULT_FOOD_SIZE = 1; // Size (0 to 1, where 1 = FOOD_SIZE) for foods not
 /* =====================================
    SETTINGS: WASABI & MINIMUM LENGTH
 ===================================== */
-const MIN_SNAKE_LENGTH = 3; // The snake can never shrink below this.
+const MIN_SNAKE_LENGTH = 2; // The snake can never shrink below this.
 const WASABI_CYCLE_MS = 20000; // One full cycle.
 const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
 const WASABI_SPEED_BOOST = 0.1; // +10% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 0.5; // +0.5x calorie multiplier per wasabi.
-const WASABI_MAX_EATEN = 100; // No more wasabi spawn after this many are eaten.
+const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi.
+const WASABI_MAX_EATEN = 10; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
 const DARK_MODE_IMAGE_DARKEN = 0.15; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
@@ -531,6 +535,70 @@ const KEY_DIRECTIONS = {
 
 const isOpposite = (a, b) => a.x === -b.x && a.y === -b.y;
 
+// Re-plan from the complete visible game state on every move. BFS accounts for
+// the arena bounds, internal walls, the snake's current body and all sushi cells.
+const autoDirection = (g) => {
+  if (!g?.snake?.length) return null;
+  if (!g.foods?.length && !g.wasabi) return null;
+
+  const head = g.snake[0];
+  const tail = g.snake[g.snake.length - 1];
+  const blocked = new Set(g.snake.slice(0, -1).map((p) => `${p.x},${p.y}`));
+  const directions = [UP, RIGHT, DOWN, LEFT];
+
+  // Wasabi is the preferred target whenever it is on the board and reachable.
+  // Only fall back to ordinary sushi if no safe path to the wasabi exists.
+  const targetGroups = [
+    ...(g.wasabi ? [[g.wasabi]] : []),
+    ...(g.foods?.length ? [g.foods] : []),
+  ];
+  for (const targetGroup of targetGroups) {
+    const targets = new Set(targetGroup.map((f) => `${f.x},${f.y}`));
+    const queue = [{ x: head.x, y: head.y, first: null }];
+    const seen = new Set([`${head.x},${head.y}`]);
+    while (queue.length) {
+      const current = queue.shift();
+      if (targets.has(`${current.x},${current.y}`) && current.first) return current.first;
+      for (const d of directions) {
+        if (!current.first && isOpposite(d, g.dir)) continue;
+        const next = { x: current.x + d.x, y: current.y + d.y };
+        const key = `${next.x},${next.y}`;
+        if (next.x < 0 || next.x >= ARENA_COLS || next.y < 0 || next.y >= ARENA_ROWS) continue;
+        if (seen.has(key) || (blocked.has(key) && !(next.x === tail.x && next.y === tail.y))) continue;
+        if (isWallBetween(g.walls, current, next)) continue;
+        seen.add(key);
+        queue.push({ ...next, first: current.first ?? d });
+      }
+    }
+  }
+  // If no food is currently reachable, keep moving into the largest safe region
+  // rather than deliberately reversing or colliding.
+  const safe = directions.filter((d) => {
+    if (isOpposite(d, g.dir)) return false;
+    const n = { x: head.x + d.x, y: head.y + d.y };
+    return n.x >= 0 && n.x < ARENA_COLS && n.y >= 0 && n.y < ARENA_ROWS &&
+      !blocked.has(`${n.x},${n.y}`) && !isWallBetween(g.walls, head, n);
+  });
+  if (!safe.length) return null;
+  const freeSpace = (start) => {
+    const q = [start];
+    const visited = new Set([`${start.x},${start.y}`]);
+    while (q.length) {
+      const c = q.shift();
+      for (const d of directions) {
+        const n = { x: c.x + d.x, y: c.y + d.y };
+        const key = `${n.x},${n.y}`;
+        if (n.x < 0 || n.x >= ARENA_COLS || n.y < 0 || n.y >= ARENA_ROWS || visited.has(key) || blocked.has(key)) continue;
+        if (isWallBetween(g.walls, c, n)) continue;
+        visited.add(key); q.push(n);
+      }
+    }
+    return visited.size;
+  };
+  return safe.map((d) => ({ d, area: freeSpace({ x: head.x + d.x, y: head.y + d.y }) }))
+    .sort((a, b) => b.area - a.area)[0].d;
+};
+
 // Hunger drains steadily from the level and time of the last meal.
 const hungerLevel = (hunger, now, drainMs) =>
   Math.max(0, hunger.level - (now - hunger.at) / drainMs);
@@ -765,11 +833,21 @@ const wallsAreValid = (set) => {
   for (let x = 0; x < ARENA_COLS; x++) {
     for (let y = 0; y < ARENA_ROWS; y++) {
       let closed = 0;
+      const blocked = { left: false, right: false, up: false, down: false };
       for (const [dx, dy] of DIRS) {
         const nx = x + dx;
         const ny = y + dy;
-        if (!inside(nx, ny) || isWallBetween(walls, { x, y }, { x: nx, y: ny })) closed++;
+        const isBlocked =
+          !inside(nx, ny) || isWallBetween(walls, { x, y }, { x: nx, y: ny });
+        if (isBlocked) closed++;
+        if (dx === -1) blocked.left = isBlocked;
+        if (dx === 1) blocked.right = isBlocked;
+        if (dy === -1) blocked.up = isBlocked;
+        if (dy === 1) blocked.down = isBlocked;
       }
+      // Reject any cell trapped in a one-cell-wide passage between opposing walls
+      // or between a wall and the arena boundary.
+      if ((blocked.left && blocked.right) || (blocked.up && blocked.down)) return false;
       if (closed >= 3) return false;
     }
   }
@@ -1077,6 +1155,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [pageBg, setPageBg] = useState(null);
   const [eatenFoods, setEatenFoods] = useState([]);
   const [scoreBonus, setScoreBonus] = useState(null);
+  const [noSushiLosses, setNoSushiLosses] = useState(0);
+  const [autoUnlocked, setAutoUnlocked] = useState(false);
+  const autoPlayRef = useRef(false);
+  const runAteSushiRef = useRef(false);
 
   const popupTimeoutRef = useRef(null);
   const playAgainRef = useRef(null);
@@ -1086,7 +1168,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const mouthRef = useRef(newMouth());
   const wantOpenRef = useRef(false);
   const touchRef = useRef(null);
-  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0, wasabi: 0 });
+  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0, wasabi: 0, botGame: false });
 
   const canvasRef = useRef(null);
   const cellRef = useRef(0);
@@ -1108,6 +1190,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const commit = (next) => {
     const previousStatus = gameRef.current?.status;
 
+    if (next.status === "dead" && previousStatus !== "dead") {
+      // Preserve whether this run was controlled by AUTO for the game-over prompt.
+      const wasBotGame = autoPlayRef.current;
+      next.botGame = wasBotGame;
+      if (wasBotGame) setAutoUnlocked(true);
+      if (!runAteSushiRef.current) setNoSushiLosses((count) => count + 1);
+      autoPlayRef.current = false;
+    }
     if (next.status === "dead" || next.status === "won" || next.status === "choose") {
       clearTimeout(popupTimeoutRef.current);
       setPopupClosing(false);
@@ -1172,8 +1262,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       }
 
       let dir = g.dir;
-      const queued = dirQueueRef.current.shift();
-      if (queued && !isOpposite(queued, dir)) dir = queued;
+      if (autoPlayRef.current) {
+        const planned = autoDirection(g);
+        if (planned && !isOpposite(planned, dir)) dir = planned;
+      } else {
+        const queued = dirQueueRef.current.shift();
+        if (queued && !isOpposite(queued, dir)) dir = queued;
+      }
 
       const facing = dir.x !== 0 ? (dir.x > 0 ? "right" : "left") : g.facing;
       const head = g.snake[0];
@@ -1291,6 +1386,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
         // Only normal food triggers respawns; wasabi lives outside the food-group limit.
         if (eatenFood) {
+          runAteSushiRef.current = true;
+          setNoSushiLosses(0);
           const blocked = wasabiNow ? [wasabiNow] : [];
           const remaining = g.foods.filter((f) => f !== eatenFood);
           // Hard modes: wait until every food is eaten, then spawn the whole set again.
@@ -1872,6 +1969,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Clears everything left over from the previous run.
   const resetRun = () => {
     dirQueueRef.current = [];
+    runAteSushiRef.current = false;
     mouthRef.current = newMouth();
     deathParticlesRef.current = [];
     deathEmittedRef.current = new Set();
@@ -1900,6 +1998,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Playing again builds a brand-new game in the same mode, with a fresh set of walls.
   const playAgain = () => {
+    autoPlayRef.current = false;
+    resetRun();
+    dismissStartPopup();
+    commit(activateGame(createGame(cfg), cfg));
+  };
+
+  const playAutomatically = () => {
+    autoPlayRef.current = true;
     resetRun();
     dismissStartPopup();
     commit(activateGame(createGame(cfg), cfg));
@@ -2424,6 +2530,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       reason: game.reason,
       score: game.score,
       wasabi: game.wasabiEaten,
+      botGame: !!game.botGame,
     };
   }
   const popupInfo = popupInfoRef.current;
@@ -2443,7 +2550,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : popupInfo.status === "won"
         ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}`
         : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
-  // The chosen difficulty's icon sits below the body text on the game over / winner prompt.
+  // Show the selected difficulty icon, plus AUTO when the completed run was a bot game.
   const popupBodyIcon = popupInfo.status === "choose" ? null : icons[cfg.icon];
   // Only the "X WASABIS" part is green (darker), and only if at least one wasabi was eaten.
   const popupWasabiNode = popupInfo.wasabi > 0
@@ -2464,7 +2571,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = 8;
-  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : 2;
+  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
+  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : (showAutoButton ? 3 : 2);
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
     const longestWord = Math.max(...label.split(" ").map((word) => word.length));
@@ -2495,7 +2603,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const widthNeeded = Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
     popupButtonCount * popupButtonSize + (popupButtonCount - 1) * popupBtnGap,
-    longestWord * bodyCharPx
+    longestWord * bodyCharPx,
+    0
   );
   let popupSide = Math.ceil(widthNeeded + 2 * popupPad + 2 + POPUP_SLACK);
   for (let guard = 0; guard < 2000; guard++) {
@@ -2571,7 +2680,15 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     textTransform: "uppercase",
   };
 
-  // Difficulty icon shown on its own line below the body text on the game over / winner prompt.
+  // Difficulty and AUTO icons sit together below the body on bot-game results.
+  const popupBodyIconRowStyle = {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Math.max(4, Math.round(popupDiffIconPx * 0.2)),
+    flexShrink: 0,
+  };
   const popupBodyIconStyle = {
     display: "block",
     width: popupDiffIconPx,
@@ -2752,6 +2869,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
             top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
             objectFit: "contain",
+            filter: "drop-shadow(0 0 1px var(--colour-6)) drop-shadow(0 0 1px var(--colour-6))",
           }}
         />
       </div>
@@ -2917,7 +3035,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           <div style={scoreStyle}>
             <span style={{ position: "relative", display: "inline-block", whiteSpace: "nowrap" }}>
               {formatPoints(game.score)}
-              {scoreBonus && (
+              {!mobileMode && scoreBonus && (
                 <div key={scoreBonus.id} style={scoreBonusStyle}>
                   (+{formatPoints(scoreBonus.amount)})
                 </div>
@@ -3174,7 +3292,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                 <div style={popupBodyStyle}>{popupBodyNode}</div>
               )}
               {popupBodyIcon && (
-                <img src={popupBodyIcon} alt="" aria-hidden="true" draggable={false} style={popupBodyIconStyle} />
+                <div style={popupBodyIconRowStyle} aria-label="Difficulty">
+                  <img src={popupBodyIcon} alt="" aria-hidden="true" draggable={false} style={popupBodyIconStyle} />
+                </div>
               )}
             </div>
 
@@ -3216,6 +3336,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   </div>
                   <span style={popupButtonLabelStyle("RETRY")}>RETRY</span>
                 </button>
+                {showAutoButton && (
+                  <button
+                    type="button"
+                    style={popupButtonStyle}
+                    aria-label="Play automatically"
+                    title="Play automatically"
+                    onClick={playAutomatically}
+                  >
+                    <div style={popupButtonIconStyle}>
+                      {renderIcon(icons.auto)}
+                    </div>
+                    <span style={popupButtonLabelStyle("AUTO")}>AUTO</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   style={popupButtonStyle}
