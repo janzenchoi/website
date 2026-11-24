@@ -104,6 +104,7 @@ const DIFFICULTIES = {
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
     speedMult: 0.5, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
     hungerMult: 0.8, // 1.2 = hunger bar empties 20% faster.
+    scoreMult: 1, // Multiplier applied to calories gained (and lost) in this mode.
     foodCount: 4, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
     straightWalls: 0, // Number of straight walls placed at the start of each game.
@@ -117,6 +118,7 @@ const DIFFICULTIES = {
     icon: "hard",
     speedMult: 0.5,
     hungerMult: 0.9,
+    scoreMult: 1.2,
     foodCount: 3,
     respawnAllAtOnce: false,
     straightWalls: 3,
@@ -130,6 +132,7 @@ const DIFFICULTIES = {
     icon: "vhard",
     speedMult: 0.5,
     hungerMult: 1.0,
+    scoreMult: 1.4,
     foodCount: 3,
     respawnAllAtOnce: true,
     straightWalls: 5,
@@ -185,7 +188,7 @@ const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi.
 const WASABI_MAX_EATEN = 128; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
-const DARK_MODE_IMAGE_DARKEN = 0.15; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
+const DARK_MODE_IMAGE_DARKEN = 0.20; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
 const WASABI_ARENA_GLOW = 0.4; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
 
 // Body lost to wasabi is not removed at once: the tail retracts smoothly over this long.
@@ -251,7 +254,7 @@ const MODE_ICON_SCALE = 1.75; // Difficulty icons are drawn this many times thei
    SETTINGS: WALLS
 ===================================== */
 const WALL_FILL = "var(--colour-4)";
-const WALL_OUTLINE = "var(--colour-5)";
+const WALL_OUTLINE = "var(--colour-4)";
 const WALL_MAX_ATTEMPTS = 800; // Tries per wall before giving up on placing it (higher because walls must also leave no 1-wide gaps).
 const START_CLEAR_AHEAD = 5; // Cells in front of the starting head kept free of walls.
 const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free of walls.
@@ -285,9 +288,9 @@ const FOOD_SIZE = 1.0; // Food image size in cells. Each food scales this by its
 const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
 const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
-const BELLY_BLEND = 0.6; // Fade-in band above the belly, as a fraction of the belly's depth (0 = hard edge).
+const BELLY_BLEND = 0.3; // Fade-in band above the belly, as a fraction of the belly's depth (0 = hard edge).
 const OUTLINE_LIGHT_COLOUR = "#000000";
-const OUTLINE_DARK_COLOUR = "#484848";
+const OUTLINE_DARK_COLOUR = "#adadad";
 const OUTLINE_WIDTH = 0.02;
 const EDGE_WOBBLE = 1;
 const BELLY_COLOUR = "#D7AFA8";
@@ -323,7 +326,7 @@ const PATTERN_HUES = [0, 28, 55, 120, 170, 210, 270, 320];
 const SPOT_RADIUS = [0.05, 0.18];
 const SPOT_SPACING = [0.5, 1.2];
 const SPOT_NEIGHBOUR_CHANCE = 0.1;
-const SPOT_LIGHTNESS = [18, 34]; // Darker spots (was 28 to 48).
+const SPOT_LIGHTNESS = [16, 24]; // Darker spots (was 28 to 48).
 
 /* =====================================
    FRAMES AND MENU ICONS
@@ -849,7 +852,7 @@ const updateWasabi = (g, wasabi, now, snake, foods, eatenCount) => {
         name: "wasabi",
         image: WASABI_IMAGE,
         size: WASABI_SIZE,
-        satiation: 0,
+        satiation: 1, // Fills the entire hunger meter.
         calories: 0,
         length: -WASABI_LENGTH_LOSS,
         expiresAt: now + WASABI_LIFETIME_MS - (phase - WASABI_SPAWN_AT_MS),
@@ -1471,7 +1474,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         swallowing = eatenItem;
         const baseCalories = Number(eatenItem.calories ?? DEFAULT_FOOD_CALORIES) || 0;
         const calorieChange = roundPoints(
-          baseCalories * (1 + WASABI_CALORIE_BOOST * g.wasabiEaten)
+          baseCalories * (1 + WASABI_CALORIE_BOOST * g.wasabiEaten) * (cfg.scoreMult ?? 1)
         );
         score = roundPoints(score + calorieChange);
         if (calorieChange !== 0) {
@@ -3133,10 +3136,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             height: foodSize,
             objectFit: "contain",
             filter: `
-              drop-shadow(1px 0 0 var(--colour-4))
-              drop-shadow(-1px 0 0 var(--colour-4))
-              drop-shadow(0 1px 0 var(--colour-4))
-              drop-shadow(0 -1px 0 var(--colour-4))
+              drop-shadow(1px 0 0 var(--colour-5))
+              drop-shadow(-1px 0 0 var(--colour-5))
+              drop-shadow(0 1px 0 var(--colour-5))
+              drop-shadow(0 -1px 0 var(--colour-5))
             `,
           }}
         />
