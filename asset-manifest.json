@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.cd3e51f8.css",
-    "main.js": "/website/static/js/main.18ed7cf2.js",
+    "main.js": "/website/static/js/main.1c5e49e0.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -66,6 +66,7 @@
     "static/media/volley.png": "/website/static/media/volley.4fad8476940bf27d0b4a.png",
     "static/media/hind_lower_arm.png": "/website/static/media/hind_lower_arm.4af0c9ececba0364ba43.png",
     "static/media/fore_foot.png": "/website/static/media/fore_foot.dd4804981a8c710ebae9.png",
+    "static/media/wasabi.png": "/website/static/media/wasabi.5a39fd51a5c4ffe9037e.png",
     "static/media/janzen_3.png": "/website/static/media/janzen_3.0d3e1887b63d84748cad.png",
     "static/media/janzen_5.png": "/website/static/media/janzen_5.2e8031ae124c9a3c158c.png",
     "static/media/janzen_6.png": "/website/static/media/janzen_6.8a2910e353d204168cac.png",
@@ -98,11 +99,11 @@
     "static/media/nigiri_1.png": "/website/static/media/nigiri_1.7d00c81db7631b647dc2.png",
     "index.html": "/website/index.html",
     "main.cd3e51f8.css.map": "/website/static/css/main.cd3e51f8.css.map",
-    "main.18ed7cf2.js.map": "/website/static/js/main.18ed7cf2.js.map",
+    "main.1c5e49e0.js.map": "/website/static/js/main.1c5e49e0.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cd3e51f8.css",
-    "static/js/main.18ed7cf2.js"
+    "static/js/main.1c5e49e0.js"
   ]
 }
