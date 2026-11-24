@@ -24,37 +24,18 @@ export const Immersion = ({ mobileMode, darkMode, leaveActivities, children }) =
     justifyContent: "center",
   };
 
-  // Close button
-  const closeButton = {
-    position: "absolute",
-    top: "0.5rem",
-    left: "1rem",
-    background: "none",
-    border: "none",
-    color: "rgba(200, 200, 200, 0.8)",
-    fontSize: "4rem",
-    fontWeight: mobileMode ? 400 : 200,
-    cursor: "pointer",
-    lineHeight: 1,
-    padding: 0,
-    // Keep the button above positioned children (e.g. position: relative game screens),
-    // which would otherwise paint over it because they come later in the DOM
-    zIndex: 1,
-  };
-
   // Inner container
   const innerContainer = {
     width: "100%",
     maxWidth: MAX_WIDTH,
     minWidth: mobileMode ? "unset" : MIN_WIDTH,
     boxSizing: "border-box",
-    backgroundColor: "var(--colour-2)",
+    backgroundColor: "var(--colour-0)",
   };
 
   // Return immersion space
   return (
     <div style={outerContainer}>
-      <button style={closeButton} onClick={leaveActivities}>×</button>
       <div style={innerContainer}>
         {children}
       </div>

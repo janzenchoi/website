@@ -11,8 +11,8 @@ import image from "../../../../assets/activities/snake_icon.png";
 export const SnakeActivity = ({ mobileMode, darkMode, activityController }) => {
   
   // Constants
-  const title = "Snake Game";
-  const subtitle = "Play a Janzen-ified snake game";
+  const title = "Sushi Snake";
+  const subtitle = "Feed the snake some sushis";
   
   // Render
   return (

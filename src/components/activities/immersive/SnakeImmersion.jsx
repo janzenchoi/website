@@ -15,29 +15,41 @@ import janzen_9 from "../../../assets/activities/snake/head/janzen_9.png";
 
 import icon_cross_light from "../../../assets/activities/symbols/cross_light.png";
 import icon_cross_dark from "../../../assets/activities/symbols/cross_dark.png";
-import icon_gamemode_light from "../../../assets/activities/symbols/gamemode_light.png";
-import icon_gamemode_dark from "../../../assets/activities/symbols/gamemode_dark.png";
+import icon_change_light from "../../../assets/activities/symbols/change_light.png";
+import icon_change_dark from "../../../assets/activities/symbols/change_dark.png";
 import icon_joystick_light from "../../../assets/activities/symbols/joystick_light.png";
 import icon_joystick_dark from "../../../assets/activities/symbols/joystick_dark.png";
-import icon_keypad_light from "../../../assets/activities/symbols/keypad_light.png";
-import icon_keypad_dark from "../../../assets/activities/symbols/keypad_dark.png";
+import icon_dpad_light from "../../../assets/activities/symbols/dpad_light.png";
+import icon_dpad_dark from "../../../assets/activities/symbols/dpad_dark.png";
 import icon_restart_light from "../../../assets/activities/symbols/restart_light.png";
 import icon_restart_dark from "../../../assets/activities/symbols/restart_dark.png";
+import icon_normal_light from "../../../assets/activities/symbols/normal_light.png";
+import icon_normal_dark from "../../../assets/activities/symbols/normal_dark.png";
+import icon_hard_light from "../../../assets/activities/symbols/hard_light.png";
+import icon_hard_dark from "../../../assets/activities/symbols/hard_dark.png";
+import icon_vhard_light from "../../../assets/activities/symbols/vhard_light.png";
+import icon_vhard_dark from "../../../assets/activities/symbols/vhard_dark.png";
 
 const THEME_ICONS = {
   light: {
     cross: icon_cross_light,
-    gamemode: icon_gamemode_light,
+    change: icon_change_light,
     joystick: icon_joystick_light,
-    keypad: icon_keypad_light,
+    dpad: icon_dpad_light,
     restart: icon_restart_light,
+    normal: icon_normal_light,
+    hard: icon_hard_light,
+    vhard: icon_vhard_light,
   },
   dark: {
     cross: icon_cross_dark,
-    gamemode: icon_gamemode_dark,
+    change: icon_change_dark,
     joystick: icon_joystick_dark,
-    keypad: icon_keypad_dark,
+    dpad: icon_dpad_dark,
     restart: icon_restart_dark,
+    normal: icon_normal_dark,
+    hard: icon_hard_dark,
+    vhard: icon_vhard_dark,
   },
 };
 
@@ -60,9 +72,9 @@ const FOOD_IMAGES = FOODS.map((f) => f.image);
 /* =====================================
    SETTINGS: ARENA AND BASE SPEED
 ===================================== */
-const ARENA_COLS = 15;
-const ARENA_ROWS = 15;
-const CELL_SIZE = 40;
+const ARENA_COLS = 13;
+const ARENA_ROWS = 13;
+const CELL_SIZE = 50;
 const BASE_TICK_MS = 130; // Normal-mode time per move. Each difficulty scales it with speedMult.
 const START_LENGTH = 3;
 
@@ -75,10 +87,11 @@ const DEFAULT_DIFFICULTY = "normal"; // Settings used for the board behind the "
 const DIFFICULTIES = {
   normal: {
     label: "NORMAL",
-    emoji: "🙂", // Button on the start prompt, and shown on the game over prompt.
-    speedMult: 1.0, // 1.1 = 10% faster, 1.2 = 20% faster.
+    icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
+    speedMult: 1.0, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
     hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
-    foodCount: 3, // How many foods are on the board at once (a new one spawns when one is eaten).
+    foodCount: 3, // How many GROUPS of food are on the board at once.
+    respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
     straightWalls: 0, // Number of straight walls placed at the start of each game.
     cornerWalls: 0, // Number of L-shaped (corner) walls placed at the start of each game.
     straightLength: [2, 4], // Min / max length of a straight wall, in cells.
@@ -87,10 +100,11 @@ const DIFFICULTIES = {
   },
   hard: {
     label: "HARD",
-    emoji: "☹️",
-    speedMult: 1.1,
+    icon: "hard",
+    speedMult: 1.0,
     hungerMult: 1.2,
     foodCount: 3,
+    respawnAllAtOnce: true,
     straightWalls: 4,
     cornerWalls: 2,
     straightLength: [2, 4],
@@ -99,10 +113,11 @@ const DIFFICULTIES = {
   },
   veryHard: {
     label: "VERY HARD",
-    emoji: "😩",
-    speedMult: 1.2,
+    icon: "vhard",
+    speedMult: 1.0,
     hungerMult: 1.4,
     foodCount: 3,
+    respawnAllAtOnce: true,
     straightWalls: 7,
     cornerWalls: 4,
     straightLength: [2, 5],
@@ -120,15 +135,31 @@ const TEXT_PX_DESKTOP = 25.6; // 1.6rem: the same on desktop.
 // Per-food settings. Keys are the food image file names (without extensions).
 // `growth` is both the number of body segments added and the points awarded.
 // `spawnWeight` controls relative spawn frequency: 2 is twice as likely as 1; 0 disables that food.
+// `count` is how many pieces of that food appear together, as one cluster of touching cells,
+// every time a group of it spawns.
+// `size` is the food's image size from 0 to 1, where 1 is the full FOOD_SIZE constant.
 const FOOD_CONFIG = {
-  apple:  { satiation: 0.3, growth: 2, spawnWeight: 1 },
-  sushi:  { satiation: 0.2, growth: 1, spawnWeight: 1 },
-  burger: { satiation: 0.6, growth: 1, spawnWeight: 1 },
-  cake:   { satiation: 0.6, growth: 1, spawnWeight: 1 },
+  temaki_1:   { satiation: 0.1, growth: 0.5, spawnWeight: 1, count: 3, size: 0.5 },
+  temaki_2:   { satiation: 0.1, growth: 0.5, spawnWeight: 1, count: 3, size: 0.5 },
+  
+  nigiri_1:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
+  nigiri_2:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
+  nigiri_3:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
+  
+  futomaki_1: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
+  futomaki_2: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
+  futomaki_3: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
 };
 const DEFAULT_FOOD_SATIATION = 0.4; // Hunger refill for foods not listed above.
 const DEFAULT_FOOD_GROWTH = 1; // Segments and points for foods not listed above.
 const DEFAULT_FOOD_SPAWN_WEIGHT = 1; // Spawn weight for foods not listed above.
+const DEFAULT_FOOD_COUNT = 1; // Pieces per group for foods not listed above.
+const DEFAULT_FOOD_SIZE = 1; // Size (0 to 1, where 1 = FOOD_SIZE) for foods not listed above.
+
+// Keep score and growth values precise while avoiding floating-point display artefacts.
+const roundPoints = (value) => Math.round((Number(value) + Number.EPSILON) * 10000) / 10000;
+const formatPoints = (value) => String(Number(roundPoints(value).toFixed(4)));
+const CLUSTER_SEED_ATTEMPTS = 40; // Random starting cells tried to find room for a full cluster.
 const HUNGER_BAR_FRAC = 0.52; // Bar height as a fraction of its rectangle (bigger = less space above/below).
 const EAT_FILL_MS = 450; // How long the bar takes to slide up after eating.
 const EATEN_FOOD_FADE_MS = 3200; // How long each eaten food stays in the bar (fading out) before it is gone.
@@ -141,25 +172,34 @@ const DEATH_REASONS = {
 };
 
 /* =====================================
-   SETTINGS: SCREEN, PANELS AND JOYSTICK
+   SETTINGS: SCREEN, PANELS AND CONTROLS
 ===================================== */
 const JOYSTICK_SIZE = 170;
-const JOY_PAD = 16; // Space between the joystick and its rectangle.
 const FONT_FAMILY = "'Courier New', Courier, monospace";
-const GRID_SCALE = 0.9; // Grid is 10% smaller than the space available.
+const GRID_SCALE = 0.925; // Grid is 7.5% smaller than the space available (was 10%, now 25% less padding).
 const OUTER_PAD = 5; // Gap between the outer border and the wall ring around the grid.
 const WALL_THICKNESS = OUTER_PAD; // Walls (and the ring) are as thick as that gap.
 const RING_EXT = WALL_THICKNESS / 2 + 1; // How far the ring's outline reaches past the arena edge.
 const GAP = 6; // Fixed distance between the rectangles in every view.
+const MIN_PANEL_SPACE = 9; // Smallest space above / between / below the grid and controller (was 12, now 25% less).
 // Score, hunger and button rectangles all share this height.
 const ROW_H_MOBILE = 55;
 const ROW_H_DESKTOP = 50; // 0.8x of the previous 62.5.
-// Per side: outer border + outer pad + the ring's overhang.
-const GRID_CHROME = 2 * (1 + OUTER_PAD + RING_EXT);
-const KEY_SIZE_DESKTOP = 49.6; // px (3.1rem). Mobile keys are double this.
+// Per side: outer pad + the ring's overhang (the shared panel owns the border).
+const GRID_CHROME = 2 * (OUTER_PAD + RING_EXT);
+const KEY_SIZE_DESKTOP = 49.6; // px (3.1rem).
 const KEY_GAP = 5.6; // px between desktop keys.
-const KEYPAD_PAD_DESKTOP = 16; // Space between the keys and their rectangle.
-const KEYPAD_PAD_MOBILE = 22;
+
+/* =====================================
+   SETTINGS: PROMPT (POPUP)
+   The prompt is a square, made as small as it can be while still holding its text
+   at full font size (nothing clipped, overflowing or shrunk).
+===================================== */
+const POPUP_GAP = 10; // Space between the text block and the buttons, in px.
+const POPUP_TEXT_GAP = 8; // Space between title, body and icon, in px.
+const POPUP_SLACK = 6; // Extra px of room so text never touches an edge.
+const MONO_CHAR_EM = 0.62; // Width of one body character, in em (Courier is 0.6; a little slack added).
+const TITLE_CHAR_EM = 0.66; // Width of one title character, in em (includes its letter spacing).
 
 /* =====================================
    SETTINGS: WALLS
@@ -195,10 +235,10 @@ const openDistance = (tickMs) =>
 /* =====================================
    SETTINGS: LOOK
 ===================================== */
-const FOOD_SIZE = 0.6;
+const FOOD_SIZE = 1.0; // Food image size in cells. Each food scales this by its own `size` (0 to 1).
 const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
-const BELLY_WIDTH = 0.3; // Belly occupies exactly 30% of the body's diameter.
+const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
 const OUTLINE_COLOUR = "#000000";
 const OUTLINE_WIDTH = 0.01;
 const EDGE_WOBBLE = 1;
@@ -460,23 +500,58 @@ const isOpposite = (a, b) => a.x === -b.x && a.y === -b.y;
 const hungerLevel = (hunger, now, drainMs) =>
   Math.max(0, hunger.level - (now - hunger.at) / drainMs);
 
-const spawnFood = (snake, foods = []) => {
+let nextFoodGroupId = 1;
+
+// Grows a cluster of up to `size` cells outward from `seed`. Every new cell touches
+// (up, down, left or right) a cell already in the cluster, is free, and is not
+// separated from it by a wall. Returns fewer cells if the seed has no room to grow.
+const growCluster = (seed, size, isFree, walls) => {
+  const cluster = [seed];
+  const taken = new Set([`${seed.x},${seed.y}`]);
+
+  while (cluster.length < size) {
+    const options = [];
+
+    for (const c of cluster) {
+      for (const [dx, dy] of DIRS) {
+        const next = { x: c.x + dx, y: c.y + dy };
+        const key = `${next.x},${next.y}`;
+        if (taken.has(key) || !isFree(next.x, next.y)) continue;
+        if (isWallBetween(walls, c, next)) continue;
+        if (!options.some((o) => o.x === next.x && o.y === next.y)) options.push(next);
+      }
+    }
+
+    if (!options.length) break;
+
+    const pick = options[Math.floor(Math.random() * options.length)];
+    taken.add(`${pick.x},${pick.y}`);
+    cluster.push(pick);
+  }
+
+  return cluster;
+};
+
+// Spawns one group: `count` pieces of the same food placed together as a cluster of
+// touching cells. This runs every time a group spawns (not just at the start).
+// Returns an array of foods (fewer than `count` only if the board is too full), or null.
+const spawnFoodGroup = (snake, foods = [], walls = null) => {
+  const occupied = new Set([
+    ...snake.map((s) => `${s.x},${s.y}`),
+    ...foods.map((f) => `${f.x},${f.y}`),
+  ]);
+  const isFree = (x, y) =>
+    x >= 0 && x < ARENA_COLS && y >= 0 && y < ARENA_ROWS && !occupied.has(`${x},${y}`);
+
   const free = [];
 
   for (let x = 0; x < ARENA_COLS; x++) {
     for (let y = 0; y < ARENA_ROWS; y++) {
-      if (
-        !snake.some((s) => s.x === x && s.y === y) &&
-        !foods.some((f) => f.x === x && f.y === y)
-      ) {
-        free.push({ x, y });
-      }
+      if (isFree(x, y)) free.push({ x, y });
     }
   }
 
   if (!free.length) return null;
-
-  const cell = free[Math.floor(Math.random() * free.length)];
 
   // Choose a food proportionally to its configured spawn weight.
   // Unlisted foods use DEFAULT_FOOD_SPAWN_WEIGHT; a weight of 0 excludes a food.
@@ -516,24 +591,41 @@ const spawnFood = (snake, foods = []) => {
   }
 
   const foodConfig = FOOD_CONFIG[type.name] ?? {};
+  const wanted = Math.max(1, Math.floor(foodConfig.count ?? DEFAULT_FOOD_COUNT));
+  const groupId = nextFoodGroupId++;
 
-  return {
+  // Try several random starting cells and keep the biggest cluster found,
+  // stopping as soon as one has room for every piece.
+  let cells = [];
+  for (let attempt = 0; attempt < CLUSTER_SEED_ATTEMPTS; attempt++) {
+    const seed = free[Math.floor(Math.random() * free.length)];
+    const candidate = growCluster(seed, wanted, isFree, walls);
+    if (candidate.length > cells.length) cells = candidate;
+    if (cells.length >= wanted) break;
+  }
+
+  return cells.map((cell) => ({
     ...cell,
     image: type.image,
     name: type.name,
+    groupId,
     satiation: foodConfig.satiation ?? DEFAULT_FOOD_SATIATION,
-    growth: Math.max(0, Math.floor(foodConfig.growth ?? DEFAULT_FOOD_GROWTH)),
-  };
+    growth: Number.isFinite(Number(foodConfig.growth ?? DEFAULT_FOOD_GROWTH))
+      ? Math.max(0, Number(foodConfig.growth ?? DEFAULT_FOOD_GROWTH))
+      : DEFAULT_FOOD_GROWTH,
+    size: Math.min(1, Math.max(0, Number(foodConfig.size ?? DEFAULT_FOOD_SIZE) || 0)),
+  }));
 };
 
-// Tops the board up to `count` foods (fewer if there is no room left).
-const refillFoods = (snake, foods, count) => {
+// Tops the board up to `count` groups of food (fewer if there is no room left).
+// A group stays on the board until every piece of it has been eaten.
+const refillFoods = (snake, foods, count, walls = null) => {
   const next = [...foods];
 
-  while (next.length < count) {
-    const food = spawnFood(snake, next);
-    if (!food) break;
-    next.push(food);
+  while (new Set(next.map((f) => f.groupId)).size < count) {
+    const group = spawnFoodGroup(snake, next, walls);
+    if (!group || !group.length) break;
+    next.push(...group);
   }
 
   return next;
@@ -711,7 +803,7 @@ const activateGame = (g, cfg) => {
     movedAt: performance.now(),
     dir: RIGHT,
     facing: "right",
-    foods: refillFoods(snake, [], cfg.foodCount),
+    foods: refillFoods(snake, [], cfg.foodCount, g.walls),
     swallowing: null,
     growthRemaining: 0,
     score: 0,
@@ -810,12 +902,14 @@ const useWindowSize = () => {
    SNAKE IMMERSION
 ===================================== */
 export const SnakeImmersion = ({ mobileMode, darkMode, leaveActivities }) => {
+  // On mobile the rectangles nearly fill the whole area: only a GAP-sized margin
+  // (the same as the space between the buttons in the top right).
   const outerContainer = {
     position: "relative",
     width: "100%",
     height: "100vh",
     boxSizing: "border-box",
-    padding: "2rem",
+    padding: mobileMode ? GAP : "2rem",
     fontFamily: FONT_FAMILY,
   };
 
@@ -989,9 +1083,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         newHead.y >= ARENA_ROWS;
 
       const foodGrowth = eating
-        ? Math.max(0, Math.floor(eatenFood.growth ?? DEFAULT_FOOD_GROWTH))
+        ? Math.max(0, Number(eatenFood.growth ?? DEFAULT_FOOD_GROWTH) || 0)
         : 0;
-      const willGrow = (g.growthRemaining ?? 0) + foodGrowth > 0;
+      // Fractional growth is banked until it reaches a complete body segment.
+      // A segment is retained on this move only when at least 1.0 is available.
+      const availableGrowth = roundPoints((g.growthRemaining ?? 0) + foodGrowth);
+      const willGrow = availableGrowth >= 1;
       const solid = willGrow ? g.snake : g.snake.slice(0, -1);
       const hitSelf = solid.some((s) => s.x === newHead.x && s.y === newHead.y);
       const hitWall = outOfBounds || isWallBetween(g.walls, head, newHead);
@@ -1009,11 +1106,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         return;
       }
 
-      let growthRemaining = g.growthRemaining ?? 0;
-      if (eating) growthRemaining += foodGrowth;
+      let growthRemaining = availableGrowth;
 
       const snake = [newHead, ...g.snake];
-      if (growthRemaining > 0) growthRemaining -= 1;
+      if (willGrow) growthRemaining = roundPoints(growthRemaining - 1);
       else snake.pop();
 
       let foods = g.foods;
@@ -1024,7 +1120,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       if (eating) {
         swallowing = eatenFood;
-        score += foodGrowth;
+        score = roundPoints(score + foodGrowth);
         if (foodGrowth > 0) {
           clearTimeout(scoreBonusTimeoutRef.current);
           setScoreBonus({ id: now, amount: foodGrowth });
@@ -1045,11 +1141,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           ),
           at: now,
         };
-        foods = refillFoods(
-          snake,
-          g.foods.filter((f) => f !== eatenFood),
-          cfg.foodCount
-        );
+        const remaining = g.foods.filter((f) => f !== eatenFood);
+        // Hard modes: wait until every food is eaten, then spawn the whole set again.
+        // Normal mode: top the board up as soon as a group is finished.
+        foods = cfg.respawnAllAtOnce
+          ? (remaining.length
+              ? remaining
+              : refillFoods(snake, [], cfg.foodCount, g.walls))
+          : refillFoods(snake, remaining, cfg.foodCount, g.walls);
         if (!foods.length) status = "won";
       }
 
@@ -1720,34 +1819,37 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const textPx = mobileMode ? TEXT_PX_MOBILE : TEXT_PX_DESKTOP;
 
   // The stack fills the immersion area. Every rectangle is full width and only the
-  // grid's rectangle changes size, taking whatever height is left. In joystick mode
-  // the joystick rectangle ends at the same distance from the edge as the others.
-  const boxW = Math.max(1, measuredBox?.w ?? w - 64);
-  const boxH = Math.max(1, measuredBox?.h ?? h - 104);
+  // grid's rectangle changes size, taking whatever height is left.
+  // On mobile the outer padding is just GAP on each side, so the fallback subtracts that.
+  const boxW = Math.max(1, measuredBox?.w ?? w - (mobileMode ? 2 * GAP : 64));
+  const boxH = Math.max(1, measuredBox?.h ?? h - (mobileMode ? 2 * GAP : 104));
 
-  // Mobile keys are double the desktop size (only shrunk if the screen is too narrow).
-  const keypadPad = mobileMode ? KEYPAD_PAD_MOBILE : KEYPAD_PAD_DESKTOP;
-  const keyGap = mobileMode ? 8 : KEY_GAP;
-  const keySize = mobileMode
-    ? Math.floor(
-        Math.min(2 * KEY_SIZE_DESKTOP, (boxW - 2 * keypadPad - 2 - 2 * keyGap) / 3)
-      )
-    : KEY_SIZE_DESKTOP;
-  const keypadH = 2 * keySize + keyGap + 2 * keypadPad + 2;
-  
+  // Desktop keypad: two rows of keys. Mobile arrows: a console-style D-pad cross
+  // whose size matches the joystick, so the layout does not jump when toggling.
+  const keySize = KEY_SIZE_DESKTOP;
+  const keyGap = KEY_GAP;
+  const dpadArm = Math.floor(JOYSTICK_SIZE / 3);
+  const dpadSize = dpadArm * 3;
+
+  // Visible height of whichever controller is showing (no padding around it).
+  const controlsH = joystickMode
+    ? JOYSTICK_SIZE
+    : mobileMode
+      ? dpadSize
+      : 2 * keySize + keyGap;
 
   // Score text is doubled but shrinks if the narrower score rectangle needs it.
   const scoreW = boxW - (mobileMode ? 3 : 2) * (rowH + GAP);
   const scoreFontPx = Math.floor(Math.min(textPx, (scoreW - 16) / 6));
-  const joystickH = JOYSTICK_SIZE + 2 * JOY_PAD + 2;
-  const controlsH = joystickMode ? joystickH : keypadH;
 
+  // Panel height = whole stack minus score row, hunger row, the two stack gaps and the border.
+  // The grid gets what is left after the controller and three MIN_PANEL_SPACE gaps.
+  const panelH = boxH - rowH - hungerH - 2 * GAP - 2;
   const gridRectH = Math.max(
-    GRID_CHROME + 60,
-    boxH - rowH - hungerH - controlsH - 2 * GAP
+    2 * RING_EXT + 60,
+    panelH - controlsH - 3 * MIN_PANEL_SPACE
   );
 
-  // The grid keeps at least OUTER_PAD between its border and the grid rectangle.
   const cell = Math.max(
     4,
     Math.floor(
@@ -1755,7 +1857,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         Math.min(
           CELL_SIZE,
           (boxW - GRID_CHROME) / ARENA_COLS,
-          (gridRectH - GRID_CHROME) / ARENA_ROWS
+          (gridRectH - 2 * RING_EXT) / ARENA_ROWS
         )
     )
   );
@@ -1822,7 +1924,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   }, [joystickMode, w, h, cell, measuredBox]);
 
   const headSize = HEAD_SIZE * cell;
-  const foodSize = FOOD_SIZE * cell;
   const head = game.snake[0] ?? { x: 0, y: 0 };
 
   // The head artwork faces left. Mirroring makes it face right; vertical movement
@@ -1836,6 +1937,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
      STYLES
   ===================================== */
   const colContainer = {
+    position: "relative", // The prompt is centred on this whole play area, not on the grid.
     display: "flex",
     flexDirection: "column",
     alignItems: "stretch",
@@ -1927,7 +2029,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     border: "1px solid var(--colour-5)",
     borderRadius: "6px",
     overflow: "hidden",
-    backgroundColor: "var(--colour-2)",
+    backgroundColor: "var(--colour-1)",
   };
 
   const hungerIcon = Math.round(hungerH * HUNGER_BAR_FRAC * 0.75);
@@ -1940,22 +2042,33 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     bottom: 0,
     width: `${hungerShown * 100}%`,
     borderRadius: "5px",
-    backgroundColor: "var(--colour-4)",
+    backgroundColor: "var(--colour-3)",
   };
 
-  // Outer border: same look (and shadow) as the score and keypad rectangles.
-  // It stretches to fill the remaining space; the grid inside keeps its own size.
-  const gridSectionStyle = {
+  // One shared panel with no padding or gap of its own. space-evenly puts the same
+  // amount of space above the grid, between grid and controller, and below the controller.
+  const gridControlsSectionStyle = {
     ...sectionStyle,
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
     minHeight: 0,
-    padding: OUTER_PAD,
-    // Join the controls panel below the grid and use its top border as the divider.
-    borderBottom: 0,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    padding: 0,
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "space-evenly",
+    gap: 0,
+  };
+
+  // Exactly as tall as the grid plus its wall ring.
+  const gridSectionStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    padding: 0,
   };
 
   // Holds the arena and the wall ring around it: no border, no shadow.
@@ -1977,23 +2090,24 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     height: ARENA_ROWS * cell,
     flexShrink: 0,
     boxSizing: "content-box",
-    backgroundColor: "var(--colour-2)",
+    backgroundColor: "var(--colour-1)",
     backgroundImage:
       "linear-gradient(var(--colour-3) 1px, transparent 1px), linear-gradient(90deg, var(--colour-3) 1px, transparent 1px)",
     backgroundSize: `${cell}px ${cell}px`,
     boxShadow: "none",
   };
 
+  // Exactly as tall as the visible controller.
   const controlsSectionStyle = {
-    ...sectionStyle,
-    minHeight: controlsH,
-    padding: joystickMode ? JOY_PAD : keypadPad,
+    height: controlsH,
+    flexShrink: 0,
+    width: "100%",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
     position: "relative",
-    // Pull the panel up to meet the grid; this top border is the single divider line.
-    marginTop: -GAP,
-    borderTop: "1px solid var(--colour-5)",
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
   };
 
   const directionGridStyle = {
@@ -2051,78 +2165,139 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     </button>
   );
 
-  // Compact CSS triangles for the mobile keypad; desktop keeps its WASD labels.
-  const directionTriangle = (direction) => {
-    const height = Math.max(6, Math.round(keySize * 0.18));
-    const halfBase = Math.max(5, Math.round(keySize * 0.16));
-    const style = {
-      display: "block",
-      width: 0,
-      height: 0,
-      borderStyle: "solid",
-    };
+  // Compact CSS triangle drawn on each arm of the mobile D-pad.
+  const directionTriangle = (direction, size) => {
+    const height = Math.max(6, Math.round(size * 0.18));
+    const halfBase = Math.max(5, Math.round(size * 0.16));
+    const style = { display: "block", width: 0, height: 0, borderStyle: "solid" };
 
     if (direction === UP) {
-      return { ...style, borderWidth: `0 ${halfBase}px ${height}px`, borderColor: `transparent transparent var(--colour-5)` };
+      return { ...style, borderWidth: `0 ${halfBase}px ${height}px`, borderColor: "transparent transparent var(--colour-5)" };
     }
     if (direction === DOWN) {
-      return { ...style, borderWidth: `${height}px ${halfBase}px 0`, borderColor: `var(--colour-5) transparent transparent` };
+      return { ...style, borderWidth: `${height}px ${halfBase}px 0`, borderColor: "var(--colour-5) transparent transparent" };
     }
     if (direction === LEFT) {
-      return { ...style, borderWidth: `${halfBase}px ${height}px ${halfBase}px 0`, borderColor: `transparent var(--colour-5) transparent transparent` };
+      return { ...style, borderWidth: `${halfBase}px ${height}px ${halfBase}px 0`, borderColor: "transparent var(--colour-5) transparent transparent" };
     }
-    return { ...style, borderWidth: `${halfBase}px 0 ${halfBase}px ${height}px`, borderColor: `transparent transparent transparent var(--colour-5)` };
+    return { ...style, borderWidth: `${halfBase}px 0 ${halfBase}px ${height}px`, borderColor: "transparent transparent transparent var(--colour-5)" };
   };
+
+  // Console-style D-pad: one cross-shaped outline with four invisible hit areas on top.
+  const dpadArms = [
+    { d: UP, x: 1, y: 0, label: "Move up" },
+    { d: LEFT, x: 0, y: 1, label: "Move left" },
+    { d: RIGHT, x: 2, y: 1, label: "Move right" },
+    { d: DOWN, x: 1, y: 2, label: "Move down" },
+  ];
+  const isPressedDir = (d) =>
+    activeDirection != null && activeDirection.x === d.x && activeDirection.y === d.y;
+  const dpadPath = [
+    `M${dpadArm},0`, `H${2 * dpadArm}`, `V${dpadArm}`, `H${3 * dpadArm}`,
+    `V${2 * dpadArm}`, `H${2 * dpadArm}`, `V${3 * dpadArm}`, `H${dpadArm}`,
+    `V${2 * dpadArm}`, `H0`, `V${dpadArm}`, `H${dpadArm}`, "Z",
+  ].join(" ");
 
   const glassStyle = {
     position: "absolute",
     inset: 0,
-    zIndex: 15,
+    zIndex: 1000,
     pointerEvents: "none",
     background:
       "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 40%)",
   };
 
-  // The prompt is a fixed 7 x 7 cells. The title is sized to fit on one line;
-  // The prompt occupies 7 x 7 cells on desktop and 9 x 9 cells on mobile.
-  // On narrow phones, reduce the horizontal padding and button gap so the three
-  // full-size mode buttons still fit within the 9-cell-wide prompt.
-  const popupSide = (mobileMode ? 7.8 : 6.8) * cell;
-  const popupBtnGap = mobileMode
-    ? Math.max(4, Math.min(6, Math.floor((popupSide - 3 * rowH - 2) / 2)))
-    : Math.max(6, Math.round(cell * 0.3));
-  const popupPadX = mobileMode
-    ? Math.max(2, Math.min(8, (popupSide - 3 * rowH - 2 * popupBtnGap - 2) / 2))
-    : Math.max(8, cell * 0.4);
-  const titleChars = 16; // "CHOOSE GAME MODE"
-  const popupFont = Math.max(
-    8,
-    Math.floor(Math.min(textPx, (popupSide - 2 * Math.max(4, cell * 0.2) - 2) / (titleChars * 0.64)))
-  );
-  const popupBodyFont = Math.max(7, Math.round(popupFont * 0.85));
+  // What the prompt says. Keep what it showed while it fades, so the game-over
+  // text never appears behind the start popup.
+  if (game.status === "choose" || game.status === "dead" || game.status === "won") {
+    popupInfoRef.current = { status: game.status, reason: game.reason, score: game.score };
+  }
+  const popupInfo = popupInfoRef.current;
+  const popupTitle =
+    popupInfo.status === "choose"
+      ? "CHOOSE MODE"
+      : popupInfo.status === "won"
+        ? `WINNER`
+        : `GAME OVER`;
+  const popupBody =
+    popupInfo.status === "choose"
+      ? `EAT SUSHI TO STOP THE SNAKE FROM GOING HUNGRY`
+      : popupInfo.status === "won"
+        ? `YOU SCORED ${formatPoints(popupInfo.score)} ${popupInfo.score === 1 ? "POINT" : "POINTS"} AND ARE FINALLY FULL`
+        : `YOU SCORED ${formatPoints(popupInfo.score)} ${popupInfo.score === 1 ? "POINT" : "POINTS"} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
+  // The chosen difficulty's icon sits below the body text on the game over / winner prompt.
+  const popupBodyIcon = popupInfo.status === "choose" ? null : icons[cfg.icon];
 
-  // Popup buttons match the top-right control buttons exactly.
-  const popupBtn = rowH;
+  // Fonts stay at full size; the square grows to fit them instead.
+  const popupFont = Math.round(textPx);
+  const popupBodyFont = Math.max(7, Math.round(popupFont * 0.85));
+  const popupPad = Math.max(10, Math.round(popupFont * 0.7));
+  const popupBtn = rowH; // Popup buttons match the top-right control buttons exactly.
+  const popupBtnGap = 8;
+  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : 2;
+  const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
+  const popupLabelFont = (label) => {
+    const longestWord = Math.max(...label.split(" ").map((word) => word.length));
+    const availableWidth = popupBtn - 10;
+    return Math.max(6, Math.min(popupLabelMaxFont, availableWidth / (longestWord * 0.62)));
+  };
+  const popupDiffIconPx = Math.round(2 * 1.3 * popupBodyFont); // Larger difficulty icon shown above the action buttons on results.
+
+  // Greedy word wrap for a monospace font, so the number of body lines is known exactly.
+  const wrapLineCount = (text, maxChars) => {
+    let lines = 1;
+    let len = 0;
+    for (const word of text.split(" ")) {
+      if (len === 0) len = word.length;
+      else if (len + 1 + word.length <= maxChars) len += 1 + word.length;
+      else {
+        lines += 1;
+        len = word.length;
+      }
+    }
+    return lines;
+  };
+
+  // Find the smallest square side whose width fits the title, buttons and longest word,
+  // and whose height holds the title, wrapped body, icon and buttons.
+  const bodyCharPx = MONO_CHAR_EM * popupBodyFont;
+  const longestWord = Math.max(...popupBody.split(" ").map((x) => x.length));
+  const widthNeeded = Math.max(
+    popupTitle.length * TITLE_CHAR_EM * popupFont,
+    popupButtonCount * popupBtn + (popupButtonCount - 1) * popupBtnGap,
+    longestWord * bodyCharPx
+  );
+  let popupSide = Math.ceil(widthNeeded + 2 * popupPad + 2 + POPUP_SLACK);
+  for (let guard = 0; guard < 2000; guard++) {
+    const innerW = popupSide - 2 * popupPad - 2;
+    const maxChars = Math.max(1, Math.floor(innerW / bodyCharPx));
+    const bodyLines = wrapLineCount(popupBody, maxChars);
+    const needH =
+      2 * popupPad + 2 + POPUP_SLACK +
+      popupFont * 1.1 +
+      POPUP_TEXT_GAP + bodyLines * popupBodyFont * 1.2 +
+      (popupBodyIcon ? POPUP_TEXT_GAP + popupDiffIconPx : 0) +
+      POPUP_GAP + popupBtn;
+    if (needH <= popupSide) break;
+    popupSide += 1;
+  }
 
   const overlayStyle = {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
+    position: "fixed",
+    left: "50vw",
+    top: "50vh",
     width: popupSide,
     height: popupSide,
     boxSizing: "border-box",
     transform: "translate(-50%, -50%)",
-    zIndex: 25,
+    zIndex: 50,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: `${Math.max(2, cell * 0.1)}px`,
-    paddingTop: `${Math.max(8, cell * 0.5)}px`,
-    paddingLeft: `${popupPadX}px`,
-    paddingRight: `${popupPadX}px`,
-    paddingBottom: `${Math.max(8, cell * 0.5)}px`,
-    overflow: mobileMode ? "visible" : "hidden",
+    gap: `${POPUP_GAP}px`,
+    padding: `${popupPad}px`,
+    overflow: "visible",
     textAlign: "center",
     color: "var(--colour-6)",
     fontFamily: FONT_FAMILY,
@@ -2145,7 +2320,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: `${Math.max(3, cell * 0.2)}px`,
+    gap: `${POPUP_TEXT_GAP}px`,
   };
 
   const popupTitleStyle = {
@@ -2160,12 +2335,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupBodyStyle = {
     width: "100%",
     boxSizing: "border-box",
-    paddingLeft: `${Math.max(4, cell * 0.35)}px`,
-    paddingRight: `${Math.max(4, cell * 0.35)}px`,
     fontSize: `${popupBodyFont}px`,
     lineHeight: 1.2,
     fontWeight: 400,
     textTransform: "uppercase",
+  };
+
+  // Difficulty icon shown on its own line below the body text on the game over / winner prompt.
+  const popupBodyIconStyle = {
+    display: "block",
+    width: popupDiffIconPx,
+    height: popupDiffIconPx,
+    flexShrink: 0,
+    objectFit: "contain",
+    pointerEvents: "none",
   };
 
   const popupButtonRowStyle = {
@@ -2177,6 +2360,30 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexShrink: 0,
   };
 
+  const popupButtonIconStyle = {
+    width: "62%",
+    height: "48%",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const popupButtonLabelStyle = (label) => ({
+    width: "100%",
+    maxHeight: "2.1em",
+    overflow: "hidden",
+    fontFamily: FONT_FAMILY,
+    fontSize: `${popupLabelFont(label)}px`,
+    lineHeight: 0.95,
+    fontWeight: 700,
+    color: "var(--colour-6)",
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflowWrap: "normal",
+    textTransform: "uppercase",
+  });
+
   const popupButtonStyle = {
     fontFamily: FONT_FAMILY,
     width: popupBtn,
@@ -2184,20 +2391,25 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     minWidth: popupBtn,
     minHeight: popupBtn,
     flexShrink: 0,
+    boxSizing: "border-box",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-evenly",
+    gap: 1,
     border: "1px solid var(--colour-5)",
     borderRadius: "8px",
     backgroundColor: pageBg ?? "transparent",
     color: "var(--colour-6)",
     fontWeight: 700,
-    fontSize: `${Math.round(popupBtn * 0.55)}px`,
     lineHeight: 1,
     cursor: "pointer",
-    padding: Math.max(5, Math.round(popupBtn * 0.18)),
+    padding: "4px 3px",
+    overflow: "hidden",
     boxShadow: "0 3px 10px rgba(0, 0, 0, 0.22)",
   };
+
+  const modeButtonStyle = popupButtonStyle;
 
   const buttonSize = rowH; // Buttons are as tall as the score rectangle.
 
@@ -2280,9 +2492,18 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     </div>
   );
 
-  const foodZ = frame === FULL_OPEN_FRAME ? 3 : 1;
+  // Layering: canvas/walls (1) < closed-mouth food (10 + row) < head (500)
+  // < open-mouth food (600 + row) < mouth overlay (900) < glass (1000).
+  // Adding the row means foods in lower cells always draw on top of foods in higher cells.
+  const HEAD_Z = 500;
+  const OVERLAY_Z = 900;
+  const foodZ = (food) => (frame === FULL_OPEN_FRAME ? 600 : 10) + food.y;
 
-  const foodLayer = (food, key) => (
+  const foodLayer = (food, key) => {
+    // Each food scales the FOOD_SIZE constant by its own 0 to 1 size.
+    const foodSize = FOOD_SIZE * cell * (food.size ?? DEFAULT_FOOD_SIZE);
+
+    return (
     <div
       key={key}
       style={{
@@ -2291,7 +2512,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         top: 0,
         width: cell,
         height: cell,
-        zIndex: foodZ,
+        zIndex: foodZ(food),
         pointerEvents: "none",
         display: "flex",
         alignItems: "center",
@@ -2312,7 +2533,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         FOOD_EMOJI
       )}
     </div>
-  );
+    );
+  };
 
   /* =====================================
      WALL LAYER
@@ -2382,25 +2604,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   /* =====================================
      RENDER
   ===================================== */
-  // Keep what the popup showed while it fades, so the game-over text never
-  // appears behind the start popup.
-  if (game.status === "choose" || game.status === "dead" || game.status === "won") {
-    popupInfoRef.current = { status: game.status, reason: game.reason, score: game.score };
-  }
-  const popupInfo = popupInfoRef.current;
-  const popupTitle =
-    popupInfo.status === "choose"
-      ? "CHOOSE MODE"
-      : popupInfo.status === "won"
-        ? `WINNER`
-        : `GAME OVER`;
-  const popupBody =
-    popupInfo.status === "choose"
-      ? `FEED THE SNAKE TO STOP HIM FROM GOING HUNGRY`
-      : popupInfo.status === "won"
-        ? `YOU HAVE EATEN ALL THAT CAN BE EATEN ${cfg.emoji}`
-        : `YOU SCORED ${popupInfo.score} ${popupInfo.score === 1 ? "POINT" : "POINTS"} BEFORE ${DEATH_REASONS[popupInfo.reason]} ${cfg.emoji}`;
-
   return (
     <div
       ref={colContainerRef}
@@ -2424,10 +2627,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         <div style={scoreSectionStyle}>
           <div style={scoreStyle}>
             <span style={{ position: "relative", display: "inline-block", whiteSpace: "nowrap" }}>
-              SCORE: {game.score}
+              SCORE: {formatPoints(game.score)}
               {scoreBonus && (
                 <span key={scoreBonus.id} style={scoreBonusStyle}>
-                  (+{scoreBonus.amount})
+                  (+{formatPoints(scoreBonus.amount)})
                 </span>
               )}
             </span>
@@ -2440,10 +2643,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               type="button"
               style={iconButtonStyle}
               onClick={toggleMobileControls}
-              aria-label={mobileControlMode === "joystick" ? "Use arrow keypad" : "Use joystick"}
-              title={mobileControlMode === "joystick" ? "Use arrow keypad" : "Use joystick"}
+              aria-label={mobileControlMode === "joystick" ? "Use directional pad" : "Use joystick"}
+              title={mobileControlMode === "joystick" ? "Use directional pad" : "Use joystick"}
             >
-              {renderIcon(mobileControlMode === "joystick" ? icons.keypad : icons.joystick, 0.68)}
+              {renderIcon(mobileControlMode === "joystick" ? icons.dpad : icons.joystick, 0.68)}
             </button>
           )}
 
@@ -2506,147 +2709,225 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         </div>
       </div>
 
-      <div style={gridSectionStyle}>
-        <div style={gridInnerStyle}>
-        <div key={runId} style={arenaStyle}>
-          {wallLayer}
+      <div style={gridControlsSectionStyle}>
+        <div style={gridSectionStyle}>
+          <div style={gridInnerStyle}>
+            <div key={runId} style={arenaStyle}>
+              {wallLayer}
 
-          <canvas
-            ref={canvasRef}
-            width={Math.round(ARENA_COLS * cell * dpr)}
-            height={Math.round(ARENA_ROWS * cell * dpr)}
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: ARENA_COLS * cell,
-              height: ARENA_ROWS * cell,
-              zIndex: 1,
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* No snake or food is rendered until the game starts. */}
-          {game.snake.length > 0 && (
-            <>
-              {headLayer(FRAMES[frame], 2)}
-              {game.foods.map((f) => foodLayer(f, `food-${f.x}-${f.y}`))}
-              {game.swallowing && foodLayer(game.swallowing, "swallowing")}
-              {headLayer(OVERLAY_IMAGE, 4, frame === FULL_OPEN_FRAME)}
-            </>
-          )}
-
-          <div style={glassStyle} />
-
-          {!popupHidden &&
-            (game.status === "choose" ||
-              game.status === "dead" ||
-              game.status === "won" ||
-              popupClosing) && (
-              <div style={overlayStyle}>
-                <div style={popupTextAreaStyle}>
-                  <div style={popupTitleStyle}>{popupTitle}</div>
-                  {popupBody && <div style={popupBodyStyle}>{popupBody}</div>}
-                </div>
-
-                {popupInfo.status === "choose" ? (
-                  <div style={popupButtonRowStyle}>
-                    {Object.entries(DIFFICULTIES).map(([key, d]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        style={popupButtonStyle}
-                        aria-label={`${d.label} mode`}
-                        title={d.label}
-                        onClick={() => chooseMode(key)}
-                      >
-                        {d.emoji}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={popupButtonRowStyle}>
-                    <button
-                      type="button"
-                      style={popupButtonStyle}
-                      aria-label="Play again"
-                      title="Play again"
-                      onClick={playAgain}
-                    >
-                      {renderIcon(icons.restart, 0.68)}
-                    </button>
-                    <button
-                      type="button"
-                      style={popupButtonStyle}
-                      aria-label="Choose game mode"
-                      title="Choose game mode"
-                      onClick={quitToStart}
-                    >
-                      {renderIcon(icons.gamemode, 0.68)}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-        </div>
-        </div>
-      </div>
-
-      <div style={controlsSectionStyle}>
-        {mobileMode ? (
-          mobileControlMode === "joystick" ? (
-            <>
-              <div
-                ref={spacerRef}
+              <canvas
+                ref={canvasRef}
+                width={Math.round(ARENA_COLS * cell * dpr)}
+                height={Math.round(ARENA_ROWS * cell * dpr)}
                 style={{
-                  width: JOYSTICK_SIZE,
-                  height: JOYSTICK_SIZE,
-                  flexShrink: 0,
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: ARENA_COLS * cell,
+                  height: ARENA_ROWS * cell,
+                  zIndex: 1,
+                  pointerEvents: "none",
                 }}
               />
 
-              <div
-                ref={overlayRef}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  zIndex: 40,
-                  pointerEvents: "none",
-                }}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                {joyPos && (
-                  <Joystick
-                    size={JOYSTICK_SIZE}
-                    initialPosition={joyPos}
-                    onChange={handleJoystick}
-                    movable={false}
-                  />
-                )}
-              </div>
-            </>
-          ) : (
-            <div style={directionGridStyle} aria-label="Arrow controls">
-              <span />
-              {makeDirectionButton(UP, <span style={directionTriangle(UP)} />, "Move up")}
-              <span />
-              {makeDirectionButton(LEFT, <span style={directionTriangle(LEFT)} />, "Move left")}
-              {makeDirectionButton(DOWN, <span style={directionTriangle(DOWN)} />, "Move down")}
-              {makeDirectionButton(RIGHT, <span style={directionTriangle(RIGHT)} />, "Move right")}
+              {/* No snake or food is rendered until the game starts. */}
+              {game.snake.length > 0 && (
+                <>
+                  {headLayer(FRAMES[frame], HEAD_Z)}
+                  {game.foods.map((f) => foodLayer(f, `food-${f.x}-${f.y}`))}
+                  {game.swallowing && foodLayer(game.swallowing, "swallowing")}
+                  {headLayer(OVERLAY_IMAGE, OVERLAY_Z, frame === FULL_OPEN_FRAME)}
+                </>
+              )}
+
+              <div style={glassStyle} />
             </div>
-          )
-        ) : (
-          <div style={directionGridStyle} aria-label="WASD controls">
-            <span />
-            {makeDirectionButton(UP, "W", "Move up")}
-            <span />
-            {makeDirectionButton(LEFT, "A", "Move left")}
-            {makeDirectionButton(DOWN, "S", "Move down")}
-            {makeDirectionButton(RIGHT, "D", "Move right")}
+          </div>
+        </div>
+
+        <div style={controlsSectionStyle}>
+          {mobileMode ? (
+            mobileControlMode === "joystick" ? (
+              <>
+                <div
+                  ref={spacerRef}
+                  style={{
+                    width: JOYSTICK_SIZE,
+                    height: JOYSTICK_SIZE,
+                    flexShrink: 0,
+                  }}
+                />
+
+                <div
+                  ref={overlayRef}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 40,
+                    pointerEvents: "none",
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                >
+                  {joyPos && (
+                    <Joystick
+                      size={JOYSTICK_SIZE}
+                      initialPosition={joyPos}
+                      onChange={handleJoystick}
+                      movable={false}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div
+                style={{ position: "relative", width: dpadSize, height: dpadSize, flexShrink: 0 }}
+                aria-label="Directional pad"
+              >
+                <svg
+                  width={dpadSize}
+                  height={dpadSize}
+                  style={{ position: "absolute", left: 0, top: 0, overflow: "visible", pointerEvents: "none" }}
+                  aria-hidden="true"
+                >
+                  <path d={dpadPath} fill="var(--colour-3)" />
+                  {dpadArms.filter((a) => isPressedDir(a.d)).map((a) => (
+                    <rect
+                      key={a.label}
+                      x={a.x * dpadArm}
+                      y={a.y * dpadArm}
+                      width={dpadArm}
+                      height={dpadArm}
+                      fill="var(--colour-4)"
+                    />
+                  ))}
+                  <circle
+                    cx={dpadSize / 2}
+                    cy={dpadSize / 2}
+                    r={dpadArm * 0.28}
+                    fill="none"
+                    stroke="var(--colour-5)"
+                    strokeOpacity="0.5"
+                  />
+                  <path d={dpadPath} fill="none" stroke="var(--colour-5)" strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
+
+                {dpadArms.map((a) => (
+                  <button
+                    key={a.label}
+                    type="button"
+                    aria-label={a.label}
+                    style={{
+                      position: "absolute",
+                      left: a.x * dpadArm,
+                      top: a.y * dpadArm,
+                      width: dpadArm,
+                      height: dpadArm,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      touchAction: "manipulation",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                    onPointerDown={() => {
+                      setActiveDirection(a.d);
+                      handleDirection(a.d);
+                    }}
+                    onPointerUp={() => setActiveDirection(null)}
+                    onPointerCancel={() => setActiveDirection(null)}
+                    onPointerLeave={() => setActiveDirection(null)}
+                    onClick={(e) => {
+                      // Pointer presses are handled above; this covers keyboard activation (detail 0).
+                      if (e.detail === 0) handleDirection(a.d);
+                    }}
+                  >
+                    <span style={directionTriangle(a.d, dpadArm)} />
+                  </button>
+                ))}
+              </div>
+            )
+          ) : (
+            <div style={directionGridStyle} aria-label="WASD controls">
+              <span />
+              {makeDirectionButton(UP, "W", "Move up")}
+              <span />
+              {makeDirectionButton(LEFT, "A", "Move left")}
+              {makeDirectionButton(DOWN, "S", "Move down")}
+              {makeDirectionButton(RIGHT, "D", "Move right")}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* The prompt sits over the whole play area and is sized from its shape, not from the grid. */}
+      {!popupHidden &&
+        (game.status === "choose" ||
+          game.status === "dead" ||
+          game.status === "won" ||
+          popupClosing) && (
+          <div style={overlayStyle}>
+            <div style={popupTextAreaStyle}>
+              <div style={popupTitleStyle}>{popupTitle}</div>
+              {popupBody && (
+                <div style={popupBodyStyle}>{popupBody}</div>
+              )}
+              {popupBodyIcon && (
+                <img src={popupBodyIcon} alt="" aria-hidden="true" draggable={false} style={popupBodyIconStyle} />
+              )}
+            </div>
+
+            {popupInfo.status === "choose" ? (
+              <div style={popupButtonRowStyle}>
+                {Object.entries(DIFFICULTIES).map(([key, d]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    style={modeButtonStyle}
+                    aria-label={`${d.label} mode`}
+                    title={d.label}
+                    onClick={() => chooseMode(key)}
+                  >
+                    <div style={popupButtonIconStyle}>
+                      {renderIcon(icons[d.icon])}
+                    </div>
+                    <span style={popupButtonLabelStyle(d.label)}>{d.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={popupButtonRowStyle}>
+                <button
+                  type="button"
+                  style={popupButtonStyle}
+                  aria-label="Play again"
+                  title="Play again"
+                  onClick={playAgain}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.restart)}
+                  </div>
+                  <span style={popupButtonLabelStyle("RETRY")}>RETRY</span>
+                </button>
+                <button
+                  type="button"
+                  style={popupButtonStyle}
+                  aria-label="Choose game mode"
+                  title="Choose game mode"
+                  onClick={quitToStart}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.change)}
+                  </div>
+                  <span style={popupButtonLabelStyle("MODES")}>MODES</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
-      </div>
     </div>
   );
 };
