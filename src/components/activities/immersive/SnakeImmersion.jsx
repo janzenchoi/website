@@ -95,7 +95,7 @@ const DIFFICULTIES = {
     label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
     speedMult: 0.5, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
-    hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
+    hungerMult: 0.8, // 1.2 = hunger bar empties 20% faster.
     foodCount: 4, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
     straightWalls: 0, // Number of straight walls placed at the start of each game.
@@ -108,7 +108,7 @@ const DIFFICULTIES = {
     label: "NORMAL",
     icon: "hard",
     speedMult: 0.5,
-    hungerMult: 1.2,
+    hungerMult: 0.9,
     foodCount: 3,
     respawnAllAtOnce: false,
     straightWalls: 3,
@@ -121,7 +121,7 @@ const DIFFICULTIES = {
     label: "HARD",
     icon: "vhard",
     speedMult: 0.5,
-    hungerMult: 1.4,
+    hungerMult: 1.0,
     foodCount: 3,
     respawnAllAtOnce: true,
     straightWalls: 5,
@@ -242,8 +242,8 @@ const MODE_ICON_SCALE = 1.75; // Difficulty icons are drawn this many times thei
 /* =====================================
    SETTINGS: WALLS
 ===================================== */
-const WALL_FILL = "var(--colour-3)";
-const WALL_OUTLINE = "var(--colour-4)";
+const WALL_FILL = "var(--colour-4)";
+const WALL_OUTLINE = "var(--colour-5)";
 const WALL_MAX_ATTEMPTS = 200; // Tries per wall before giving up on placing it.
 const START_CLEAR_AHEAD = 5; // Cells in front of the starting head kept free of walls.
 const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free of walls.
@@ -277,6 +277,7 @@ const FOOD_SIZE = 1.0; // Food image size in cells. Each food scales this by its
 const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
 const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
+const BELLY_BLEND = 0.3; // Fade-in band above the belly, as a fraction of the belly's depth (0 = hard edge).
 const OUTLINE_LIGHT_COLOUR = "#000000";
 const OUTLINE_DARK_COLOUR = "#484848";
 const OUTLINE_WIDTH = 0.02;
@@ -536,68 +537,132 @@ const KEY_DIRECTIONS = {
 
 const isOpposite = (a, b) => a.x === -b.x && a.y === -b.y;
 
-// Re-plan from the complete visible game state on every move. BFS accounts for
-// the arena bounds, internal walls, the snake's current body and all sushi cells.
-const autoDirection = (g) => {
-  if (!g?.snake?.length) return null;
-  if (!g.foods?.length && !g.wasabi) return null;
+/* =====================================
+   AUTO PLAY (AI)
+===================================== */
+const MOVES = [UP, RIGHT, DOWN, LEFT];
+const AUTO_MAX_TARGETS = 8; // Food pieces checked (nearest first) before giving up on a safe meal.
+const AUTO_URGENCY = 1.5; // Stop being picky when the nearest food takes over 1/1.5 of the remaining hunger time.
 
-  const head = g.snake[0];
-  const tail = g.snake[g.snake.length - 1];
-  const blocked = new Set(g.snake.slice(0, -1).map((p) => `${p.x},${p.y}`));
-  const directions = [UP, RIGHT, DOWN, LEFT];
+const cellKey = (c) => `${c.x},${c.y}`;
+const inArena = (x, y) => x >= 0 && x < ARENA_COLS && y >= 0 && y < ARENA_ROWS;
 
-  // Wasabi is the preferred target whenever it is on the board and reachable.
-  // Only fall back to ordinary sushi if no safe path to the wasabi exists.
-  const targetGroups = [
-    ...(g.wasabi ? [[g.wasabi]] : []),
-    ...(g.foods?.length ? [g.foods] : []),
-  ];
-  for (const targetGroup of targetGroups) {
-    const targets = new Set(targetGroup.map((f) => `${f.x},${f.y}`));
-    const queue = [{ x: head.x, y: head.y, first: null }];
-    const seen = new Set([`${head.x},${head.y}`]);
-    while (queue.length) {
-      const current = queue.shift();
-      if (targets.has(`${current.x},${current.y}`) && current.first) return current.first;
-      for (const d of directions) {
-        if (!current.first && isOpposite(d, g.dir)) continue;
-        const next = { x: current.x + d.x, y: current.y + d.y };
-        const key = `${next.x},${next.y}`;
-        if (next.x < 0 || next.x >= ARENA_COLS || next.y < 0 || next.y >= ARENA_ROWS) continue;
-        if (seen.has(key) || (blocked.has(key) && !(next.x === tail.x && next.y === tail.y))) continue;
-        if (isWallBetween(g.walls, current, next)) continue;
-        seen.add(key);
-        queue.push({ ...next, first: current.first ?? d });
-      }
+// Flood-fills from body[0]. `steps` maps each reachable cell to the moves needed to reach it;
+// `parent` rebuilds routes. Body cells are not permanent walls: segment j (head = 0) is free
+// once the snake has moved (length - j) times. `firstMoves` limits the first step (no reversing).
+const floodFrom = (body, walls, firstMoves = MOVES) => {
+  const len = body.length;
+  const freeAt = new Map();
+  for (let j = 1; j < len; j++) {
+    const key = cellKey(body[j]);
+    freeAt.set(key, Math.max(freeAt.get(key) ?? 0, len - j));
+  }
+
+  const start = body[0];
+  const steps = new Map([[cellKey(start), 0]]);
+  const parent = new Map();
+  const queue = [start];
+
+  for (let i = 0; i < queue.length; i++) {
+    const c = queue[i];
+    const next = steps.get(cellKey(c)) + 1;
+    for (const d of c === start ? firstMoves : MOVES) {
+      const n = { x: c.x + d.x, y: c.y + d.y };
+      const key = cellKey(n);
+      if (!inArena(n.x, n.y) || steps.has(key)) continue;
+      if (isWallBetween(walls, c, n)) continue;
+      if ((freeAt.get(key) ?? 0) > next) continue;
+      steps.set(key, next);
+      parent.set(key, c);
+      queue.push(n);
     }
   }
-  // If no food is currently reachable, keep moving into the largest safe region
-  // rather than deliberately reversing or colliding.
-  const safe = directions.filter((d) => {
-    if (isOpposite(d, g.dir)) return false;
+
+  return { steps, parent };
+};
+
+const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
+  const snake = g?.snake;
+  if (!snake?.length) return null;
+
+  const walls = g.walls;
+  const head = snake[0];
+  const len = snake.length;
+  const legal = MOVES.filter((d) => !isOpposite(d, g.dir));
+
+  // Can the head step this way now without dying? (The move vacates the tail cell.)
+  const canStep = (d) => {
     const n = { x: head.x + d.x, y: head.y + d.y };
-    return n.x >= 0 && n.x < ARENA_COLS && n.y >= 0 && n.y < ARENA_ROWS &&
-      !blocked.has(`${n.x},${n.y}`) && !isWallBetween(g.walls, head, n);
-  });
-  if (!safe.length) return null;
-  const freeSpace = (start) => {
-    const q = [start];
-    const visited = new Set([`${start.x},${start.y}`]);
-    while (q.length) {
-      const c = q.shift();
-      for (const d of directions) {
-        const n = { x: c.x + d.x, y: c.y + d.y };
-        const key = `${n.x},${n.y}`;
-        if (n.x < 0 || n.x >= ARENA_COLS || n.y < 0 || n.y >= ARENA_ROWS || visited.has(key) || blocked.has(key)) continue;
-        if (isWallBetween(g.walls, c, n)) continue;
-        visited.add(key); q.push(n);
-      }
-    }
-    return visited.size;
+    return (
+      inArena(n.x, n.y) &&
+      !isWallBetween(walls, head, n) &&
+      !snake.slice(0, Math.max(1, len - 1)).some((s) => s.x === n.x && s.y === n.y)
+    );
   };
-  return safe.map((d) => ({ d, area: freeSpace({ x: head.x + d.x, y: head.y + d.y }) }))
-    .sort((a, b) => b.area - a.area)[0].d;
+
+  // A body "has an exit" if its head can still reach its own tail, which keeps moving away.
+  const hasExit = (body) => {
+    const { steps } = floodFrom(body, walls);
+    return steps.has(cellKey(body[body.length - 1]));
+  };
+
+  const { steps, parent } = floodFrom(snake, walls, legal);
+  const now = performance.now();
+  const eta = (f) => (steps.get(cellKey(f)) ?? Infinity) * tickMs;
+
+  const candidates = [
+    ...(g.wasabi && now + eta(g.wasabi) < g.wasabi.expiresAt ? [g.wasabi] : []),
+    ...[...(g.foods ?? [])]
+      .filter((f) => steps.has(cellKey(f)))
+      .sort((a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))),
+  ].slice(0, AUTO_MAX_TARGETS);
+
+  const routeTo = (target) => {
+    const route = [];
+    for (let c = target; c && cellKey(c) !== cellKey(head); c = parent.get(cellKey(c))) route.push(c);
+    return route.reverse(); // First step ... target.
+  };
+  const firstMove = (route) =>
+    MOVES.find((d) => head.x + d.x === route[0].x && head.y + d.y === route[0].y) ?? null;
+
+  // 1. Go for the first food (wasabi first) that leaves the snake a way out afterwards.
+  for (const target of candidates) {
+    if (eta(target) >= timeLeftMs) continue; // Would starve before arriving.
+    const route = routeTo(target);
+    if (!route.length) continue;
+
+    // Assume the longest growth the food could give, to be on the safe side.
+    const growth = target === g.wasabi ? 0 : Math.max(1, Math.ceil(Number(target.length) || 1));
+    const future = [...route.slice().reverse(), ...snake].slice(0, len + growth);
+    if (hasExit(future)) return firstMove(route);
+  }
+
+  // 2. Nothing is safe. If starving is the bigger danger, take the nearest food anyway.
+  const nearest = [...candidates].sort(
+    (a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))
+  )[0];
+  if (nearest && steps.get(cellKey(nearest)) * tickMs * AUTO_URGENCY >= timeLeftMs) {
+    const route = routeTo(nearest);
+    if (route.length) return firstMove(route);
+  }
+
+  // 3. Otherwise keep safe: prefer moves that keep a way out, then the most open space,
+  // then carrying straight on.
+  const options = legal.filter(canStep).map((d) => {
+    const n = { x: head.x + d.x, y: head.y + d.y };
+    const body = [n, ...snake.slice(0, -1)];
+    const { steps: room } = floodFrom(body, walls);
+    return {
+      d,
+      exit: room.has(cellKey(body[body.length - 1])),
+      area: room.size,
+      straight: d === g.dir,
+    };
+  });
+  if (!options.length) return null;
+
+  options.sort((a, b) => (b.exit - a.exit) || (b.area - a.area) || (b.straight - a.straight));
+  return options[0].d;
 };
 
 // Hunger drains steadily from the level and time of the last meal.
@@ -965,7 +1030,11 @@ const createGame = (cfg) => ({
 const activateGame = (g, cfg) => {
   const cx = Math.floor(ARENA_COLS / 2);
   const cy = Math.floor(ARENA_ROWS / 2);
-  const snake = Array.from({ length: START_LENGTH }, (_, i) => ({ x: cx - i, y: cy }));
+  const snake = Array.from({ length: START_LENGTH }, (_, i) => ({
+    x: cx - i,
+    y: cy,
+    bellyFlip: 1, // 1 = belly on the "facing right" side, 0 = "facing left" side
+  }));
 
   return {
     ...g,
@@ -1269,13 +1338,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       if (queued && !isOpposite(queued, dir)) {
         dir = queued;
       } else if (autoPlayRef.current && now >= autoManualUntilRef.current) {
-        const planned = autoDirection(g);
+        const planned = autoDirection(g, {
+          tickMs,
+          timeLeftMs: hungerLevel(g.hunger, now, drainMs) * drainMs,
+        });
         if (planned && !isOpposite(planned, dir)) dir = planned;
       }
 
       const facing = dir.x !== 0 ? (dir.x > 0 ? "right" : "left") : g.facing;
       const head = g.snake[0];
-      const newHead = { x: head.x + dir.x, y: head.y + dir.y };
+      const newHead = {
+        x: head.x + dir.x,
+        y: head.y + dir.y,
+        bellyFlip: facing === "right" ? 1 : 0,
+      };
 
       const eatenWasabi =
         g.wasabi && g.wasabi.x === newHead.x && g.wasabi.y === newHead.y ? g.wasabi : null;
@@ -1504,18 +1580,45 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       if (!g.snake.length) return;
 
       const nz = g.pattern.nz;
-      const headFlip = g.facing === "right" ? -1 : 1;
-      const headTurn = g.dir.y !== 0 ? (g.dir.y < 0 ? 90 : -90) * headFlip : 0;
-      const headLift = OPEN_STEPS.includes(mouthRef.current.frame)
-        ? HEAD_LIFT_ANGLE * headFlip
-        : 0;
-      const bellyAngle = (headTurn + headLift + HEAD_ANGLE_OFFSET) * Math.PI / 180;
-
-      // The chin establishes which side of the body the belly starts on.
-      const chinX = -Math.sin(bellyAngle);
-      const chinY = Math.cos(bellyAngle);
 
       const t = Math.min(1, (now - g.movedAt) / paramsRef.current.tickMs);
+
+      // Belly side along the body: 0 or 1 on each cell, easing between neighbouring
+      // cells so a flip becomes a one-cell twist. q + 1 - t is the body's position on
+      // the cell track (cells slide forward by one over each move).
+      const flipOf = (cellData) => cellData?.bellyFlip ?? 1;
+      const bellyFlipAt = (q) => {
+        const cells = g.snake;
+        const tau = Math.min(cells.length - 1, Math.max(0, q + 1 - t));
+        const k = Math.floor(tau);
+        const u = tau - k;
+        const a = flipOf(cells[k]);
+        const b = flipOf(cells[Math.min(cells.length - 1, k + 1)]);
+        return a + (b - a) * (u * u * (3 - 2 * u));
+      };
+
+      // The belly is a band of constant width whose edges stay straight and parallel to the
+      // body. Twisting slides the band straight across the body, from one side (side = 0)
+      // to the other (side = 1), in the body's own frame (local y = across the body).
+      const bellyBand = (full, side) => {
+        const cut = full - 2 * full * BELLY_WIDTH;
+        return { lo: cut + (-full - cut) * side, hi: full + (-cut - full) * side };
+      };
+
+      // Gradient across a body of half-width R: opaque between lo and hi, fading to
+      // transparent over a short band outside each edge that lies inside the body.
+      const bandGradient = (R, lo, hi, colourAt) => {
+        const blend = Math.max(1e-3, (hi - lo) * BELLY_BLEND);
+        const alphaAt = (y) =>
+          Math.max(0, Math.min(1, (y - (lo - blend)) / blend)) *
+          Math.max(0, Math.min(1, (hi + blend - y) / blend));
+        const grad = ctx.createLinearGradient(0, -R, 0, R);
+        for (const y of [-R, lo - blend, lo, hi, hi + blend, R]) {
+          const yy = Math.min(R, Math.max(-R, y));
+          grad.addColorStop((yy + R) / (2 * R), colourAt(alphaAt(yy)));
+        }
+        return grad;
+      };
 
       if (g.status === "dead" && g.deathAt != null) {
         const elapsed = Math.min(DEATH_FADE_MS, Math.max(0, now - g.deathAt));
@@ -1596,15 +1699,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       const last = sx.length - 1;
       const sFull = [];
-      const sCut = [];
-      const sCutB = [];
       const skinC = [];
       const bellyC = [];
-      const sAngle = [];
-
-      // Estimate a smoothed tangent for each sample. Transporting the normal from
-      // sample to sample keeps the belly on one continuous side through corners.
-      let previousNormal = null;
+      const sNormal = []; // Angle of the body's left-hand normal (head to tail).
+      const sSide = []; // 0 = belly on that normal side, 1 = opposite side, between = mid-slide.
 
       for (let i = 0; i <= last; i++) {
         const before = Math.max(0, i - SUB);
@@ -1623,31 +1721,17 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         tx /= tangentLength;
         ty /= tangentLength;
 
-        // Left-hand normal of the head-to-tail tangent.
-        let nx = -ty;
-        let ny = tx;
-        const reference = previousNormal ?? { x: chinX, y: chinY };
-
-        // Avoid a 180-degree flip when the snake turns.
-        if (nx * reference.x + ny * reference.y < 0) {
-          nx = -nx;
-          ny = -ny;
-        }
-
-        previousNormal = { x: nx, y: ny };
-
-        // Local positive Y points towards the belly.
-        const angle = Math.atan2(-nx, ny);
-        sAngle.push(angle);
-
+        // The left-hand normal (-ty, tx) is continuous along the body, so it never flips by itself.
         const q = sQ[i];
+        const normal = Math.atan2(ty, tx);
+        const side = bellyFlipAt(q);
+
+        sNormal.push(normal);
+        sSide.push(side);
+
         const [, full] = widthsAt(q, Leff, n, g.bulges, now, W, c);
-        const bellyDepth = (2 * full) * BELLY_WIDTH;
-        const cut = full - bellyDepth;
 
         sFull.push(full);
-        sCut.push(cut);
-        sCutB.push(cut);
         skinC.push(skinColour(nz, q));
         bellyC.push(bellyColour(nz, q));
       }
@@ -1669,14 +1753,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const ex0 = tdx / tlen;
       const ex1 = tdy / tlen;
 
-      // The tail frame's vertical axis uses the final transported belly normal.
-      const ey0 = -Math.sin(sAngle[last]);
-      const ey1 = Math.cos(sAngle[last]);
+      // The tail frame's vertical axis is the body normal; the belly band slides across it.
+      const ey0 = -Math.sin(sNormal[last]);
+      const ey1 = Math.cos(sNormal[last]);
 
       const hwT = sFull[last];
       const R = 2 * hwT;
-      const Tt = hwT - sCutB[last];
-      const tailBelly = true;
+      const tailBand = bellyBand(hwT, sSide[last]);
+      const tailBelly = tailBand.hi - tailBand.lo > 0.5;
 
       const inTailFrame = (fn) => {
         ctx.save();
@@ -1735,12 +1819,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       /* =====================================
          2. SKIN
+         Full discs: the belly is painted over them, so the skin never leaves a
+         sliver on the wrong side while the belly twists round.
       ===================================== */
       everything((from, to) => {
         for (let i = from; i <= to; i++) {
           ctx.globalAlpha = deathAlpha(sQ[i]);
           ctx.beginPath();
-          discPart(ctx, sx[i], sy[i], sFull[i], sCut[i], false);
+          ctx.arc(sx[i], sy[i], sFull[i], 0, Math.PI * 2);
           ctx.fillStyle = skinC[i];
           ctx.fill();
         }
@@ -1783,27 +1869,36 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       }
 
       /* =====================================
-         4. BELLY (no dividing line between belly and skin)
+         4. BELLY (soft fade from skin, no dividing line)
       ===================================== */
       // Each belly cap is clipped to its own body disc and rotated to the local
-      // body normal. This keeps the belly at 30% of the diameter, including turns.
+      // body normal. It fades in over a short band above its old edge.
       everything((from, to) => {
         for (let i = from; i <= to; i++) {
-          if (sCut[i] >= sFull[i] - 0.01) continue;
+          if (sFull[i] < 0.5) continue;
 
           ctx.save();
           ctx.globalAlpha = deathAlpha(sQ[i]);
           ctx.translate(sx[i], sy[i]);
-          ctx.rotate(sAngle[i]);
+          ctx.rotate(sNormal[i]); // Always aligned to the body: the band's edges stay straight.
+
+          const band = bellyBand(sFull[i], sSide[i]);
           ctx.beginPath();
-          discPart(ctx, 0, 0, sFull[i], sCut[i], true);
-          ctx.fillStyle = bellyC[i];
+          ctx.arc(0, 0, sFull[i], 0, Math.PI * 2);
+
+          ctx.fillStyle = bandGradient(
+            sFull[i], band.lo, band.hi,
+            (a) => bellyC[i].replace(/\)$/, ` / ${a})`)
+          );
           ctx.fill();
 
           const headShade = Math.max(0, 1 - sQ[i] / 3);
           if (headShade > 0) {
-            ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * headShade})`;
-            ctx.fill();
+            ctx.fillStyle = bandGradient(
+              sFull[i], band.lo, band.hi,
+              (a) => `rgba(0, 0, 0, ${0.25 * headShade * a})`
+            );
+            ctx.fill(); // Reuses the same path.
           }
 
           ctx.restore();
@@ -1812,15 +1907,19 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       // Belly on the tail, clipped to the tail silhouette.
       if (tailBelly) {
-        const cutY = hwT - Tt;
+        const { lo: cutY, hi: edgeY } = tailBand;
 
         inTailFrame(() => {
           ctx.save();
           tailShape();
           ctx.clip();
           ctx.globalAlpha = deathAlpha(n - 1);
-          ctx.fillStyle = bellyC[last];
-          ctx.fillRect(-1, cutY, R + 2, hwT + 1 - cutY);
+
+          ctx.fillStyle = bandGradient(
+            hwT, cutY, edgeY,
+            (a) => bellyC[last].replace(/\)$/, ` / ${a})`)
+          );
+          ctx.fillRect(-1, -hwT - 1, R + 2, 2 * hwT + 2);
 
           ctx.lineWidth = Math.max(1, c * 0.035);
           ctx.lineCap = "butt";
@@ -1830,10 +1929,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             if (s >= R) break;
             if (s < 1) continue;
 
-            const lean = Math.tan((hash(j) - 0.5) * 2 * STRIPE_ANGLE) * ((hwT - cutY) / 2);
+            const lean = Math.tan((hash(j) - 0.5) * 2 * STRIPE_ANGLE) * ((edgeY - cutY) / 2);
             ctx.strokeStyle = stripeColour(nz, n - 1, j);
             ctx.beginPath();
-            ctx.moveTo(s - lean, hwT);
+            ctx.moveTo(s - lean, edgeY);
             ctx.lineTo(s + lean, cutY);
             ctx.stroke();
           }
@@ -1860,8 +1959,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
         const [, full] = widthsAt(q, Leff, n, g.bulges, now, W, c);
         const bellyDepth = (2 * full) * BELLY_WIDTH;
-        const cut = full - bellyDepth;
         if (bellyDepth < 1) continue;
+        const band = bellyBand(full, bellyFlipAt(q));
 
         const x = pts[i][0] + dx * f;
         const y = pts[i][1] + dy * f;
@@ -1872,11 +1971,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         ctx.save();
         ctx.globalAlpha = deathAlpha(q);
         ctx.translate(x, y);
-        ctx.rotate(sAngle[sampleIndex]);
+        ctx.rotate(sNormal[sampleIndex]);
         ctx.strokeStyle = stripeColour(nz, q, j);
         ctx.beginPath();
-        ctx.moveTo(lean * half, cut);
-        ctx.lineTo(-lean * half, full);
+        ctx.moveTo(lean * half, band.lo);
+        ctx.lineTo(-lean * half, band.hi);
         ctx.stroke();
         ctx.restore();
       }
@@ -2580,7 +2679,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = 8;
-  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 5 || popupInfo.botGame);
+  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
   const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : (showAutoButton ? 3 : 2);
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
@@ -2878,7 +2977,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
             top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
             objectFit: "contain",
-            filter: "drop-shadow(0 0 1px var(--colour-6)) drop-shadow(0 0 1px var(--colour-6))",
+            filter: `drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR}) drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR})`,
           }}
         />
       </div>
