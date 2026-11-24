@@ -174,13 +174,14 @@ const WASABI_MAX_EATEN = 100; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
 const DARK_MODE_IMAGE_DARKEN = 0.15; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
-const WASABI_ARENA_GLOW = 0.3; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
+const WASABI_ARENA_GLOW = 0.4; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
 
 // Body lost to wasabi is not removed at once: the tail retracts smoothly over this long.
 const WASABI_SHRINK_MS = 1200; // Doubled (was 600): the shrink takes twice as long.
 const EATEN_FOOD_VISIBLE_FRAC = 0.65; // Fraction of the move during which an eaten food stays visible (1 = until the move ends).
 const EATEN_FOOD_FADE_FRAC = 0.1; // Fraction of the move over which it then fades out.
-const WASABI_TEXT_COLOUR = "#11801c"; // Darker green for the "X WASABIS" text on the result prompt.
+const WASABI_TEXT_LIGHT_COLOUR = "#11801c"; // Darker green for the "X WASABIS" text on the result prompt.
+const WASABI_TEXT_DARK_COLOUR = "#4bcf58"; // Darker green for the "X WASABIS" text on the result prompt.
 // On death, each body segment also bursts into green particles: this many per wasabi eaten.
 const WASABI_DEATH_PARTICLES_PER_WASABI = 3;
 const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
@@ -237,7 +238,7 @@ const MODE_ICON_SCALE = 1.75; // Difficulty icons are drawn this many times thei
    SETTINGS: WALLS
 ===================================== */
 const WALL_FILL = "var(--colour-3)";
-const WALL_OUTLINE = "var(--colour-5)";
+const WALL_OUTLINE = "var(--colour-4)";
 const WALL_MAX_ATTEMPTS = 200; // Tries per wall before giving up on placing it.
 const START_CLEAR_AHEAD = 5; // Cells in front of the starting head kept free of walls.
 const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free of walls.
@@ -272,7 +273,7 @@ const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
 const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
 const OUTLINE_LIGHT_COLOUR = "#000000";
-const OUTLINE_DARK_COLOUR = "#757575";
+const OUTLINE_DARK_COLOUR = "#484848";
 const OUTLINE_WIDTH = 0.02;
 const EDGE_WOBBLE = 1;
 const BELLY_COLOUR = "#D7AFA8";
@@ -2438,22 +2439,22 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     : "";
   const popupBody =
     popupInfo.status === "choose"
-      ? `EAT SUSHI TO STOP THE SNAKE FROM GOING HUNGRY`
+      ? `EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY`
       : popupInfo.status === "won"
-        ? `CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}`
-        : `CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
+        ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}`
+        : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
   // The chosen difficulty's icon sits below the body text on the game over / winner prompt.
   const popupBodyIcon = popupInfo.status === "choose" ? null : icons[cfg.icon];
   // Only the "X WASABIS" part is green (darker), and only if at least one wasabi was eaten.
   const popupWasabiNode = popupInfo.wasabi > 0
-    ? <>{" AND "}<span style={{ color: WASABI_TEXT_COLOUR }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
+    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
     : null;
   const popupBodyNode =
     popupInfo.status === "choose"
       ? popupBody
       : popupInfo.status === "won"
-        ? <>{`CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}</>
-        : <>{`CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
+        ? <>{`YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}</>
+        : <>{`YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
 
   // Fonts stay at full size; the square grows to fit them instead.
   const popupFont = Math.round(textPx);
@@ -2801,6 +2802,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             width: foodSize,
             height: foodSize,
             objectFit: "contain",
+            filter: `
+              drop-shadow(1px 0 0 var(--colour-4))
+              drop-shadow(-1px 0 0 var(--colour-4))
+              drop-shadow(0 1px 0 var(--colour-4))
+              drop-shadow(0 -1px 0 var(--colour-4))
+            `,
           }}
         />
       ) : (
