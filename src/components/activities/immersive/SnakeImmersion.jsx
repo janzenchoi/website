@@ -185,7 +185,7 @@ const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
 const WASABI_SPEED_BOOST = 0.10; // +10% speed per wasabi (permanent for the run).
 const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi.
-const WASABI_MAX_EATEN = 128; // No more wasabi spawn after this many are eaten.
+const WASABI_MAX_EATEN = 32; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
 const DARK_MODE_IMAGE_DARKEN = 0.20; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
