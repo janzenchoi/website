@@ -31,6 +31,10 @@ import icon_vhard_light from "../../../assets/activities/symbols/vhard_light.png
 import icon_vhard_dark from "../../../assets/activities/symbols/vhard_dark.png";
 import icon_auto_light from "../../../assets/activities/symbols/auto_light.png";
 import icon_auto_dark from "../../../assets/activities/symbols/auto_dark.png";
+import icon_pause_light from "../../../assets/activities/symbols/pause_light.png";
+import icon_pause_dark from "../../../assets/activities/symbols/pause_dark.png";
+import icon_play_light from "../../../assets/activities/symbols/play_light.png";
+import icon_play_dark from "../../../assets/activities/symbols/play_dark.png";
 
 const THEME_ICONS = {
   light: {
@@ -43,6 +47,8 @@ const THEME_ICONS = {
     hard: icon_hard_light,
     vhard: icon_vhard_light,
     auto: icon_auto_light,
+    pause: icon_pause_light,
+    play: icon_play_light,
   },
   dark: {
     cross: icon_cross_dark,
@@ -54,6 +60,8 @@ const THEME_ICONS = {
     hard: icon_hard_dark,
     vhard: icon_vhard_dark,
     auto: icon_auto_dark,
+    pause: icon_pause_dark,
+    play: icon_play_dark,
   },
 };
 
@@ -209,7 +217,7 @@ const DEATH_REASONS = {
    SETTINGS: SCREEN, PANELS AND CONTROLS
 ===================================== */
 const JOYSTICK_SIZE = 170;
-const AUTO_MANUAL_OVERRIDE_MS = 500; // After a manual turn in auto mode, ignore AI for this long.
+const AUTO_MANUAL_OVERRIDE_MS = 1000; // After a manual turn in auto mode, ignore AI for this long.
 const FONT_FAMILY = "'Courier New', Courier, monospace";
 const GRID_SCALE = 0.925; // Grid is 7.5% smaller than the space available (was 10%, now 25% less padding).
 const OUTER_PAD = 5; // Gap between the outer border and the wall ring around the grid.
@@ -244,7 +252,7 @@ const MODE_ICON_SCALE = 1.75; // Difficulty icons are drawn this many times thei
 ===================================== */
 const WALL_FILL = "var(--colour-4)";
 const WALL_OUTLINE = "var(--colour-5)";
-const WALL_MAX_ATTEMPTS = 200; // Tries per wall before giving up on placing it.
+const WALL_MAX_ATTEMPTS = 800; // Tries per wall before giving up on placing it (higher because walls must also leave no 1-wide gaps).
 const START_CLEAR_AHEAD = 5; // Cells in front of the starting head kept free of walls.
 const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free of walls.
 
@@ -288,6 +296,8 @@ const BELLY_HUE_RANGE = 5;
 const BELLY_SAT_RANGE = 6;
 const BELLY_GRADIENT_SEGMENTS = 3;
 const BELLY_STRIPE_SPACING = 0.2;
+const TAIL_LENGTH = 0.6; // How far the tapering tail tip reaches past the last body point, in cells.
+const TAIL_TAPER = 0.5; // Taper curve: 1 = straight cone, above 1 = sharp whip-like tip, below 1 = softer, rounder tip.
 const STRIPE_ANGLE = 0.2;
 const STRIPE_JITTER = 0.03;
 const STRIPE_DARKEN = 18;
@@ -918,6 +928,25 @@ const wallsAreValid = (set) => {
     }
   }
 
+  // Reject any 1-cell-wide gap or entrance. An open edge on a grid line is such a gap when
+  // BOTH of its end points touch something solid (a wall end/corner or the arena border):
+  // it is then a doorway exactly one cell wide. Gaps must be at least 2 cells wide.
+  const solidPoint = (vx, vy) =>
+    vx <= 0 || vy <= 0 || vx >= ARENA_COLS || vy >= ARENA_ROWS ||
+    set.has(wallKey("h", vx - 1, vy)) || set.has(wallKey("h", vx, vy)) ||
+    set.has(wallKey("v", vx, vy - 1)) || set.has(wallKey("v", vx, vy));
+
+  for (let y = 1; y < ARENA_ROWS; y++) {
+    for (let x = 0; x < ARENA_COLS; x++) {
+      if (!set.has(wallKey("h", x, y)) && solidPoint(x, y) && solidPoint(x + 1, y)) return false;
+    }
+  }
+  for (let x = 1; x < ARENA_COLS; x++) {
+    for (let y = 0; y < ARENA_ROWS; y++) {
+      if (!set.has(wallKey("v", x, y)) && solidPoint(x, y) && solidPoint(x, y + 1)) return false;
+    }
+  }
+
   const seen = new Set(["0,0"]);
   const stack = [{ x: 0, y: 0 }];
 
@@ -1227,6 +1256,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [scoreBonus, setScoreBonus] = useState(null);
   const [noSushiLosses, setNoSushiLosses] = useState(0);
   const [autoUnlocked, setAutoUnlocked] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const pausedAtRef = useRef(0); // performance.now() when the current pause began
   const autoPlayRef = useRef(false);
   const autoManualUntilRef = useRef(0); // performance.now() until which auto is blocked after manual input
   const runAteSushiRef = useRef(false);
@@ -1321,7 +1353,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   useEffect(() => {
     const step = () => {
       const g = gameRef.current;
-      if (g.status !== "playing" || !g.snake.length) return;
+      if (g.status !== "playing" || !g.snake.length || pausedRef.current) return;
 
       const now = performance.now();
       const { cfg, tickMs, drainMs } = paramsRef.current;
@@ -1515,6 +1547,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Advance the mouth animation.
   useEffect(() => {
     const id = setInterval(() => {
+      if (pausedRef.current) return;
       advanceMouth(mouthRef.current, wantOpenRef.current);
       setFrame(mouthRef.current.frame);
     }, FRAME_MS);
@@ -1526,7 +1559,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   useEffect(() => {
     const id = setInterval(() => {
       const g = gameRef.current;
-      const now = performance.now();
+      const now = pausedRef.current ? pausedAtRef.current : performance.now(); // Frozen while paused.
       let level = null;
 
       if (g.status === "choose") level = 1;
@@ -1569,7 +1602,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const g = gameRef.current;
       const c = cellRef.current;
       const dpr = dprRef.current;
-      const now = performance.now();
+      const now = pausedRef.current ? pausedAtRef.current : performance.now(); // Frozen while paused.
       const deltaMs = Math.min(40, Math.max(0, now - lastFrameAt));
       lastFrameAt = now;
 
@@ -1587,9 +1620,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       // cells so a flip becomes a one-cell twist. q + 1 - t is the body's position on
       // the cell track (cells slide forward by one over each move).
       const flipOf = (cellData) => cellData?.bellyFlip ?? 1;
+      // The cells the body is sliding along: the new head, then the previous body. This
+      // includes the cell the tail is still leaving, so the tail keeps easing through a
+      // flip over the whole move instead of holding one side and snapping at the next move.
+      const flipCells = [g.snake[0], ...g.prev];
+      let flipPos = (q) => q + 1 - t; // Overridden below while the tail is retracting.
       const bellyFlipAt = (q) => {
-        const cells = g.snake;
-        const tau = Math.min(cells.length - 1, Math.max(0, q + 1 - t));
+        const cells = flipCells;
+        const tau = Math.min(cells.length - 1, Math.max(0, flipPos(q)));
         const k = Math.floor(tau);
         const u = tau - k;
         const a = flipOf(cells[k]);
@@ -1650,6 +1688,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         pts = [];
         for (let j = 0; j < shrinkSpan - 0.02; j++) pts.push(at(headIdx + j));
         pts.push(at(tailIdx));
+        // Map each point to its true position along the path (the last gap is shorter than a cell).
+        const shrinkN = pts.length;
+        flipPos = (q) =>
+          q <= shrinkN - 2
+            ? headIdx + q
+            : headIdx + (shrinkN - 2) + (q - (shrinkN - 2)) * (tailIdx - headIdx - (shrinkN - 2));
       } else {
         pts = g.snake.map((sn, i) => {
           const p = g.prev[i] ?? sn;
@@ -1758,9 +1802,15 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const ey1 = Math.cos(sNormal[last]);
 
       const hwT = sFull[last];
-      const R = 2 * hwT;
       const tailBand = bellyBand(hwT, sSide[last]);
       const tailBelly = tailBand.hi - tailBand.lo > 0.5;
+
+      // The tail is a long taper that narrows smoothly from the body's width to a fine tip.
+      // Its belly is drawn per slice, so the belly narrows with the tail and slides across
+      // it together with the body's twist.
+      const TL = TAIL_LENGTH * c;
+      const TAIL_STEPS = 28;
+      const tailHalf = (s) => hwT * Math.pow(Math.max(0, 1 - s / TL), TAIL_TAPER);
 
       const inTailFrame = (fn) => {
         ctx.save();
@@ -1773,8 +1823,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const tailShape = () => {
         ctx.beginPath();
         ctx.moveTo(-1, hwT);
-        ctx.lineTo(R, hwT);
-        ctx.arc(0, hwT, R, 0, -Math.PI / 2, true);
+        for (let i = 0; i <= TAIL_STEPS; i++) {
+          const s = (TL * i) / TAIL_STEPS;
+          ctx.lineTo(s, tailHalf(s));
+        }
+        for (let i = TAIL_STEPS; i >= 0; i--) {
+          const s = (TL * i) / TAIL_STEPS;
+          ctx.lineTo(s, -tailHalf(s));
+        }
         ctx.lineTo(-1, -hwT);
         ctx.closePath();
       };
@@ -1907,33 +1963,50 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       // Belly on the tail, clipped to the tail silhouette.
       if (tailBelly) {
-        const { lo: cutY, hi: edgeY } = tailBand;
-
         inTailFrame(() => {
           ctx.save();
           tailShape();
           ctx.clip();
           ctx.globalAlpha = deathAlpha(n - 1);
 
-          ctx.fillStyle = bandGradient(
-            hwT, cutY, edgeY,
-            (a) => bellyC[last].replace(/\)$/, ` / ${a})`)
-          );
-          ctx.fillRect(-1, -hwT - 1, R + 2, 2 * hwT + 2);
+          // One belly cap per slice, the same way the body does it, but with the slice's
+          // own (shrinking) width so the belly tapers with the tail.
+          const slices = Math.max(8, Math.ceil(TL / (c / SUB)));
+          for (let i = 0; i <= slices; i++) {
+            const s = (TL * i) / slices;
+            const h = tailHalf(s);
+            if (h < 0.5) continue;
+
+            const band = bellyBand(h, sSide[last]);
+            ctx.save();
+            ctx.translate(s, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, h, 0, Math.PI * 2);
+            ctx.fillStyle = bandGradient(
+              h, band.lo, band.hi,
+              (a) => bellyC[last].replace(/\)$/, ` / ${a})`)
+            );
+            ctx.fill();
+            ctx.restore();
+          }
 
           ctx.lineWidth = Math.max(1, c * 0.035);
           ctx.lineCap = "butt";
 
           for (let j = Math.floor((n - 1) / BELLY_STRIPE_SPACING); ; j++) {
             const s = (stripeQ(j) - (n - 1)) * c;
-            if (s >= R) break;
+            if (s >= TL) break;
             if (s < 1) continue;
 
-            const lean = Math.tan((hash(j) - 0.5) * 2 * STRIPE_ANGLE) * ((edgeY - cutY) / 2);
+            const h = tailHalf(s);
+            if (h < 1.5) continue;
+
+            const band = bellyBand(h, sSide[last]);
+            const lean = Math.tan((hash(j) - 0.5) * 2 * STRIPE_ANGLE) * ((band.hi - band.lo) / 2);
             ctx.strokeStyle = stripeColour(nz, n - 1, j);
             ctx.beginPath();
-            ctx.moveTo(s - lean, edgeY);
-            ctx.lineTo(s + lean, cutY);
+            ctx.moveTo(s - lean, band.hi);
+            ctx.lineTo(s + lean, band.lo);
             ctx.stroke();
           }
 
@@ -2072,6 +2145,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const resetRun = () => {
     dirQueueRef.current = [];
     autoManualUntilRef.current = 0;
+    pausedRef.current = false;
+    setPaused(false);
     runAteSushiRef.current = false;
     mouthRef.current = newMouth();
     deathParticlesRef.current = [];
@@ -2124,10 +2199,39 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     commit(createGame(DIFFICULTIES[DEFAULT_DIFFICULTY]));
   };
 
+  // Pause freezes the snake, the hunger bar, the wasabi timers and the drawing clock.
+  // Resuming shifts every timestamp forward by the time spent paused, so nothing jumps.
+  const togglePause = () => {
+    const g = gameRef.current;
+    if (g.status !== "playing") return;
+
+    if (!pausedRef.current) {
+      pausedAtRef.current = performance.now();
+      pausedRef.current = true;
+      setPaused(true);
+      setActiveDirection(null);
+      return;
+    }
+
+    const d = performance.now() - pausedAtRef.current;
+    pausedRef.current = false;
+    setPaused(false);
+    if (fillAnimRef.current) fillAnimRef.current = { ...fillAnimRef.current, start: fillAnimRef.current.start + d };
+    autoManualUntilRef.current += d;
+    commit({
+      ...g,
+      movedAt: g.movedAt + d,
+      hunger: { ...g.hunger, at: g.hunger.at + d },
+      wasabiStart: g.wasabiStart + d,
+      wasabi: g.wasabi ? { ...g.wasabi, expiresAt: g.wasabi.expiresAt + d } : g.wasabi,
+      bulges: g.bulges.map((b) => ({ ...b, t0: b.t0 + d })),
+    });
+  };
+
   // Turns are queued while a game is being played.
   const handleDirection = (d) => {
     const g = gameRef.current;
-    if (g.status !== "playing") return;
+    if (g.status !== "playing" || pausedRef.current) return;
 
     // In auto mode, any manual turn blocks the AI for a few seconds.
     if (autoPlayRef.current) {
@@ -3114,12 +3218,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   return (
     <div
       ref={colContainerRef}
-      className="snake-game"
+      className={`snake-game${paused ? " paused" : ""}`}
       style={colContainer}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       <style>{`${darkMode ? `.snake-game img { filter: brightness(${1 - DARK_MODE_IMAGE_DARKEN}); }` : ""}
+      .snake-game.paused, .snake-game.paused * { animation-play-state: paused !important; }
       @keyframes hungerFoodFade {
         0% { opacity: 1; width: ${eatenSlot}px; }
         55% { opacity: 1; width: ${eatenSlot}px; }
@@ -3168,6 +3273,22 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               <span style={popupButtonLabelStyle(toggleLabel)}>{toggleLabel}</span>
             </button>
           )}
+
+          <button
+            type="button"
+            style={{
+              ...toggleButtonStyle,
+              opacity: game.status === "playing" ? 1 : 0.45,
+              cursor: game.status === "playing" ? "pointer" : "default",
+            }}
+            onClick={togglePause}
+            disabled={game.status !== "playing"}
+            aria-label={paused ? "Resume game" : "Pause game"}
+            title={paused ? "Resume game" : "Pause game"}
+          >
+            <div style={popupButtonIconStyle}>{renderIcon(paused ? icons.play : icons.pause)}</div>
+            <span style={popupButtonLabelStyle(paused ? "PLAY" : "PAUSE")}>{paused ? "PLAY" : "PAUSE"}</span>
+          </button>
 
           <button
             type="button"
