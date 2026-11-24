@@ -157,16 +157,34 @@ const TEXT_PX_DESKTOP = 25.6; // 1.6rem: the same on desktop.
 // `count` is how many pieces of that food appear together, as one cluster of touching cells,
 // every time a group of it spawns.
 // `size` is the food's image size from 0 to 1, where 1 is the full FOOD_SIZE constant.
+// `minWasabi` is how many wasabi must have been eaten this run before that food can spawn (0 = always available).
 // Wasabi is NOT configured here: see SETTINGS: WASABI & MINIMUM LENGTH below.
 const FOOD_CONFIG = {
-  temaki_1:   { satiation: 0.1, length: 0.4, calories: 35,  spawnWeight: 1, count: 3, size: 0.5 },
-  temaki_2:   { satiation: 0.1, length: 0.4, calories: 40,  spawnWeight: 1, count: 3, size: 0.5 },
-  nigiri_1:   { satiation: 0.2,  length: 0.6, calories: 55,  spawnWeight: 1, count: 2, size: 0.6 },
-  nigiri_2:   { satiation: 0.2,  length: 0.6, calories: 65,  spawnWeight: 1, count: 2, size: 0.6 },
-  nigiri_3:   { satiation: 0.2,  length: 0.6, calories: 75,  spawnWeight: 1, count: 2, size: 0.6 },
-  futomaki_1: { satiation: 0.3,  length: 1,   calories: 110, spawnWeight: 1, count: 1, size: 0.7 },
-  futomaki_2: { satiation: 0.4,  length: 2,   calories: 180, spawnWeight: 1, count: 1, size: 0.8 },
-  futomaki_3: { satiation: 0.5,  length: 4,   calories: 260, spawnWeight: 1, count: 1, size: 0.9 },
+  nigiri_6:   { satiation: 0.2,  length: 0.4, calories: 55,  spawnWeight: 1, count: 2, size: 0.6, minWasabi: 0 },
+  nigiri_1:   { satiation: 0.2,  length: 0.4, calories: 75,  spawnWeight: 2, count: 2, size: 0.6, minWasabi: 1 },
+  nigiri_2:   { satiation: 0.2,  length: 0.4, calories: 75,  spawnWeight: 2, count: 2, size: 0.6, minWasabi: 1 },
+  nigiri_3:   { satiation: 0.2,  length: 0.4, calories: 85,  spawnWeight: 3, count: 2, size: 0.6, minWasabi: 2 },
+  nigiri_4:   { satiation: 0.3,  length: 0.4, calories: 165,  spawnWeight: 5, count: 2, size: 0.6, minWasabi: 3 },
+  nigiri_5:   { satiation: 0.3,  length: 0.4, calories: 245,  spawnWeight: 6, count: 2, size: 0.6, minWasabi: 4 },
+  nigiri_7:   { satiation: 0.3,  length: 0.4, calories: 325,  spawnWeight: 7, count: 2, size: 0.6, minWasabi: 5 },
+
+  temaki_2:   { satiation: 0.1,  length: 0.3, calories: 40,  spawnWeight: 1, count: 3, size: 0.5, minWasabi: 0 },
+  temaki_1:   { satiation: 0.1,  length: 0.3, calories: 80,  spawnWeight: 3, count: 3, size: 0.5, minWasabi: 2 },
+  temaki_3:   { satiation: 0.2,  length: 0.4, calories: 120, spawnWeight: 5, count: 3, size: 0.6, minWasabi: 4 },
+  
+  futomaki_1: { satiation: 0.3,  length: 0.8, calories: 110, spawnWeight: 1, count: 1, size: 0.7, minWasabi: 0 },
+  futomaki_2: { satiation: 0.4,  length: 1.0, calories: 220, spawnWeight: 3, count: 1, size: 0.8, minWasabi: 2 },
+  futomaki_5: { satiation: 0.4,  length: 1.0, calories: 220, spawnWeight: 3, count: 1, size: 0.8, minWasabi: 2 },
+  futomaki_3: { satiation: 0.5,  length: 1.2, calories: 330, spawnWeight: 4, count: 1, size: 0.9, minWasabi: 3 },
+  futomaki_4: { satiation: 0.6,  length: 1.4, calories: 440, spawnWeight: 5, count: 1, size: 0.9, minWasabi: 4 },
+  futomaki_6: { satiation: 0.7,  length: 1.6, calories: 550, spawnWeight: 6, count: 1, size: 0.8, minWasabi: 5 },
+  futomaki_7: { satiation: 0.8,  length: 1.8, calories: 660, spawnWeight: 7, count: 1, size: 0.9, minWasabi: 6 },
+  futomaki_8: { satiation: 0.9,  length: 2.0, calories: 770, spawnWeight: 8, count: 1, size: 1.0, minWasabi: 7 },
+  
+  gunkan_1:   { satiation: 4, length: 4, calories: 1200, spawnWeight: 4, count: 1, size: 0.7, minWasabi: 3 },
+  gunkan_2:   { satiation: 4, length: 4, calories: 2400, spawnWeight: 6, count: 1, size: 0.6, minWasabi: 5 },
+  gunkan_3:   { satiation: 4, length: 4, calories: 3600, spawnWeight: 8, count: 1, size: 0.6, minWasabi: 7 },
+  omega:      { satiation: 8, length: 4, calories: 4800, spawnWeight: 9, count: 1, size: 1.2, minWasabi: 8 },
 };
 const DEFAULT_FOOD_SATIATION = 0.4; // Hunger refill for foods not listed above.
 const DEFAULT_FOOD_LENGTH = 1; // Length change for foods not listed above.
@@ -174,17 +192,18 @@ const DEFAULT_FOOD_CALORIES = 100; // Calories for foods not listed above.
 const DEFAULT_FOOD_SPAWN_WEIGHT = 1; // Spawn weight for foods not listed above.
 const DEFAULT_FOOD_COUNT = 1; // Pieces per group for foods not listed above.
 const DEFAULT_FOOD_SIZE = 1; // Size (0 to 1, where 1 = FOOD_SIZE) for foods not listed above.
+const DEFAULT_FOOD_MIN_WASABI = 0; // Wasabi that must be eaten before foods not listed above can spawn.
 
 /* =====================================
    SETTINGS: WASABI & MINIMUM LENGTH
 ===================================== */
 const MIN_SNAKE_LENGTH = 3; // The snake can never shrink below this.
-const WASABI_CYCLE_MS = 20000; // One full cycle.
-const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
-const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
+const WASABI_CYCLE_MS = 16000; // One full cycle.
+const WASABI_SPAWN_AT_MS = 8000; // Wasabi appears this far into each cycle...
+const WASABI_LIFETIME_MS = 8000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
 const WASABI_SPEED_BOOST = 0.10; // +10% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi.
+const WASABI_CALORIE_BOOST = 1; // +20% calorie multiplier per wasabi.
 const WASABI_MAX_EATEN = 32; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
@@ -718,7 +737,7 @@ const growCluster = (seed, size, isFree, walls) => {
 // touching cells. This runs every time a group spawns (not just at the start).
 // `blocked` lists extra cells (such as the wasabi) that food must not spawn on.
 // Returns an array of foods (fewer than `count` only if the board is too full), or null.
-const spawnFoodGroup = (snake, foods = [], walls = null, blocked = []) => {
+const spawnFoodGroup = (snake, foods = [], walls = null, blocked = [], wasabiEaten = 0) => {
   const occupied = new Set([
     ...snake.map((s) => `${s.x},${s.y}`),
     ...foods.map((f) => `${f.x},${f.y}`),
@@ -754,7 +773,12 @@ const spawnFoodGroup = (snake, foods = [], walls = null, blocked = []) => {
           weight: Number.isFinite(weight) ? Math.max(0, weight) : 0,
         };
       })
-      .filter((entry) => entry.weight > 0);
+      .filter((entry) => entry.weight > 0)
+      // A food only spawns once enough wasabi have been eaten this run.
+      .filter((entry) => {
+        const need = Number(FOOD_CONFIG[entry.food.name]?.minWasabi ?? DEFAULT_FOOD_MIN_WASABI);
+        return wasabiEaten >= (Number.isFinite(need) ? need : 0);
+      });
 
     const totalWeight = weightedFoods.reduce((sum, entry) => sum + entry.weight, 0);
 
@@ -806,11 +830,11 @@ const spawnFoodGroup = (snake, foods = [], walls = null, blocked = []) => {
 
 // Tops the board up to `count` groups of food (fewer if there is no room left).
 // A group stays on the board until every piece of it has been eaten.
-const refillFoods = (snake, foods, count, walls = null, blocked = []) => {
+const refillFoods = (snake, foods, count, walls = null, blocked = [], wasabiEaten = 0) => {
   const next = [...foods];
 
   while (new Set(next.map((f) => f.groupId)).size < count) {
-    const group = spawnFoodGroup(snake, next, walls, blocked);
+    const group = spawnFoodGroup(snake, next, walls, blocked, wasabiEaten);
     if (!group || !group.length) break;
     next.push(...group);
   }
@@ -1509,8 +1533,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           foods = cfg.respawnAllAtOnce
             ? (remaining.length
                 ? remaining
-                : refillFoods(snake, [], cfg.foodCount, g.walls, blocked))
-            : refillFoods(snake, remaining, cfg.foodCount, g.walls, blocked);
+                : refillFoods(snake, [], cfg.foodCount, g.walls, blocked, wasabiEaten))
+            : refillFoods(snake, remaining, cfg.foodCount, g.walls, blocked, wasabiEaten);
           if (!foods.length) status = "won";
         }
       }
@@ -2516,17 +2540,19 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // The score turns greener and starts glowing as more wasabis are eaten (up to WASABI_MAX_EATEN).
   const wasabiT = Math.min(1, game.wasabiEaten / WASABI_MAX_EATEN);
+  const scoreColour = wasabiT > 0
+    ? `color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-7))`
+    : "var(--colour-7)";
+  const scoreGlow = wasabiT > 0
+    ? `0 0 ${2 + wasabiT * 12}px rgba(${WASABI_GLOW_RGB}, ${0.35 + wasabiT * 0.65}), 0 0 ${wasabiT * 22}px rgba(${WASABI_GLOW_RGB}, ${wasabiT * 0.7})`
+    : "none";
   const scoreStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
     fontSize: scoreFontPx,
     whiteSpace: "nowrap",
-    color: wasabiT > 0
-      ? `color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-7))`
-      : "var(--colour-7)",
-    textShadow: wasabiT > 0
-      ? `0 0 ${2 + wasabiT * 12}px rgba(${WASABI_GLOW_RGB}, ${0.35 + wasabiT * 0.65}), 0 0 ${wasabiT * 22}px rgba(${WASABI_GLOW_RGB}, ${wasabiT * 0.7})`
-      : "none",
+    color: scoreColour,
+    textShadow: scoreGlow,
     textAlign: "center",
   };
 
@@ -2536,7 +2562,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     left: "calc(100% + 0.35em)",
     top: "50%",
     whiteSpace: "nowrap",
-    color: "var(--colour-7)",
+    color: scoreColour, // Same colour and glow as the main score number.
+    textShadow: scoreGlow,
     fontSize: "0.82em",
     fontWeight: 700,
     pointerEvents: "none",
@@ -3256,7 +3283,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   (+{formatPoints(scoreBonus.amount)})
                 </div>
               )}
-              {" CALORIES"}
+              {mobileMode ? " CALS" : " CALORIES"}
             </span>
           </div>
         </div>
