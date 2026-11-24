@@ -1307,7 +1307,7 @@ const WordleGame = ({
     fontWeight: 700,
     fontSize: titleFontPx,
     whiteSpace: "nowrap",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     textAlign: "center",
   };
 
@@ -1329,7 +1329,7 @@ const WordleGame = ({
     borderRadius: "8px",
     border: "1px solid var(--colour-5)",
     backgroundColor: "transparent",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     fontSize: `${Math.round(rowH * 0.5)}px`,
     fontWeight: 700,
     lineHeight: 1,
@@ -1361,7 +1361,7 @@ const WordleGame = ({
     fontWeight: 400,
     fontSize: mobileMode ? 14 : 18,
     lineHeight: 1.15,
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     textAlign: "center",
     textTransform: "uppercase",
     display: "block",
@@ -1419,7 +1419,7 @@ const WordleGame = ({
       justifyContent: "center",
       color: hasColour
         ? "white"
-        : "var(--colour-6)",
+        : "var(--colour-7)",
       fontWeight: 700,
       fontSize: `${letterPx * 0.5}px`,
       transition: "background-color 0.3s",
@@ -1472,7 +1472,7 @@ const WordleGame = ({
           : guessedColour ?? "var(--colour-3)",
       color: guessedColour
         ? "white"
-        : "var(--colour-6)",
+        : "var(--colour-7)",
       fontWeight: 600,
       fontSize: `${keyPx * 0.45}px`,
       display: "flex",
@@ -1506,7 +1506,7 @@ const WordleGame = ({
     padding: `${popupPad}px`,
     overflow: "visible",
     textAlign: "center",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
     backgroundColor: "var(--colour-3)",
@@ -1563,7 +1563,7 @@ const WordleGame = ({
     fontSize: `${popupLabelFont(label) * BUTTON_LABEL_SCALE}px`,
     lineHeight: 0.95,
     fontWeight: 700,
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     textAlign: "center",
     whiteSpace: "normal",
     overflowWrap: "normal",
@@ -1587,7 +1587,7 @@ const WordleGame = ({
     border: "1px solid var(--colour-5)",
     borderRadius: "8px",
     backgroundColor: pageBg ?? "transparent",
-    color: "var(--colour-6)",
+    color: "var(--colour-7)",
     fontWeight: 700,
     lineHeight: 1,
     cursor: "pointer",
