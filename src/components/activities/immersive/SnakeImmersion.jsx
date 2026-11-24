@@ -175,7 +175,7 @@ const DEFAULT_FOOD_SIZE = 1; // Size (0 to 1, where 1 = FOOD_SIZE) for foods not
 /* =====================================
    SETTINGS: WASABI & MINIMUM LENGTH
 ===================================== */
-const MIN_SNAKE_LENGTH = 2; // The snake can never shrink below this.
+const MIN_SNAKE_LENGTH = 3; // The snake can never shrink below this.
 const WASABI_CYCLE_MS = 20000; // One full cycle.
 const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
