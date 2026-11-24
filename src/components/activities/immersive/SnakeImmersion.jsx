@@ -59,7 +59,7 @@ const foodContext = require.context(
   false,
   /\.(png|jpe?g|webp|gif|svg)$/
 );
-const FOODS = foodContext.keys().map((key) => {
+const ALL_FOODS = foodContext.keys().map((key) => {
   const m = foodContext(key);
   return {
     // "./apple.png" -> "apple"
@@ -67,7 +67,9 @@ const FOODS = foodContext.keys().map((key) => {
     image: typeof m === "string" ? m : m.default,
   };
 });
-const FOOD_IMAGES = FOODS.map((f) => f.image);
+const FOODS = ALL_FOODS.filter((f) => f.name !== "wasabi"); // Wasabi never spawns as normal food.
+const WASABI_IMAGE = ALL_FOODS.find((f) => f.name === "wasabi")?.image ?? null;
+const FOOD_IMAGES = ALL_FOODS.map((f) => f.image);
 
 /* =====================================
    SETTINGS: ARENA AND BASE SPEED
@@ -86,9 +88,9 @@ const DEFAULT_DIFFICULTY = "normal"; // Settings used for the board behind the "
 
 const DIFFICULTIES = {
   normal: {
-    label: "NORMAL",
+    label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
-    speedMult: 1.0, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
+    speedMult: 0.7, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
     hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
     foodCount: 3, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
@@ -99,23 +101,23 @@ const DIFFICULTIES = {
     borderTouchChance: 0.4, // Chance a straight wall is pushed against the arena edge.
   },
   hard: {
-    label: "HARD",
+    label: "NORMAL",
     icon: "hard",
-    speedMult: 1.0,
-    hungerMult: 1.2,
+    speedMult: 0.7,
+    hungerMult: 1.5,
     foodCount: 3,
     respawnAllAtOnce: true,
     straightWalls: 4,
     cornerWalls: 2,
     straightLength: [2, 4],
     cornerArm: [2, 3],
-    borderTouchChance: 0.4,
+    borderTouchChance: 0.3,
   },
   veryHard: {
-    label: "VERY HARD",
+    label: "HARD",
     icon: "vhard",
-    speedMult: 1.0,
-    hungerMult: 1.4,
+    speedMult: 0.7,
+    hungerMult: 2,
     foodCount: 3,
     respawnAllAtOnce: true,
     straightWalls: 7,
@@ -133,32 +135,58 @@ const BASE_HUNGER_DRAIN_MS = 15000; // Normal-mode time for a full bar to empty 
 const TEXT_PX_MOBILE = 21.76; // 1.36rem: SCORE and popup text (mobile).
 const TEXT_PX_DESKTOP = 25.6; // 1.6rem: the same on desktop.
 // Per-food settings. Keys are the food image file names (without extensions).
-// `growth` is both the number of body segments added and the points awarded.
+// `length` changes the snake's length; `calories` changes the calorie total.
+// These values are independent and may be positive, zero, or negative.
+// Fractional length changes accumulate until they add/remove a whole segment.
 // `spawnWeight` controls relative spawn frequency: 2 is twice as likely as 1; 0 disables that food.
 // `count` is how many pieces of that food appear together, as one cluster of touching cells,
 // every time a group of it spawns.
 // `size` is the food's image size from 0 to 1, where 1 is the full FOOD_SIZE constant.
+// Wasabi is NOT configured here: see SETTINGS: WASABI & MINIMUM LENGTH below.
 const FOOD_CONFIG = {
-  temaki_1:   { satiation: 0.1, growth: 0.5, spawnWeight: 1, count: 3, size: 0.5 },
-  temaki_2:   { satiation: 0.1, growth: 0.5, spawnWeight: 1, count: 3, size: 0.5 },
-  
-  nigiri_1:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
-  nigiri_2:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
-  nigiri_3:   { satiation: 0.2, growth: 1, spawnWeight: 1, count: 2, size: 0.7 },
-  
-  futomaki_1: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
-  futomaki_2: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
-  futomaki_3: { satiation: 0.2, growth: 1, spawnWeight: 1, count: 1, size: 0.9 },
+  temaki_1:   { satiation: 0.1, length: 0.4, calories: 35,  spawnWeight: 1, count: 3, size: 0.5 },
+  temaki_2:   { satiation: 0.1, length: 0.4, calories: 40,  spawnWeight: 1, count: 3, size: 0.5 },
+  nigiri_1:   { satiation: 0.2,  length: 0.6, calories: 55,  spawnWeight: 1, count: 2, size: 0.6 },
+  nigiri_2:   { satiation: 0.2,  length: 0.6, calories: 65,  spawnWeight: 1, count: 2, size: 0.6 },
+  nigiri_3:   { satiation: 0.2,  length: 0.6, calories: 75,  spawnWeight: 1, count: 2, size: 0.6 },
+  futomaki_1: { satiation: 0.3,  length: 1,   calories: 110, spawnWeight: 1, count: 1, size: 0.7 },
+  futomaki_2: { satiation: 0.4,  length: 2,   calories: 180, spawnWeight: 1, count: 1, size: 0.8 },
+  futomaki_3: { satiation: 0.5,  length: 4,   calories: 260, spawnWeight: 1, count: 1, size: 0.9 },
 };
 const DEFAULT_FOOD_SATIATION = 0.4; // Hunger refill for foods not listed above.
-const DEFAULT_FOOD_GROWTH = 1; // Segments and points for foods not listed above.
+const DEFAULT_FOOD_LENGTH = 1; // Length change for foods not listed above.
+const DEFAULT_FOOD_CALORIES = 100; // Calories for foods not listed above.
 const DEFAULT_FOOD_SPAWN_WEIGHT = 1; // Spawn weight for foods not listed above.
 const DEFAULT_FOOD_COUNT = 1; // Pieces per group for foods not listed above.
 const DEFAULT_FOOD_SIZE = 1; // Size (0 to 1, where 1 = FOOD_SIZE) for foods not listed above.
 
+/* =====================================
+   SETTINGS: WASABI & MINIMUM LENGTH
+===================================== */
+const MIN_SNAKE_LENGTH = 3; // The snake can never shrink below this.
+const WASABI_CYCLE_MS = 20000; // One full cycle.
+const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
+const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
+const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
+const WASABI_SPEED_BOOST = 0.1; // +10% speed per wasabi (permanent for the run).
+const WASABI_CALORIE_BOOST = 0.2; // +0.1x calorie multiplier per wasabi.
+const WASABI_MAX_EATEN = 10; // No more wasabi spawn after this many are eaten.
+const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
+const WASABI_GLOW_RGB = "80, 255, 80";
+const WASABI_ARENA_GLOW = 0.5; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
+
+// Body lost to wasabi is not removed at once: the tail retracts smoothly over this long.
+const WASABI_SHRINK_MS = 1200; // Doubled (was 600): the shrink takes twice as long.
+const EATEN_FOOD_VISIBLE_FRAC = 0.65; // Fraction of the move during which an eaten food stays visible (1 = until the move ends).
+const EATEN_FOOD_FADE_FRAC = 0.1; // Fraction of the move over which it then fades out.
+const WASABI_TEXT_COLOUR = "#11801c"; // Darker green for the "X WASABIS" text on the result prompt.
+// On death, each body segment also bursts into green particles: this many per wasabi eaten.
+const WASABI_DEATH_PARTICLES_PER_WASABI = 3;
+const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
+
 // Keep score and growth values precise while avoiding floating-point display artefacts.
 const roundPoints = (value) => Math.round((Number(value) + Number.EPSILON) * 10000) / 10000;
-const formatPoints = (value) => String(Number(roundPoints(value).toFixed(4)));
+const formatPoints = (value) => String(Math.round(roundPoints(value))); // Shown as whole calories; the exact value is kept internally.
 const CLUSTER_SEED_ATTEMPTS = 40; // Random starting cells tried to find room for a full cluster.
 const HUNGER_BAR_FRAC = 0.52; // Bar height as a fraction of its rectangle (bigger = less space above/below).
 const EAT_FILL_MS = 450; // How long the bar takes to slide up after eating.
@@ -182,7 +210,7 @@ const WALL_THICKNESS = OUTER_PAD; // Walls (and the ring) are as thick as that g
 const RING_EXT = WALL_THICKNESS / 2 + 1; // How far the ring's outline reaches past the arena edge.
 const GAP = 6; // Fixed distance between the rectangles in every view.
 const MIN_PANEL_SPACE = 9; // Smallest space above / between / below the grid and controller (was 12, now 25% less).
-// Score, hunger and button rectangles all share this height.
+// Calories, hunger and button rectangles all share this height.
 const ROW_H_MOBILE = 55;
 const ROW_H_DESKTOP = 50; // 0.8x of the previous 62.5.
 // Per side: outer pad + the ring's overhang (the shared panel owns the border).
@@ -200,6 +228,9 @@ const POPUP_TEXT_GAP = 8; // Space between title, body and icon, in px.
 const POPUP_SLACK = 6; // Extra px of room so text never touches an edge.
 const MONO_CHAR_EM = 0.62; // Width of one body character, in em (Courier is 0.6; a little slack added).
 const TITLE_CHAR_EM = 0.66; // Width of one title character, in em (includes its letter spacing).
+const LABEL_FONT_SCALE = 1.13; // Button label text is this much bigger than the base fitted size.
+const LABEL_OFFSET_PX = 3; // Button label text sits this many px lower.
+const MODE_ICON_SCALE = 1.75; // Difficulty icons are drawn this many times their slot size and overflow the button.
 
 /* =====================================
    SETTINGS: WALLS
@@ -262,10 +293,11 @@ const BULGE_FADE_LENGTH = 10; // The gulp tapers away within at most 10 body cel
 // fixed-duration fade over the entire snake. Each segment also emits its own particle burst.
 const DEATH_STAGGER_PER_SEGMENT_MS = 115;
 const DEATH_FADE_MS = 260;
-const DEATH_PARTICLE_COUNT = 7;
+const POPUP_AFTER_DEATH_MS = 200; // The game over prompt appears this long after the last segment has disappeared.
+const DEATH_PARTICLE_COUNT = 14; // Doubled (was 7).
 const DEATH_PARTICLE_COLOUR = "#8A0303"; // Deep blood red.
-const DEATH_PARTICLE_LIFE_MIN = 360;
-const DEATH_PARTICLE_LIFE_MAX = 560;
+const DEATH_PARTICLE_LIFE_MIN = 720; // Doubled (was 360).
+const DEATH_PARTICLE_LIFE_MAX = 1120; // Doubled (was 560).
 
 // Spots: each new game picks one hue (each spot gets its own shade of it).
 const PATTERN_HUES = [0, 28, 55, 120, 170, 210, 270, 320];
@@ -534,11 +566,13 @@ const growCluster = (seed, size, isFree, walls) => {
 
 // Spawns one group: `count` pieces of the same food placed together as a cluster of
 // touching cells. This runs every time a group spawns (not just at the start).
+// `blocked` lists extra cells (such as the wasabi) that food must not spawn on.
 // Returns an array of foods (fewer than `count` only if the board is too full), or null.
-const spawnFoodGroup = (snake, foods = [], walls = null) => {
+const spawnFoodGroup = (snake, foods = [], walls = null, blocked = []) => {
   const occupied = new Set([
     ...snake.map((s) => `${s.x},${s.y}`),
     ...foods.map((f) => `${f.x},${f.y}`),
+    ...blocked.map((f) => `${f.x},${f.y}`),
   ]);
   const isFree = (x, y) =>
     x >= 0 && x < ARENA_COLS && y >= 0 && y < ARENA_ROWS && !occupied.has(`${x},${y}`);
@@ -610,25 +644,74 @@ const spawnFoodGroup = (snake, foods = [], walls = null) => {
     name: type.name,
     groupId,
     satiation: foodConfig.satiation ?? DEFAULT_FOOD_SATIATION,
-    growth: Number.isFinite(Number(foodConfig.growth ?? DEFAULT_FOOD_GROWTH))
-      ? Math.max(0, Number(foodConfig.growth ?? DEFAULT_FOOD_GROWTH))
-      : DEFAULT_FOOD_GROWTH,
+    length: Number.isFinite(Number(foodConfig.length ?? DEFAULT_FOOD_LENGTH))
+      ? Number(foodConfig.length ?? DEFAULT_FOOD_LENGTH)
+      : DEFAULT_FOOD_LENGTH,
+    calories: Number.isFinite(Number(foodConfig.calories ?? DEFAULT_FOOD_CALORIES))
+      ? Number(foodConfig.calories ?? DEFAULT_FOOD_CALORIES)
+      : DEFAULT_FOOD_CALORIES,
     size: Math.min(1, Math.max(0, Number(foodConfig.size ?? DEFAULT_FOOD_SIZE) || 0)),
   }));
 };
 
 // Tops the board up to `count` groups of food (fewer if there is no room left).
 // A group stays on the board until every piece of it has been eaten.
-const refillFoods = (snake, foods, count, walls = null) => {
+const refillFoods = (snake, foods, count, walls = null, blocked = []) => {
   const next = [...foods];
 
   while (new Set(next.map((f) => f.groupId)).size < count) {
-    const group = spawnFoodGroup(snake, next, walls);
+    const group = spawnFoodGroup(snake, next, walls, blocked);
     if (!group || !group.length) break;
     next.push(...group);
   }
 
   return next;
+};
+
+// Spawns the wasabi 20s into each 30s cycle and removes it 10s later. It is independent
+// of the food groups. Returns the new { wasabi, wasabiCycle }.
+const updateWasabi = (g, wasabi, now, snake, foods, eatenCount) => {
+  let wasabiCycle = g.wasabiCycle;
+  if (wasabi && now >= wasabi.expiresAt) wasabi = null;
+  if (eatenCount >= WASABI_MAX_EATEN) return { wasabi: null, wasabiCycle };
+
+  const elapsed = now - g.wasabiStart;
+  const cycle = Math.floor(elapsed / WASABI_CYCLE_MS);
+  const phase = elapsed - cycle * WASABI_CYCLE_MS;
+
+  if (
+    !wasabi &&
+    cycle > wasabiCycle &&
+    phase >= WASABI_SPAWN_AT_MS &&
+    phase < WASABI_SPAWN_AT_MS + WASABI_LIFETIME_MS
+  ) {
+    const taken = new Set([
+      ...snake.map((s) => `${s.x},${s.y}`),
+      ...foods.map((f) => `${f.x},${f.y}`),
+    ]);
+    const free = [];
+    for (let x = 0; x < ARENA_COLS; x++) {
+      for (let y = 0; y < ARENA_ROWS; y++) {
+        if (!taken.has(`${x},${y}`)) free.push({ x, y });
+      }
+    }
+    if (free.length) {
+      const cell = free[Math.floor(Math.random() * free.length)];
+      wasabi = {
+        ...cell,
+        name: "wasabi",
+        image: WASABI_IMAGE,
+        size: WASABI_SIZE,
+        satiation: 0,
+        calories: 0,
+        length: -WASABI_LENGTH_LOSS,
+        expiresAt: now + WASABI_LIFETIME_MS - (phase - WASABI_SPAWN_AT_MS),
+      };
+      wasabiCycle = cycle;
+    }
+  }
+
+  return { wasabi, wasabiCycle };
 };
 
 /* =====================================
@@ -789,6 +872,12 @@ const createGame = (cfg) => ({
   reason: null,
   hunger: { level: 1, at: 0 },
   walls: generateWalls(cfg),
+  wasabi: null,
+  wasabiEaten: 0,
+  wasabiCycle: -1,
+  wasabiStart: 0,
+  shrinkPending: 0, // Segments still to be removed by earlier wasabis.
+  shrinkPerTick: 0,
 });
 
 const activateGame = (g, cfg) => {
@@ -812,6 +901,12 @@ const activateGame = (g, cfg) => {
     bulges: [],
     reason: null,
     hunger: { level: 1, at: performance.now() },
+    wasabi: null,
+    wasabiEaten: 0,
+    wasabiCycle: -1,
+    wasabiStart: performance.now(),
+    shrinkPending: 0,
+    shrinkPerTick: 0,
   };
 };
 
@@ -821,7 +916,7 @@ const shouldOpen = (g, openDist) => {
 
   const head = g.snake[0];
 
-  return g.foods.some((food) => {
+  return [...g.foods, ...(g.wasabi ? [g.wasabi] : [])].some((food) => {
     const dx = food.x - head.x;
     const dy = food.y - head.y;
     const dist = g.dir.x !== 0
@@ -951,7 +1046,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Everything that depends on the chosen difficulty (null until one is chosen).
   const [difficulty, setDifficulty] = useState(null);
   const cfg = DIFFICULTIES[difficulty ?? DEFAULT_DIFFICULTY];
-  const tickMs = Math.round(BASE_TICK_MS / cfg.speedMult);
+
+  const gameRef = useRef(null);
+  if (gameRef.current === null) gameRef.current = createGame(DIFFICULTIES[DEFAULT_DIFFICULTY]);
+  const [game, setGame] = useState(() => gameRef.current);
+
+  // Each wasabi eaten permanently adds to the speed for the rest of the run (additive).
+  const speedMult = cfg.speedMult * (1 + WASABI_SPEED_BOOST * game.wasabiEaten);
+  const tickMs = Math.round(BASE_TICK_MS / speedMult);
   const drainMs = BASE_HUNGER_DRAIN_MS / cfg.hungerMult;
   const openDist = openDistance(tickMs);
 
@@ -959,10 +1061,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const paramsRef = useRef(null);
   paramsRef.current = { cfg, tickMs, drainMs, openDist };
 
-  const gameRef = useRef(null);
-  if (gameRef.current === null) gameRef.current = createGame(DIFFICULTIES[DEFAULT_DIFFICULTY]);
-
-  const [game, setGame] = useState(() => gameRef.current);
   const [frame, setFrame] = useState(REST_FRAME);
   const [runId, setRunId] = useState(0);
   const [popupHidden, setPopupHidden] = useState(false);
@@ -978,13 +1076,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [scoreBonus, setScoreBonus] = useState(null);
 
   const popupTimeoutRef = useRef(null);
+  const playAgainRef = useRef(null);
   const scoreBonusTimeoutRef = useRef(null);
   const colContainerRef = useRef(null);
   const dirQueueRef = useRef([]);
   const mouthRef = useRef(newMouth());
   const wantOpenRef = useRef(false);
   const touchRef = useRef(null);
-  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0 });
+  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0, wasabi: 0 });
 
   const canvasRef = useRef(null);
   const cellRef = useRef(0);
@@ -1008,10 +1107,19 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
     if (next.status === "dead" || next.status === "won" || next.status === "choose") {
       clearTimeout(popupTimeoutRef.current);
-      setPopupHidden(false);
       setPopupClosing(false);
       if (next.status === "dead") {
         setDeathElapsed(0);
+        // Hold the prompt back until every segment has faded out, plus a short pause.
+        const segments = Math.max(next.snake.length, next.prev.length);
+        const delay =
+          Math.max(0, segments - 1) * DEATH_STAGGER_PER_SEGMENT_MS +
+          DEATH_FADE_MS +
+          POPUP_AFTER_DEATH_MS;
+        setPopupHidden(true);
+        popupTimeoutRef.current = setTimeout(() => setPopupHidden(false), delay);
+      } else {
+        setPopupHidden(false);
       }
     }
 
@@ -1056,13 +1164,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       // The snake starves if the hunger bar empties before it eats.
       if (hungerLevel(g.hunger, now, drainMs) <= 0) {
-        commit({
-          ...g,
-          swallowing: null,
-          status: "dead",
-          reason: "starved",
-          deathAt: now,
-        });
+        commit({ ...g, swallowing: null, status: "dead", reason: "starved", deathAt: now });
         return;
       }
 
@@ -1073,8 +1175,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const facing = dir.x !== 0 ? (dir.x > 0 ? "right" : "left") : g.facing;
       const head = g.snake[0];
       const newHead = { x: head.x + dir.x, y: head.y + dir.y };
-      const eatenFood = g.foods.find((f) => f.x === newHead.x && f.y === newHead.y);
-      const eating = !!eatenFood;
+
+      const eatenWasabi =
+        g.wasabi && g.wasabi.x === newHead.x && g.wasabi.y === newHead.y ? g.wasabi : null;
+      const eatenFood = eatenWasabi
+        ? null
+        : g.foods.find((f) => f.x === newHead.x && f.y === newHead.y);
+      const eatenItem = eatenWasabi ?? eatenFood;
+      const eating = !!eatenItem;
 
       const outOfBounds =
         newHead.x < 0 ||
@@ -1082,14 +1190,34 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         newHead.y < 0 ||
         newHead.y >= ARENA_ROWS;
 
-      const foodGrowth = eating
-        ? Math.max(0, Number(eatenFood.growth ?? DEFAULT_FOOD_GROWTH) || 0)
-        : 0;
-      // Fractional growth is banked until it reaches a complete body segment.
-      // A segment is retained on this move only when at least 1.0 is available.
-      const availableGrowth = roundPoints((g.growthRemaining ?? 0) + foodGrowth);
-      const willGrow = availableGrowth >= 1;
-      const solid = willGrow ? g.snake : g.snake.slice(0, -1);
+      const foodLength = eating ? Number(eatenItem.length ?? DEFAULT_FOOD_LENGTH) || 0 : 0;
+      // Positive fractions accumulate until a full segment can be added.
+      // Negative fractions accumulate until a full segment can be removed.
+      const availableLengthChange = roundPoints((g.growthRemaining ?? 0) + foodLength);
+      const wantedShrink = Math.max(0, Math.floor(-availableLengthChange));
+      const willGrow = availableLengthChange >= 1;
+      // Wasabi shrink is queued and then removed a few cells per tick, so the tail retracts
+      // smoothly over WASABI_SHRINK_MS. Never shrink below MIN_SNAKE_LENGTH.
+      const pendingBefore = g.shrinkPending ?? 0;
+      const newShrink = Math.min(
+        wantedShrink,
+        Math.max(0, g.snake.length - MIN_SNAKE_LENGTH - pendingBefore)
+      );
+      const pendingTotal = pendingBefore + newShrink;
+      const shrinkPerTick = newShrink > 0
+        ? Math.max(1, Math.ceil(pendingTotal / Math.max(1, Math.round(WASABI_SHRINK_MS / tickMs))))
+        : (g.shrinkPerTick ?? 0);
+      const lengthAfterMove = g.snake.length + (willGrow ? 1 : 0);
+      const removeNow = Math.min(
+        pendingTotal,
+        shrinkPerTick,
+        Math.max(0, lengthAfterMove - MIN_SNAKE_LENGTH)
+      );
+      const shrinkPending = lengthAfterMove - removeNow <= MIN_SNAKE_LENGTH ? 0 : pendingTotal - removeNow;
+      // Predict which old tail cells remain occupied after this move.
+      const cellsRemovedFromTail = (willGrow ? 0 : 1) + removeNow;
+      const keepCount = Math.max(1, g.snake.length - cellsRemovedFromTail);
+      const solid = g.snake.slice(0, keepCount);
       const hitSelf = solid.some((s) => s.x === newHead.x && s.y === newHead.y);
       const hitWall = outOfBounds || isWallBetween(g.walls, head, newHead);
 
@@ -1106,29 +1234,45 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         return;
       }
 
-      let growthRemaining = availableGrowth;
+      let growthRemaining = availableLengthChange;
 
       const snake = [newHead, ...g.snake];
-      if (willGrow) growthRemaining = roundPoints(growthRemaining - 1);
-      else snake.pop();
+      if (willGrow) {
+        growthRemaining = roundPoints(growthRemaining - 1);
+      } else {
+        snake.pop(); // Normal tail movement.
+        if (wantedShrink > newShrink) {
+          growthRemaining = 0; // Shrink we couldn't pay (already at minimum) is discarded.
+        } else if (newShrink > 0) {
+          growthRemaining = roundPoints(growthRemaining + newShrink);
+        }
+      }
+      // This tick's share of the queued wasabi shrink.
+      for (let i = 0; i < removeNow && snake.length > MIN_SNAKE_LENGTH; i++) snake.pop();
 
       let foods = g.foods;
       let swallowing = null;
       let score = g.score;
       let status = "playing";
       let hunger = g.hunger;
+      const wasabiEaten = g.wasabiEaten + (eatenWasabi ? 1 : 0);
+      const wasabiNow = eatenWasabi ? null : g.wasabi;
 
       if (eating) {
-        swallowing = eatenFood;
-        score = roundPoints(score + foodGrowth);
-        if (foodGrowth > 0) {
+        swallowing = eatenItem;
+        const baseCalories = Number(eatenItem.calories ?? DEFAULT_FOOD_CALORIES) || 0;
+        const calorieChange = roundPoints(
+          baseCalories * (1 + WASABI_CALORIE_BOOST * g.wasabiEaten)
+        );
+        score = roundPoints(score + calorieChange);
+        if (calorieChange !== 0) {
           clearTimeout(scoreBonusTimeoutRef.current);
-          setScoreBonus({ id: now, amount: foodGrowth });
+          setScoreBonus({ id: now, amount: calorieChange });
           scoreBonusTimeoutRef.current = setTimeout(() => setScoreBonus(null), SCORE_BONUS_DURATION_MS);
         }
         fillAnimRef.current = { from: hungerShownRef.current, start: now };
         // Show the eaten food in the hunger bar; each one fades on its own, side by side.
-        setEatenFoods((prev) => [...prev, { image: eatenFood.image, key: now }].slice(-EATEN_FOOD_MAX));
+        setEatenFoods((prev) => [...prev, { image: eatenItem.image, key: now }].slice(-EATEN_FOOD_MAX));
         eatenTimeoutsRef.current.push(
           setTimeout(() => {
             setEatenFoods((prev) => prev.filter((f) => f.key !== now));
@@ -1137,20 +1281,27 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         hunger = {
           level: Math.min(
             1,
-            hungerLevel(g.hunger, now, drainMs) + (eatenFood.satiation ?? DEFAULT_FOOD_SATIATION)
+            hungerLevel(g.hunger, now, drainMs) + (eatenItem.satiation ?? DEFAULT_FOOD_SATIATION)
           ),
           at: now,
         };
-        const remaining = g.foods.filter((f) => f !== eatenFood);
-        // Hard modes: wait until every food is eaten, then spawn the whole set again.
-        // Normal mode: top the board up as soon as a group is finished.
-        foods = cfg.respawnAllAtOnce
-          ? (remaining.length
-              ? remaining
-              : refillFoods(snake, [], cfg.foodCount, g.walls))
-          : refillFoods(snake, remaining, cfg.foodCount, g.walls);
-        if (!foods.length) status = "won";
+
+        // Only normal food triggers respawns; wasabi lives outside the food-group limit.
+        if (eatenFood) {
+          const blocked = wasabiNow ? [wasabiNow] : [];
+          const remaining = g.foods.filter((f) => f !== eatenFood);
+          // Hard modes: wait until every food is eaten, then spawn the whole set again.
+          // Normal mode: top the board up as soon as a group is finished.
+          foods = cfg.respawnAllAtOnce
+            ? (remaining.length
+                ? remaining
+                : refillFoods(snake, [], cfg.foodCount, g.walls, blocked))
+            : refillFoods(snake, remaining, cfg.foodCount, g.walls, blocked);
+          if (!foods.length) status = "won";
+        }
       }
+
+      const wasabiUpdate = updateWasabi(g, wasabiNow, now, snake, foods, wasabiEaten);
 
       commit({
         snake,
@@ -1169,6 +1320,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         pattern: g.pattern,
         walls: g.walls,
         bulges: eating ? [...g.bulges, { t0: now + tickMs }] : g.bulges,
+        wasabi: wasabiUpdate.wasabi,
+        wasabiCycle: wasabiUpdate.wasabiCycle,
+        wasabiStart: g.wasabiStart,
+        wasabiEaten,
+        shrinkPending,
+        shrinkPerTick,
       });
     };
 
@@ -1267,13 +1424,35 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const W = BODY_WIDTH * c;
       const O = Math.max(1.25, c * OUTLINE_WIDTH);
 
-      const pts = g.snake.map((sn, i) => {
-        const p = g.prev[i] ?? sn;
-        return [
-          (p.x + (sn.x - p.x) * t + 0.5) * c,
-          (p.y + (sn.y - p.y) * t + 0.5) * c,
-        ];
-      });
+      let pts;
+      let shrinkSpan = null; // Head-to-tail length in cells while the tail is retracting.
+
+      if (g.snake.length < g.prev.length) {
+        // Shrinking: walk along the path the body already follows and pull the tail forward
+        // along it, so the snake gets shorter smoothly instead of snapping.
+        const path = [g.snake[0], ...g.prev];
+        const at = (idx) => {
+          const i = Math.min(path.length - 1, Math.max(0, Math.floor(idx)));
+          const f = idx - i;
+          const a = path[i];
+          const b = path[Math.min(path.length - 1, i + 1)];
+          return [(a.x + (b.x - a.x) * f + 0.5) * c, (a.y + (b.y - a.y) * f + 0.5) * c];
+        };
+        const headIdx = 1 - t;
+        const tailIdx = g.prev.length - t * (g.prev.length - g.snake.length + 1);
+        shrinkSpan = tailIdx - headIdx;
+        pts = [];
+        for (let j = 0; j < shrinkSpan - 0.02; j++) pts.push(at(headIdx + j));
+        pts.push(at(tailIdx));
+      } else {
+        pts = g.snake.map((sn, i) => {
+          const p = g.prev[i] ?? sn;
+          return [
+            (p.x + (sn.x - p.x) * t + 0.5) * c,
+            (p.y + (sn.y - p.y) * t + 0.5) * c,
+          ];
+        });
+      }
 
       const n = pts.length;
       const deathAlpha = (q) => {
@@ -1283,7 +1462,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         return 1 - Math.max(0, Math.min(1, (elapsed - delay) / DEATH_FADE_MS));
       };
 
-      const Leff = Math.max(1, n - 2 + (g.swallowing ? t : 1));
+      const Leff = shrinkSpan != null
+        ? Math.max(1, shrinkSpan - 1 + (g.swallowing ? t : 1))
+        : Math.max(1, n - 2 + (g.swallowing ? t : 1));
       g.bulges = g.bulges.filter((b) =>
         (now - b.t0) / BULGE_MS_PER_CELL - BULGE_RADIUS <
         Math.min(n - 2, BULGE_FADE_LENGTH)
@@ -1617,9 +1798,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           const originX = sx[sampleIndex];
           const originY = sy[sampleIndex];
           const radius = sFull[sampleIndex];
-          const colours = [DEATH_PARTICLE_COLOUR];
+          const greenCount = g.wasabiEaten * WASABI_DEATH_PARTICLES_PER_WASABI;
 
-          for (let p = 0; p < DEATH_PARTICLE_COUNT; p++) {
+          for (let p = 0; p < DEATH_PARTICLE_COUNT + greenCount; p++) {
             const angle = rand(0, Math.PI * 2);
             const speed = rand(28, 105);
             const life = rand(DEATH_PARTICLE_LIFE_MIN, DEATH_PARTICLE_LIFE_MAX);
@@ -1631,10 +1812,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               vx: Math.cos(angle) * speed,
               vy: Math.sin(angle) * speed - rand(8, 28),
               gravity: rand(65, 135),
-              size: rand(1.2, Math.max(2, c * 0.075)),
+              size: rand(2.4, Math.max(4, c * 0.15)), // Doubled (was 1.2 / c * 0.075).
               bornAt: now,
               life,
-              colour: colours[Math.floor(Math.random() * colours.length)],
+              colour: p < DEATH_PARTICLE_COUNT
+                ? DEATH_PARTICLE_COLOUR
+                : WASABI_DEATH_PARTICLE_COLOURS[
+                    Math.floor(Math.random() * WASABI_DEATH_PARTICLE_COLOURS.length)
+                  ],
             });
           }
         }
@@ -1665,6 +1850,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         ctx.globalAlpha = 1;
         deathParticlesRef.current = aliveParticles;
       }
+
     };
 
     raf = requestAnimationFrame(draw);
@@ -1716,6 +1902,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     commit(activateGame(createGame(cfg), cfg));
   };
 
+  // The key listener below is registered once, so it calls the latest playAgain through this ref.
+  playAgainRef.current = playAgain;
+
   // Quit goes straight back to the "choose game mode" prompt.
   const quitToStart = () => {
     resetRun();
@@ -1739,6 +1928,16 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Arrow keys and WASD.
   useEffect(() => {
     const onKeyDown = (e) => {
+      // Spacebar restarts the game from the game over / winner prompt.
+      if (e.key === " " || e.code === "Space") {
+        const status = gameRef.current.status;
+        if (status === "dead" || status === "won") {
+          e.preventDefault();
+          if (!e.repeat) playAgainRef.current?.();
+        }
+        return;
+      }
+
       const d = KEY_DIRECTIONS[e.key];
       if (!d) return;
       e.preventDefault();
@@ -1838,7 +2037,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       ? dpadSize
       : 2 * keySize + keyGap;
 
-  // Score text is doubled but shrinks if the narrower score rectangle needs it.
+  // Calorie text is doubled but shrinks if the narrower score rectangle needs it.
   const scoreW = boxW - (mobileMode ? 3 : 2) * (rowH + GAP);
   const scoreFontPx = Math.floor(Math.min(textPx, (scoreW - 16) / 6));
 
@@ -1966,7 +2165,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexShrink: 0,
   };
 
-  // The score rectangle holds the score and the home / controls buttons.
+  // The calorie rectangle holds the calorie total and the home / controls buttons.
   const topRowStyle = {
     display: "flex",
     flexDirection: "row",
@@ -1991,12 +2190,19 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     padding: "0 0.5rem",
   };
 
+  // The score turns greener and starts glowing as more wasabis are eaten (up to WASABI_MAX_EATEN).
+  const wasabiT = Math.min(1, game.wasabiEaten / WASABI_MAX_EATEN);
   const scoreStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
     fontSize: scoreFontPx,
     whiteSpace: "nowrap",
-    color: "var(--colour-6)",
+    color: wasabiT > 0
+      ? `color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-6))`
+      : "var(--colour-6)",
+    textShadow: wasabiT > 0
+      ? `0 0 ${2 + wasabiT * 12}px rgba(${WASABI_GLOW_RGB}, ${0.35 + wasabiT * 0.65}), 0 0 ${wasabiT * 22}px rgba(${WASABI_GLOW_RGB}, ${wasabiT * 0.7})`
+      : "none",
     textAlign: "center",
   };
 
@@ -2210,7 +2416,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // What the prompt says. Keep what it showed while it fades, so the game-over
   // text never appears behind the start popup.
   if (game.status === "choose" || game.status === "dead" || game.status === "won") {
-    popupInfoRef.current = { status: game.status, reason: game.reason, score: game.score };
+    popupInfoRef.current = {
+      status: game.status,
+      reason: game.reason,
+      score: game.score,
+      wasabi: game.wasabiEaten,
+    };
   }
   const popupInfo = popupInfoRef.current;
   const popupTitle =
@@ -2219,27 +2430,43 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : popupInfo.status === "won"
         ? `WINNER`
         : `GAME OVER`;
+  // Wasabis are only mentioned if at least one was eaten.
+  const wasabiText = popupInfo.wasabi > 0
+    ? ` AND ${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`
+    : "";
   const popupBody =
     popupInfo.status === "choose"
       ? `EAT SUSHI TO STOP THE SNAKE FROM GOING HUNGRY`
       : popupInfo.status === "won"
-        ? `YOU SCORED ${formatPoints(popupInfo.score)} ${popupInfo.score === 1 ? "POINT" : "POINTS"} AND ARE FINALLY FULL`
-        : `YOU SCORED ${formatPoints(popupInfo.score)} ${popupInfo.score === 1 ? "POINT" : "POINTS"} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
+        ? `CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}`
+        : `CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
   // The chosen difficulty's icon sits below the body text on the game over / winner prompt.
   const popupBodyIcon = popupInfo.status === "choose" ? null : icons[cfg.icon];
+  // Only the "X WASABIS" part is green (darker), and only if at least one wasabi was eaten.
+  const popupWasabiNode = popupInfo.wasabi > 0
+    ? <>{" AND "}<span style={{ color: WASABI_TEXT_COLOUR }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
+    : null;
+  const popupBodyNode =
+    popupInfo.status === "choose"
+      ? popupBody
+      : popupInfo.status === "won"
+        ? <>{`CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}</>
+        : <>{`CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
 
   // Fonts stay at full size; the square grows to fit them instead.
   const popupFont = Math.round(textPx);
   const popupBodyFont = Math.max(7, Math.round(popupFont * 0.85));
   const popupPad = Math.max(10, Math.round(popupFont * 0.7));
-  const popupBtn = rowH; // Popup buttons match the top-right control buttons exactly.
+  const popupBtn = rowH; // Result buttons match the top-right control buttons exactly.
+  const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
+  const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = 8;
   const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : 2;
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
     const longestWord = Math.max(...label.split(" ").map((word) => word.length));
     const availableWidth = popupBtn - 10;
-    return Math.max(6, Math.min(popupLabelMaxFont, availableWidth / (longestWord * 0.62)));
+    return LABEL_FONT_SCALE * Math.max(6, Math.min(popupLabelMaxFont, availableWidth / (longestWord * 0.62)));
   };
   const popupDiffIconPx = Math.round(2 * 1.3 * popupBodyFont); // Larger difficulty icon shown above the action buttons on results.
 
@@ -2264,7 +2491,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const longestWord = Math.max(...popupBody.split(" ").map((x) => x.length));
   const widthNeeded = Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
-    popupButtonCount * popupBtn + (popupButtonCount - 1) * popupBtnGap,
+    popupButtonCount * popupButtonSize + (popupButtonCount - 1) * popupBtnGap,
     longestWord * bodyCharPx
   );
   let popupSide = Math.ceil(widthNeeded + 2 * popupPad + 2 + POPUP_SLACK);
@@ -2277,7 +2504,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       popupFont * 1.1 +
       POPUP_TEXT_GAP + bodyLines * popupBodyFont * 1.2 +
       (popupBodyIcon ? POPUP_TEXT_GAP + popupDiffIconPx : 0) +
-      POPUP_GAP + popupBtn;
+      POPUP_GAP + popupButtonSize;
     if (needH <= popupSide) break;
     popupSide += 1;
   }
@@ -2369,6 +2596,23 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     justifyContent: "center",
   };
 
+  // Icon slot for the EASY / NORMAL / HARD buttons. It is the same size as the other buttons'
+  // slot; the icon inside is drawn larger and overflows it (the icon edges are transparent).
+  const popupModeButtonIconStyle = {
+    ...popupButtonIconStyle,
+    position: "relative",
+    overflow: "visible",
+  };
+
+  const popupModeIconImageStyle = {
+    display: "block",
+    width: `${MODE_ICON_SCALE * 100}%`,
+    height: `${MODE_ICON_SCALE * 100}%`,
+    flexShrink: 0,
+    objectFit: "contain",
+    pointerEvents: "none",
+  };
+
   const popupButtonLabelStyle = (label) => ({
     width: "100%",
     maxHeight: "2.1em",
@@ -2382,6 +2626,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     whiteSpace: "normal",
     overflowWrap: "normal",
     textTransform: "uppercase",
+    transform: `translateY(${LABEL_OFFSET_PX}px)`,
   });
 
   const popupButtonStyle = {
@@ -2409,7 +2654,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     boxShadow: "0 3px 10px rgba(0, 0, 0, 0.22)",
   };
 
-  const modeButtonStyle = popupButtonStyle;
+  const modeButtonStyle = {
+    ...popupButtonStyle,
+    width: popupModeBtn,
+    height: popupModeBtn,
+    minWidth: popupModeBtn,
+    minHeight: popupModeBtn,
+    overflow: "visible", // Lets the larger icons spill past the button edge.
+  };
 
   const buttonSize = rowH; // Buttons are as tall as the score rectangle.
 
@@ -2444,6 +2696,17 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexShrink: 0,
     boxShadow: "0 3px 10px rgba(0, 0, 0, 0.22)",
   };
+
+  // The controller toggle shows an icon with a text label under it, like the popup buttons.
+  const toggleButtonStyle = {
+    ...iconButtonStyle,
+    flexDirection: "column",
+    justifyContent: "space-evenly",
+    gap: 1,
+    padding: "4px 1px",
+    overflow: "hidden",
+  };
+  const toggleLabel = mobileControlMode === "joystick" ? "DPAD" : "JOYSTICK";
 
   /* =====================================
      SNAKE AND FOOD LAYERS
@@ -2492,14 +2755,15 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     </div>
   );
 
-  // Layering: canvas/walls (1) < closed-mouth food (10 + row) < head (500)
-  // < open-mouth food (600 + row) < mouth overlay (900) < glass (1000).
-  // Adding the row means foods in lower cells always draw on top of foods in higher cells.
+  // Layering: walls (1) < closed-mouth food (10 + row) < snake body canvas (400)
+  // < head (500) < open-mouth food (600 + row) < mouth overlay (900) < glass (1000).
+  // Ordinary food sits behind the snake body; open-mouth food can still appear in front
+  // of the head during the eating animation. The row offset preserves food depth ordering.
   const HEAD_Z = 500;
   const OVERLAY_Z = 900;
   const foodZ = (food) => (frame === FULL_OPEN_FRAME ? 600 : 10) + food.y;
 
-  const foodLayer = (food, key) => {
+  const foodLayer = (food, key, extraStyle = null) => {
     // Each food scales the FOOD_SIZE constant by its own 0 to 1 size.
     const foodSize = FOOD_SIZE * cell * (food.size ?? DEFAULT_FOOD_SIZE);
 
@@ -2520,6 +2784,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         fontSize: foodSize,
         lineHeight: 1,
         transform: `translate(${food.x * cell}px, ${food.y * cell}px)`,
+        ...extraStyle,
       }}
     >
       {food.image ? (
@@ -2527,7 +2792,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           src={food.image}
           alt=""
           draggable={false}
-          style={{ width: foodSize, height: foodSize, objectFit: "contain" }}
+          style={{
+            width: foodSize,
+            height: foodSize,
+            objectFit: "contain",
+            filter: food.name === "wasabi"
+              ? `drop-shadow(0 0 ${cell * 0.12 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${cell * 0.3 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.7 * WASABI_ARENA_GLOW}))`
+              : "none",
+          }}
         />
       ) : (
         FOOD_EMOJI
@@ -2616,6 +2888,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         55% { opacity: 1; width: ${eatenSlot}px; }
         100% { opacity: 0; width: 0px; }
       }
+      @keyframes swallowFood {
+        0% { opacity: 1; }
+        ${EATEN_FOOD_VISIBLE_FRAC * 100}% { opacity: 1; }
+        ${(EATEN_FOOD_VISIBLE_FRAC + EATEN_FOOD_FADE_FRAC) * 100}% { opacity: 0; }
+        100% { opacity: 0; }
+      }
       @keyframes scoreBonusFade {
         0% { opacity: 0; transform: translateY(-35%); }
         14% { opacity: 1; transform: translateY(-50%); }
@@ -2627,12 +2905,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         <div style={scoreSectionStyle}>
           <div style={scoreStyle}>
             <span style={{ position: "relative", display: "inline-block", whiteSpace: "nowrap" }}>
-              SCORE: {formatPoints(game.score)}
+              {formatPoints(game.score)}
               {scoreBonus && (
-                <span key={scoreBonus.id} style={scoreBonusStyle}>
+                <div key={scoreBonus.id} style={scoreBonusStyle}>
                   (+{formatPoints(scoreBonus.amount)})
-                </span>
+                </div>
               )}
+              {" CALORIES"}
             </span>
           </div>
         </div>
@@ -2641,23 +2920,27 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           {mobileMode && (
             <button
               type="button"
-              style={iconButtonStyle}
+              style={toggleButtonStyle}
               onClick={toggleMobileControls}
               aria-label={mobileControlMode === "joystick" ? "Use directional pad" : "Use joystick"}
               title={mobileControlMode === "joystick" ? "Use directional pad" : "Use joystick"}
             >
-              {renderIcon(mobileControlMode === "joystick" ? icons.dpad : icons.joystick, 0.68)}
+              <div style={popupButtonIconStyle}>
+                {renderIcon(mobileControlMode === "joystick" ? icons.dpad : icons.joystick)}
+              </div>
+              <span style={popupButtonLabelStyle(toggleLabel)}>{toggleLabel}</span>
             </button>
           )}
 
           <button
             type="button"
-            style={{ ...iconButtonStyle, backgroundColor: "var(--red-0)" }}
+            style={{ ...toggleButtonStyle, backgroundColor: "var(--red-0)" }}
             onClick={leaveActivities}
             aria-label="Exit activities"
             title="Exit activities"
           >
-            {renderIcon(icons.cross, 0.68)}
+            <div style={popupButtonIconStyle}>{renderIcon(icons.cross)}</div>
+            <span style={popupButtonLabelStyle("LEAVE")}>LEAVE</span>
           </button>
         </div>
       </div>
@@ -2725,7 +3008,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   top: 0,
                   width: ARENA_COLS * cell,
                   height: ARENA_ROWS * cell,
-                  zIndex: 1,
+                  zIndex: 400,
                   pointerEvents: "none",
                 }}
               />
@@ -2735,7 +3018,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                 <>
                   {headLayer(FRAMES[frame], HEAD_Z)}
                   {game.foods.map((f) => foodLayer(f, `food-${f.x}-${f.y}`))}
-                  {game.swallowing && foodLayer(game.swallowing, "swallowing")}
+                  {game.wasabi && foodLayer(game.wasabi, "wasabi")}
+                  {game.swallowing &&
+                    foodLayer(game.swallowing, `swallowing-${game.movedAt}`, {
+                      animation: `swallowFood ${tickMs}ms linear forwards`,
+                    })}
                   {headLayer(OVERLAY_IMAGE, OVERLAY_Z, frame === FULL_OPEN_FRAME)}
                 </>
               )}
@@ -2873,7 +3160,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             <div style={popupTextAreaStyle}>
               <div style={popupTitleStyle}>{popupTitle}</div>
               {popupBody && (
-                <div style={popupBodyStyle}>{popupBody}</div>
+                <div style={popupBodyStyle}>{popupBodyNode}</div>
               )}
               {popupBodyIcon && (
                 <img src={popupBodyIcon} alt="" aria-hidden="true" draggable={false} style={popupBodyIconStyle} />
@@ -2891,8 +3178,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     title={d.label}
                     onClick={() => chooseMode(key)}
                   >
-                    <div style={popupButtonIconStyle}>
-                      {renderIcon(icons[d.icon])}
+                    <div style={popupModeButtonIconStyle}>
+                      <img
+                        src={icons[d.icon]}
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        style={popupModeIconImageStyle}
+                      />
                     </div>
                     <span style={popupButtonLabelStyle(d.label)}>{d.label}</span>
                   </button>

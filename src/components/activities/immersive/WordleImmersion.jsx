@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Immersion } from "./Immersion";
 import { WORDS } from "../../../assets/activities/wordle/words";
@@ -17,6 +18,7 @@ import icon_daily_light from "../../../assets/activities/symbols/daily_light.png
 import icon_daily_dark from "../../../assets/activities/symbols/daily_dark.png";
 import icon_random_light from "../../../assets/activities/symbols/random_light.png";
 import icon_random_dark from "../../../assets/activities/symbols/random_dark.png";
+
 const THEME_ICONS = {
   light: {
     cross: icon_cross_light,
@@ -39,155 +41,198 @@ const THEME_ICONS = {
     random: icon_random_dark,
   },
 };
+
 /* =====================================
    SETTINGS: GAME
-\===================================== */
+===================================== */
+
 const NUM_GUESSES = 6;
 const DEFAULT_LETTERS = 6;
-// Lighter gray for "letter not in word" in dark mode.
+
 const ABSENT_GREY = "#3a3a3c";
 const ABSENT_GREY_DARK = "#6a6a6e";
 const ABSENT_GREY_DARK_KEY = "rgba(106, 106, 110, 0.8)";
+
 const COLOUR_PRIORITY = {
   "#538d4e": 2,
   "#b59f3b": 1,
   "#3a3a3c": 0,
 };
+
 const KEY_COLOUR_MAP = {
   "#538d4e": "rgba(83, 141, 78, 0.8)",
   "#b59f3b": "rgba(181, 159, 59, 0.8)",
   "#3a3a3c": "rgba(58, 58, 60, 0.8)",
 };
+
 const COLOUR_EMOJI = {
   "#538d4e": "🟩",
   "#b59f3b": "🟨",
   "#3a3a3c": "⬛",
 };
-// Face emojis for the results prompt.
+
 const WIN_FACES = [
   "😀", "😃", "😄", "😁", "😆",
   "🥳", "😎", "🤩", "😍", "🤗",
 ];
+
 const GAVE_UP_FACES = [
   "😒", "🙄", "😑", "😐", "😶",
   "😬", "😏", "😵", "😳", "😤",
 ];
+
 const LOSE_FACES = [
   "😩", "😭", "😢", "😞", "😖",
   "😫", "😣", "😰", "😔", "😟",
 ];
+
 /* =====================================
    SETTINGS: SCREEN AND PANELS
-\===================================== */
+===================================== */
+
 const FONT_FAMILY = "'Courier New', Courier, monospace";
-const GAP = 6; // Space between rectangles, and (on mobile) around the outside of them.
+const GAP = 6;
 const MIN_PANEL_SPACE = 36;
 const PANEL_PAD_X = 12;
+
 const ROW_H_MOBILE = 55;
 const ROW_H_DESKTOP = 50;
+
 const TEXT_PX_MOBILE = 21.76;
 const TEXT_PX_DESKTOP = 25.6;
+
 const MAX_LETTER_PX = 64;
 const MAX_KEY_PX = 52;
 const KEYBOARD_HEIGHT_SHARE = 0.36;
+
 const END_DELAY_MS = 1200;
 const POPUP_FADE_MS = 260;
+
+/* =====================================
+   SETTINGS: BUTTON LABELS
+===================================== */
+
+// All button labels are moved down by 3px.
+const BUTTON_LABEL_OFFSET = 3;
+
+// All button labels are approximately 13% larger.
+const BUTTON_LABEL_SCALE = 1.13;
+
 /* =====================================
    SETTINGS: PROMPT (POPUP)
-   The prompt is a square, made as small as it can be while still holding its text
-   at full font size (nothing clipped, overflowing or shrunk).
-\===================================== */
-const POPUP_GAP = 10; // Space between the prompt's rows, in px.
-const POPUP_SLACK = 6; // Extra px of room so content never touches an edge.
-const MONO_CHAR_EM = 0.62; // Width of one body character, in em (Courier is 0.6; a little slack added).
-const TITLE_CHAR_EM = 0.66; // Width of one title character, in em (includes its letter spacing).
-const WORD_CHAR_EM = 0.62 + 0.1; // Width of one character of the revealed word (it has extra letter spacing).
+===================================== */
+
+const POPUP_GAP = 10;
+const POPUP_SLACK = 6;
+
+const MONO_CHAR_EM = 0.62;
+const TITLE_CHAR_EM = 0.66;
+const WORD_CHAR_EM = 0.62 + 0.1;
+
 /* =====================================
    HELPERS
-\===================================== */
+===================================== */
+
 const pickFace = (faces, roll) =>
   faces[Math.floor(roll * faces.length)];
+
 const getDailyEntry = () => {
   const today = new Date();
+
   const seed =
     today.getFullYear() * 10000 +
     (today.getMonth() + 1) * 100 +
     today.getDate();
+
   return WORDS[seed % WORDS.length];
 };
-// Pick a random word, avoiding the previous word.
+
 const pickRandomEntry = (excludeWord) => {
   if (WORDS.length < 2) return WORDS[0];
+
   let next;
+
   do {
     next = WORDS[Math.floor(Math.random() * WORDS.length)];
   } while (excludeWord && next.word === excludeWord);
+
   return next;
 };
+
 const emptyGuesses = (len) =>
   Array.from(
     { length: NUM_GUESSES },
     () => Array(len).fill("")
   );
+
 const emptyColours = (len) =>
   Array.from(
     { length: NUM_GUESSES },
     () => Array(len).fill("transparent")
   );
-// Rough width of a line in monospace characters.
+
 const lineUnits = (line) =>
   [...line].reduce(
     (sum, ch) =>
       sum + (ch.codePointAt(0) > 0x2000 ? 2 : 1),
     0
   );
-// Greedy word wrap for a monospace font. `widths` is each word's width in characters.
-// Returns how many lines the words need within `maxUnits` characters.
+
 const wrapLineCount = (widths, maxUnits) => {
   let lines = 1;
   let len = 0;
+
   for (const wd of widths) {
-    if (len === 0) len = wd;
-    else if (len + 1 + wd <= maxUnits) len += 1 + wd;
-    else {
+    if (len === 0) {
+      len = wd;
+    } else if (len + 1 + wd <= maxUnits) {
+      len += 1 + wd;
+    } else {
       lines += 1;
       len = wd;
     }
   }
+
   return lines;
 };
+
 const useWindowSize = () => {
   const [size, setSize] = useState({
     w: window.innerWidth,
     h: window.innerHeight,
   });
+
   useEffect(() => {
     const onResize = () =>
       setSize({
         w: window.innerWidth,
         h: window.innerHeight,
       });
+
     window.addEventListener("resize", onResize);
+
     return () =>
       window.removeEventListener("resize", onResize);
   }, []);
+
   return size;
 };
+
 const KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
   ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
   ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
 ];
+
 /* =====================================
    WORDLE IMMERSION
-\===================================== */
+===================================== */
+
 export const WordleImmersion = ({
   mobileMode,
   darkMode,
   leaveActivities,
 }) => {
-  // On mobile the rectangles nearly fill the whole area: only a GAP-sized margin
-  // (the same as the space between the buttons in the top right).
   const outerContainer = {
     position: "relative",
     width: "100%",
@@ -196,6 +241,7 @@ export const WordleImmersion = ({
     padding: mobileMode ? GAP : "2rem",
     fontFamily: FONT_FAMILY,
   };
+
   return (
     <Immersion
       mobileMode={mobileMode}
@@ -212,9 +258,11 @@ export const WordleImmersion = ({
     </Immersion>
   );
 };
+
 /* =====================================
    WORDLE GAME SCREEN
-\===================================== */
+===================================== */
+
 const WordleGame = ({
   mobileMode,
   darkMode,
@@ -223,6 +271,7 @@ const WordleGame = ({
   const icons = darkMode
     ? THEME_ICONS.dark
     : THEME_ICONS.light;
+
   const renderIcon = (src, scale = 1) => (
     <img
       src={src}
@@ -238,89 +287,117 @@ const WordleGame = ({
       }}
     />
   );
-  // "choose" = mode prompt, "playing" = active game, "over" = results.
+
   const [status, setStatus] = useState("choose");
   const [entry, setEntry] = useState(null);
   const [result, setResult] = useState(null);
   const [gameMode, setGameMode] = useState(null);
+
   const [guesses, setGuesses] = useState(() =>
     emptyGuesses(DEFAULT_LETTERS)
   );
+
   const [colours, setColours] = useState(() =>
     emptyColours(DEFAULT_LETTERS)
   );
+
   const [keyColours, setKeyColours] = useState({});
+
   const [currentRow, setCurrentRow] = useState(0);
   const [currentCol, setCurrentCol] = useState(0);
+
   const [pressedKey, setPressedKey] = useState(null);
   const [shakenRow, setShakenRow] = useState(null);
   const [enterCooldown, setEnterCooldown] = useState(0);
+
   const [popupHidden, setPopupHidden] = useState(false);
   const [popupClosing, setPopupClosing] = useState(false);
+
   const [copied, setCopied] = useState(false);
   const [measuredBox, setMeasuredBox] = useState(null);
   const [pageBg, setPageBg] = useState(null);
-  // Measure the hint bar so the game panel can use the remaining space.
+
   const [hintHeight, setHintHeight] = useState(
     mobileMode ? ROW_H_MOBILE : ROW_H_DESKTOP
   );
+
   const colContainerRef = useRef(null);
   const hintSectionRef = useRef(null);
+
   const popupInfoRef = useRef({
     kind: "choose",
     result: null,
   });
+
   const statusRef = useRef("choose");
   const entryRef = useRef(null);
   const lastWordRef = useRef(null);
   const gameIdRef = useRef(0);
   const gameOverRef = useRef(true);
+
   const currentRowRef = useRef(0);
   const currentColRef = useRef(0);
+
   const guessesRef = useRef(guesses);
   const coloursRef = useRef(colours);
+
   const keyHandlerRef = useRef(null);
+
   const enterCooldownRef = useRef(false);
   const cooldownIntervalRef = useRef(null);
+
   const submittingRef = useRef(false);
+
   const popupTimeoutRef = useRef(null);
   const copiedTimeoutRef = useRef(null);
+
   const { w, h } = useWindowSize();
+
   useEffect(() => {
     currentRowRef.current = currentRow;
   }, [currentRow]);
+
   useEffect(() => {
     currentColRef.current = currentCol;
   }, [currentCol]);
+
   useEffect(() => {
     guessesRef.current = guesses;
   }, [guesses]);
+
   useEffect(() => {
     coloursRef.current = colours;
   }, [colours]);
-  // Clear every timer on unmount.
+
   useEffect(
     () => () => {
       gameIdRef.current += 1;
+
       clearInterval(cooldownIntervalRef.current);
       clearTimeout(popupTimeoutRef.current);
       clearTimeout(copiedTimeoutRef.current);
     },
     []
   );
+
   /* =====================================
      SHAKE AND COOLDOWN
   ===================================== */
+
   const shakeRow = (row) => {
     setShakenRow(row);
+
     setTimeout(() => {
       setShakenRow(null);
     }, 400);
   };
+
   const startCooldown = () => {
     clearInterval(cooldownIntervalRef.current);
+
     enterCooldownRef.current = true;
     setEnterCooldown(3);
+
     cooldownIntervalRef.current = setInterval(() => {
       setEnterCooldown((prev) => {
         if (prev <= 1) {
@@ -328,90 +405,123 @@ const WordleGame = ({
           enterCooldownRef.current = false;
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
   };
+
   const stopCooldown = () => {
     clearInterval(cooldownIntervalRef.current);
+
     enterCooldownRef.current = false;
     setEnterCooldown(0);
   };
+
   /* =====================================
      POPUP
   ===================================== */
+
   const showPopupNow = () => {
     clearTimeout(popupTimeoutRef.current);
+
     setPopupHidden(false);
     setPopupClosing(false);
   };
+
   const dismissPopup = () => {
     clearTimeout(popupTimeoutRef.current);
+
     setPopupClosing(true);
+
     popupTimeoutRef.current = setTimeout(() => {
       setPopupHidden(true);
       setPopupClosing(false);
     }, POPUP_FADE_MS);
   };
+
   /* =====================================
      BOARD RESET
   ===================================== */
+
   const resetBoard = (len) => {
     const g = emptyGuesses(len);
     const c = emptyColours(len);
+
     guessesRef.current = g;
     coloursRef.current = c;
+
     currentRowRef.current = 0;
     currentColRef.current = 0;
+
     setGuesses(g);
     setColours(c);
     setKeyColours({});
+
     setCurrentRow(0);
     setCurrentCol(0);
+
     setPressedKey(null);
     setShakenRow(null);
+
     stopCooldown();
+
     submittingRef.current = false;
   };
+
   /* =====================================
      GAME NAVIGATION
   ===================================== */
-  // Return directly to the mode selection screen.
+
   const goToChoose = () => {
     gameIdRef.current += 1;
     gameOverRef.current = true;
+
     resetBoard(DEFAULT_LETTERS);
+
     entryRef.current = null;
+
     setEntry(null);
     setResult(null);
     setGameMode(null);
+
     statusRef.current = "choose";
     setStatus("choose");
+
     showPopupNow();
   };
-  // Start a fresh daily or random game.
+
   const startGame = (mode) => {
     const next =
       mode === "daily"
         ? getDailyEntry()
         : pickRandomEntry(lastWordRef.current);
+
     gameIdRef.current += 1;
+
     resetBoard(next.word.length);
+
     entryRef.current = next;
     lastWordRef.current = next.word;
+
     setEntry(next);
     setResult(null);
     setGameMode(mode);
+
     gameOverRef.current = false;
+
     statusRef.current = "playing";
     setStatus("playing");
+
     dismissPopup();
   };
-  // Restart selects a DIFFERENT random word and its corresponding hint.
+
   const restartRandomGame = () => {
     if (gameMode !== "random") return;
+
     startGame("random");
   };
+
   const retryGame = () => {
     if (gameMode === "random") {
       restartRandomGame();
@@ -419,27 +529,35 @@ const WordleGame = ({
       startGame("daily");
     }
   };
+
   const finishGame = (finalResult) => {
     gameOverRef.current = true;
     submittingRef.current = false;
+
     setResult(finalResult);
+
     statusRef.current = "over";
     setStatus("over");
+
     showPopupNow();
   };
+
   /* =====================================
      GUESSING
   ===================================== */
+
   const validateWord = async (guess) => {
     try {
       const res = await fetch(
         `https://api.dictionaryapi.dev/api/v2/entries/en/${guess.toLowerCase()}`
       );
+
       return res.ok;
     } catch {
       return true;
     }
   };
+
   const submitGuess = async () => {
     if (
       submittingRef.current ||
@@ -447,6 +565,7 @@ const WordleGame = ({
     ) {
       return;
     }
+
     if (
       statusRef.current !== "playing" ||
       gameOverRef.current ||
@@ -454,16 +573,20 @@ const WordleGame = ({
     ) {
       return;
     }
+
     submittingRef.current = true;
+
     const myId = gameIdRef.current;
     const word = entryRef.current.word.toUpperCase();
     const wl = word.length;
     const row = currentRowRef.current;
+
     const guess = guessesRef.current[row].filter(
       (l) => l !== ""
     );
+
     const valid = await validateWord(guess.join(""));
-    // Ignore lookups belonging to an abandoned game.
+
     if (
       gameOverRef.current ||
       gameIdRef.current !== myId
@@ -471,21 +594,26 @@ const WordleGame = ({
       submittingRef.current = false;
       return;
     }
+
     if (!valid) {
       shakeRow(row);
       startCooldown();
+
       submittingRef.current = false;
       return;
     }
+
     const newColours = coloursRef.current.map(
       (r) => [...r]
     );
+
     const wordArr = word.split("");
     const used = Array(wl).fill(false);
-    // Start with all letters absent.
+
     for (let i = 0; i < wl; i++) {
       newColours[row][i] = "#3a3a3c";
     }
+
     // Green letters first.
     guess.forEach((letter, i) => {
       if (i < wl && letter === wordArr[i]) {
@@ -493,12 +621,15 @@ const WordleGame = ({
         used[i] = true;
       }
     });
+
     // Yellow letters second.
     guess.forEach((letter, i) => {
       if (newColours[row][i] === "#538d4e") return;
+
       const j = wordArr.findIndex(
         (l, idx) => l === letter && !used[idx]
       );
+
       if (j !== -1) {
         newColours[row][i] = "#b59f3b";
         used[j] = true;
@@ -506,13 +637,17 @@ const WordleGame = ({
         newColours[row][i] = "#3a3a3c";
       }
     });
+
     coloursRef.current = newColours;
     setColours(newColours);
+
     setKeyColours((prev) => {
       const next = { ...prev };
+
       guess.forEach((letter, i) => {
         const gridColour = newColours[row][i];
         const existing = next[letter];
+
         if (
           !existing ||
           COLOUR_PRIORITY[gridColour] >
@@ -521,17 +656,22 @@ const WordleGame = ({
           next[letter] = gridColour;
         }
       });
+
       return next;
     });
+
     const won =
       guess.length === wl &&
       guess.join("") === word;
+
     if (won || row + 1 >= NUM_GUESSES) {
       gameOverRef.current = true;
+
       const finalGuesses = guessesRef.current;
+
       setTimeout(() => {
-        // Ignore results from an old game after restarting or leaving.
         if (gameIdRef.current !== myId) return;
+
         finishGame({
           won,
           surrendered: false,
@@ -544,16 +684,20 @@ const WordleGame = ({
     } else {
       currentRowRef.current = row + 1;
       currentColRef.current = 0;
+
       setCurrentRow(row + 1);
       setCurrentCol(0);
     }
+
     startCooldown();
+
     submittingRef.current = false;
   };
+
   /* =====================================
      SURRENDER
   ===================================== */
-  // Immediately surrender and reveal the answer.
+
   const handleSurrender = () => {
     if (
       statusRef.current !== "playing" ||
@@ -561,7 +705,9 @@ const WordleGame = ({
     ) {
       return;
     }
+
     gameIdRef.current += 1;
+
     finishGame({
       won: false,
       surrendered: true,
@@ -571,9 +717,11 @@ const WordleGame = ({
       faceRoll: Math.random(),
     });
   };
+
   /* =====================================
      KEYBOARD INPUT
   ===================================== */
+
   const handleKey = (key) => {
     if (
       statusRef.current !== "playing" ||
@@ -581,26 +729,36 @@ const WordleGame = ({
     ) {
       return;
     }
+
     if (
       key === "ENTER" &&
-      (submittingRef.current ||
-        enterCooldownRef.current)
+      (
+        submittingRef.current ||
+        enterCooldownRef.current
+      )
     ) {
       return;
     }
+
     const len = entryRef.current
       ? entryRef.current.word.length
       : DEFAULT_LETTERS;
+
     const col = currentColRef.current;
     const row = currentRowRef.current;
+
     if (key === "BACKSPACE") {
       if (col === 0) return;
+
       const next = guessesRef.current.map(
         (r) => [...r]
       );
+
       next[row][col - 1] = "";
+
       guessesRef.current = next;
       currentColRef.current = col - 1;
+
       setGuesses(next);
       setCurrentCol(col - 1);
     } else if (key === "ENTER") {
@@ -609,25 +767,35 @@ const WordleGame = ({
       const next = guessesRef.current.map(
         (r) => [...r]
       );
+
       next[row][col] = key;
+
       guessesRef.current = next;
       currentColRef.current = col + 1;
+
       setGuesses(next);
       setCurrentCol(col + 1);
     }
   };
+
   keyHandlerRef.current = handleKey;
-  // Physical keyboard. Space retries the completed game.
+
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.code === "Space") {
-        if (statusRef.current === "over" && !e.repeat) {
+        if (
+          statusRef.current === "over" &&
+          !e.repeat
+        ) {
           e.preventDefault();
           retryGame();
         }
+
         return;
       }
+
       const key = e.key.toUpperCase();
+
       if (
         /^[A-Z]$/.test(key) ||
         key === "BACKSPACE" ||
@@ -637,29 +805,36 @@ const WordleGame = ({
         keyHandlerRef.current?.(key);
       }
     };
+
     const onKeyUp = () => setPressedKey(null);
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
   }, [gameMode]);
+
   const onPressKey = (key) => {
     setPressedKey(key);
     handleKey(key);
   };
+
   /* =====================================
      SHARE TEXT
-     Always built, so the copy button works the same on mobile and desktop.
-     (Mobile just doesn't display it in the prompt.)
   ===================================== */
+
   const buildShareText = (res) => {
     if (!res) return "";
+
     const wordLength = res.word.length;
     const rows = [];
+
     for (let r = 0; r < res.guesses.length; r++) {
       const rowColours = res.colours[r];
+
       if (
         !rowColours.some(
           (c) => c !== "transparent"
@@ -667,27 +842,36 @@ const WordleGame = ({
       ) {
         break;
       }
+
       const letters = res.guesses[r]
         .slice(0, wordLength)
         .join("");
+
       const emojis = rowColours
         .slice(0, wordLength)
         .map((c) => COLOUR_EMOJI[c] ?? "⬛")
         .join("");
+
       rows.push(`${r + 1}. ${emojis} (${letters})`);
     }
+
     if (res.surrendered) {
       rows.push(`${rows.length + 1}. Gave up`);
     }
+
     return rows.join("\n");
   };
+
   const handleCopy = (text) => {
     if (!navigator.clipboard) return;
+
     navigator.clipboard
       .writeText(text)
       .then(() => {
         setCopied(true);
+
         clearTimeout(copiedTimeoutRef.current);
+
         copiedTimeoutRef.current = setTimeout(
           () => setCopied(false),
           1000
@@ -695,53 +879,61 @@ const WordleGame = ({
       })
       .catch(() => {});
   };
+
   /* =====================================
      SIZES
   ===================================== */
+
   const rowH = mobileMode
     ? ROW_H_MOBILE
     : ROW_H_DESKTOP;
+
   const textPx = mobileMode
     ? TEXT_PX_MOBILE
     : TEXT_PX_DESKTOP;
+
   const nLetters = entry
     ? entry.word.length
     : DEFAULT_LETTERS;
-  // The stack fills the immersion area. On mobile the outer padding is just GAP
-  // on each side, so the fallback subtracts that.
+
   const boxW = Math.max(
     1,
     measuredBox?.w ?? w - (mobileMode ? 2 * GAP : 64)
   );
+
   const boxH = Math.max(
     1,
     measuredBox?.h ?? h - (mobileMode ? 2 * GAP : 104)
   );
-  // Title rectangle shares the top row with three buttons
-  // (restart, surrender, exit).
+
   const buttonCount = 2;
-  // Mobile shows just a "W" so the title rectangle can stay narrow.
-  const titleText = mobileMode ? "W" : "WOOORDLE";
+
+  // WOOORDLE is displayed on both mobile and desktop.
+  const titleText = "WOOORDLE";
+
   const titleW =
     boxW - buttonCount * (rowH + GAP);
+
   const titleFontPx = Math.floor(
     Math.min(
       textPx,
       (titleW - 16) / (titleText.length * 0.62)
     )
   );
-  // Panel height accounts for the ACTUAL hint bar height.
+
   const panelH =
     boxH - rowH - hintHeight - 2 * GAP - 2;
+
   const availW = Math.max(
     60,
     boxW - 2 - 2 * PANEL_PAD_X
   );
+
   const availH = Math.max(
     100,
     panelH - 3 * MIN_PANEL_SPACE
   );
-  // Keyboard: 3 rows of 1.5 key-heights plus 2 gaps of 0.15.
+
   const keyPx = Math.max(
     12,
     Math.floor(
@@ -752,8 +944,9 @@ const WordleGame = ({
       )
     )
   );
+
   const keyboardH = 4.8 * keyPx;
-  // Grid: whatever height is left, and as wide as the word needs.
+
   const letterPx = Math.max(
     10,
     Math.floor(
@@ -765,25 +958,35 @@ const WordleGame = ({
       )
     )
   );
+
   /* =====================================
      MEASURE IMMERSION AREA
   ===================================== */
+
   useLayoutEffect(() => {
     const container = colContainerRef.current;
     const outer = container?.parentElement;
+
     if (!outer) return;
+
     const cs = window.getComputedStyle(outer);
+
     const padX =
       (parseFloat(cs.paddingLeft) || 0) +
       (parseFloat(cs.paddingRight) || 0);
+
     const padY =
       (parseFloat(cs.paddingTop) || 0) +
       (parseFloat(cs.paddingBottom) || 0);
+
     const rect = outer.getBoundingClientRect();
+
     const innerW = outer.clientWidth - padX;
     const innerH = outer.clientHeight - padY;
+
     const visibleH =
       window.innerHeight - rect.top - padY;
+
     setMeasuredBox({
       w: Math.max(1, innerW),
       h: Math.max(
@@ -792,26 +995,38 @@ const WordleGame = ({
       ),
     });
   }, [mobileMode, w, h]);
+
   /* =====================================
      MEASURE HINT BAR
   ===================================== */
+
   useLayoutEffect(() => {
     const hint = hintSectionRef.current;
+
     if (!hint) return;
-    const actualHeight = hint.getBoundingClientRect().height;
+
+    const actualHeight =
+      hint.getBoundingClientRect().height;
+
     setHintHeight((previous) =>
       Math.abs(previous - actualHeight) < 0.5
         ? previous
         : actualHeight
     );
   }, [entry?.hint, status, mobileMode, w, h]);
-  // Find the page background so popup buttons match the page.
+
+  /* =====================================
+     PAGE BACKGROUND
+  ===================================== */
+
   useLayoutEffect(() => {
     let el = colContainerRef.current;
     let bg = null;
+
     while (el) {
       const colour =
         window.getComputedStyle(el).backgroundColor;
+
       if (
         colour &&
         colour !== "transparent" &&
@@ -820,16 +1035,19 @@ const WordleGame = ({
         bg = colour;
         break;
       }
+
       el = el.parentElement;
     }
+
     setPageBg((prev) =>
       prev === bg ? prev : bg
     );
   }, [mobileMode, w, h, status]);
+
   /* =====================================
      POPUP CONTENT
   ===================================== */
-  // Keep the popup content stable while it fades.
+
   if (status === "choose") {
     popupInfoRef.current = {
       kind: "choose",
@@ -841,35 +1059,48 @@ const WordleGame = ({
       result,
     };
   }
+
   const popupInfo = popupInfoRef.current;
-  const res = popupInfo.kind === "result" ? popupInfo.result : null;
+
+  const res =
+    popupInfo.kind === "result"
+      ? popupInfo.result
+      : null;
+
   const showPopup =
     !popupHidden &&
     (status !== "playing" || popupClosing);
-  // What the prompt says.
+
   let popupTitle = "CHOOSE MODE";
-  let popupBodyText = `GUESS THE WORD IN ${NUM_GUESSES} TRIES`;
+  let popupBodyText =
+    `GUESS THE WORD IN ${NUM_GUESSES} TRIES`;
+
   let shareText = "";
   let shareLines = [];
-  let wordWidths = null; // Widths of the words in "THE WORD WAS ...".
-  const showShare = !!res && !mobileMode; // Mobile hides the results grid.
+  let wordWidths = null;
+
+  const showShare = !!res && !mobileMode;
+
   if (res) {
     shareText = buildShareText(res);
     shareLines = shareText.split("\n");
-    // Rows that were actually submitted.
+
     const guessesUsed = res.colours.filter((row) =>
       row.some((c) => c !== "transparent")
     ).length;
+
     popupTitle = res.won
       ? "WINNER"
       : res.surrendered
         ? "YOU GAVE UP"
         : "GAME OVER";
+
     const face = res.won
       ? pickFace(WIN_FACES, res.faceRoll)
       : res.surrendered
         ? pickFace(GAVE_UP_FACES, res.faceRoll)
         : pickFace(LOSE_FACES, res.faceRoll);
+
     if (res.won) {
       popupBodyText = mobileMode
         ? `YOU GOT THE WORD IN ${guessesUsed} ${guessesUsed === 1 ? "GUESS" : "GUESSES"} ${face}`
@@ -879,64 +1110,142 @@ const WordleGame = ({
     } else {
       popupBodyText = `OUT OF TRIES ${face}`;
     }
-    wordWidths = [3, 4, 3, res.word.length * (WORD_CHAR_EM / MONO_CHAR_EM)];
+
+    wordWidths = [
+      3,
+      4,
+      3,
+      res.word.length * (WORD_CHAR_EM / MONO_CHAR_EM),
+    ];
   }
-  // Fonts stay at full size; the square grows to fit them instead.
+
   const popupFont = Math.round(textPx);
-  const popupBodyFont = Math.max(10, Math.round(popupFont * 0.8));
-  const popupPad = Math.max(10, Math.round(popupFont * 0.7));
+
+  const popupBodyFont = Math.max(
+    10,
+    Math.round(popupFont * 0.8)
+  );
+
+  const popupPad = Math.max(
+    10,
+    Math.round(popupFont * 0.7)
+  );
+
   const popupBtn = rowH;
-  const popupBtnGap = mobileMode ? 6 : Math.max(6, Math.round(popupBtn * 0.3));
-  const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
+
+  const popupBtnGap = mobileMode
+    ? 6
+    : Math.max(6, Math.round(popupBtn * 0.3));
+
+  const popupLabelMaxFont = Math.min(
+    10,
+    Math.round(popupBtn * 0.2)
+  );
+
   const popupActionsHeight = popupBtn;
+
   const popupButtonCount = res ? 3 : 2;
+
   const popupLabelFont = (label) => {
-    const longestWord = Math.max(...label.split(" ").map((word) => word.length));
+    const longestWord = Math.max(
+      ...label.split(" ").map((word) => word.length)
+    );
+
     const availableWidth = popupBtn - 10;
-    return Math.max(6, Math.min(popupLabelMaxFont, availableWidth / (longestWord * 0.62)));
+
+    return Math.max(
+      6,
+      Math.min(
+        popupLabelMaxFont,
+        availableWidth / (longestWord * 0.62)
+      )
+    );
   };
+
   const shareFont = mobileMode ? 16 : 20;
+
   const bodyCharPx = MONO_CHAR_EM * popupBodyFont;
-  const bodyWidths = popupBodyText.split(" ").map(lineUnits);
-  // Share box: its text, 10px padding each side, 1px border each side.
-  const shareMaxUnits = Math.max(1, ...shareLines.map(lineUnits));
+
+  const bodyWidths = popupBodyText
+    .split(" ")
+    .map(lineUnits);
+
+  const shareMaxUnits = Math.max(
+    1,
+    ...shareLines.map(lineUnits)
+  );
+
   const shareBoxW = showShare
-    ? Math.ceil(shareMaxUnits * MONO_CHAR_EM * shareFont + 22)
+    ? Math.ceil(
+        shareMaxUnits * MONO_CHAR_EM * shareFont + 22
+      )
     : 0;
+
   const shareBoxH = showShare
-    ? Math.ceil(shareLines.length * 1.5 * shareFont + 16 + 2)
+    ? Math.ceil(
+        shareLines.length * 1.5 * shareFont + 16 + 2
+      )
     : 0;
-  // Smallest square side: wide enough for the widest row, tall enough for all rows.
+
   const widthNeeded = Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
-    popupButtonCount * popupBtn + (popupButtonCount - 1) * popupBtnGap,
+    popupButtonCount * popupBtn +
+      (popupButtonCount - 1) * popupBtnGap,
     Math.max(...bodyWidths) * bodyCharPx,
     shareBoxW,
-    wordWidths ? Math.max(...wordWidths) * bodyCharPx : 0
+    wordWidths
+      ? Math.max(...wordWidths) * bodyCharPx
+      : 0
   );
-  const rowCount = 3 + (showShare ? 1 : 0) + (wordWidths ? 1 : 0);
-  let popupSide = Math.ceil(widthNeeded + 2 * popupPad + 2 + POPUP_SLACK);
+
+  const rowCount =
+    3 +
+    (showShare ? 1 : 0) +
+    (wordWidths ? 1 : 0);
+
+  let popupSide = Math.ceil(
+    widthNeeded + 2 * popupPad + 2 + POPUP_SLACK
+  );
+
   for (let guard = 0; guard < 2000; guard++) {
     const innerW = popupSide - 2 * popupPad - 2;
-    const maxUnits = Math.max(1, Math.floor(innerW / bodyCharPx));
-    const bodyH = wrapLineCount(bodyWidths, maxUnits) * popupBodyFont * 1.25;
+
+    const maxUnits = Math.max(
+      1,
+      Math.floor(innerW / bodyCharPx)
+    );
+
+    const bodyH =
+      wrapLineCount(bodyWidths, maxUnits) *
+      popupBodyFont *
+      1.25;
+
     const wordH = wordWidths
-      ? wrapLineCount(wordWidths, maxUnits) * popupBodyFont * 1.25
+      ? wrapLineCount(wordWidths, maxUnits) *
+        popupBodyFont *
+        1.25
       : 0;
+
     const needH =
-      2 * popupPad + 2 + POPUP_SLACK +
+      2 * popupPad +
+      2 +
+      POPUP_SLACK +
       popupFont * 1.1 +
       bodyH +
       shareBoxH +
       wordH +
       popupActionsHeight +
       (rowCount - 1) * POPUP_GAP;
+
     if (needH <= popupSide) break;
+
     popupSide += 1;
   }
+
   /* =====================================
      MAIN STYLES
   ===================================== */
+
   const colContainer = {
     display: "flex",
     flexDirection: "column",
@@ -950,6 +1259,7 @@ const WordleGame = ({
     userSelect: "none",
     fontFamily: FONT_FAMILY,
   };
+
   const sectionStyle = {
     width: "100%",
     maxWidth: "100%",
@@ -964,9 +1274,11 @@ const WordleGame = ({
     justifyContent: "center",
     flexShrink: 0,
   };
+
   /* =====================================
      TOP ROW
   ===================================== */
+
   const topRowStyle = {
     display: "flex",
     flexDirection: "row",
@@ -977,6 +1289,7 @@ const WordleGame = ({
     alignSelf: "stretch",
     flexShrink: 0,
   };
+
   const titleSectionStyle = {
     ...sectionStyle,
     width: "auto",
@@ -988,6 +1301,7 @@ const WordleGame = ({
     height: rowH,
     padding: "0 0.5rem",
   };
+
   const titleStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
@@ -996,6 +1310,7 @@ const WordleGame = ({
     color: "var(--colour-6)",
     textAlign: "center",
   };
+
   const buttonRowStyle = {
     display: "flex",
     flexDirection: "row",
@@ -1005,6 +1320,7 @@ const WordleGame = ({
     height: rowH,
     flexShrink: 0,
   };
+
   const iconButtonStyle = (dimmed = false) => ({
     fontFamily: FONT_FAMILY,
     width: rowH,
@@ -1027,9 +1343,11 @@ const WordleGame = ({
     opacity: dimmed ? 0.45 : 1,
     transition: "background-color 0.15s, opacity 0.15s",
   });
+
   /* =====================================
      HINT
   ===================================== */
+
   const hintSectionStyle = {
     ...sectionStyle,
     height: "auto",
@@ -1037,6 +1355,7 @@ const WordleGame = ({
     padding: "0.5rem 0.72rem",
     flexShrink: 0,
   };
+
   const hintStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 400,
@@ -1051,9 +1370,11 @@ const WordleGame = ({
     whiteSpace: "normal",
     width: "100%",
   };
+
   /* =====================================
      GAME PANEL
   ===================================== */
+
   const panelStyle = {
     ...sectionStyle,
     position: "relative",
@@ -1067,19 +1388,24 @@ const WordleGame = ({
     justifyContent: "space-evenly",
     gap: 0,
   };
+
   const gridStyle = {
     display: "grid",
     gridTemplateColumns: `repeat(${nLetters}, ${letterPx}px)`,
     gap: `${letterPx * 0.1}px`,
     flexShrink: 0,
   };
+
   const letterStyle = (row, col) => {
     const raw = colours[row]?.[col] ?? "transparent";
+
     const shown =
       raw === ABSENT_GREY && darkMode
         ? ABSENT_GREY_DARK
         : raw;
+
     const hasColour = raw !== "transparent";
+
     return {
       height: letterPx,
       width: letterPx,
@@ -1099,9 +1425,11 @@ const WordleGame = ({
       transition: "background-color 0.3s",
     };
   };
+
   /* =====================================
      KEYBOARD STYLES
   ===================================== */
+
   const keyboardStyle = {
     display: "flex",
     flexDirection: "column",
@@ -1109,13 +1437,16 @@ const WordleGame = ({
     gap: keyPx * 0.15,
     flexShrink: 0,
   };
+
   const keyRowStyle = {
     display: "flex",
     flexDirection: "row",
     gap: keyPx * 0.15,
   };
+
   const keyStyle = (key) => {
     const hex = keyColours[key];
+
     const guessedColour = hex
       ? (
           hex === ABSENT_GREY && darkMode
@@ -1123,8 +1454,10 @@ const WordleGame = ({
             : KEY_COLOUR_MAP[hex]
         )
       : null;
+
     const isWide =
       key === "ENTER" || key === "BACKSPACE";
+
     return {
       minWidth: isWide
         ? keyPx * 1.8
@@ -1151,9 +1484,11 @@ const WordleGame = ({
       transition: "background-color 0.1s",
     };
   };
+
   /* =====================================
      POPUP STYLES
   ===================================== */
+
   const overlayStyle = {
     position: "fixed",
     left: "50vw",
@@ -1182,6 +1517,7 @@ const WordleGame = ({
     transition: `opacity ${POPUP_FADE_MS / 1000}s ease`,
     pointerEvents: popupClosing ? "none" : "auto",
   };
+
   const popupTitleStyle = {
     fontSize: `${popupFont}px`,
     lineHeight: 1.1,
@@ -1189,6 +1525,7 @@ const WordleGame = ({
     letterSpacing: "0.04em",
     whiteSpace: "nowrap",
   };
+
   const popupBodyStyle = {
     width: "100%",
     boxSizing: "border-box",
@@ -1197,6 +1534,7 @@ const WordleGame = ({
     fontWeight: 400,
     textTransform: "uppercase",
   };
+
   const popupButtonRowStyle = {
     display: "flex",
     flexDirection: "row",
@@ -1205,6 +1543,8 @@ const WordleGame = ({
     gap: popupBtnGap,
     flexShrink: 0,
   };
+
+  // Icon position is unchanged.
   const popupButtonIconStyle = {
     width: "62%",
     height: "48%",
@@ -1213,12 +1553,14 @@ const WordleGame = ({
     alignItems: "center",
     justifyContent: "center",
   };
+
+  // Button labels: 13% larger and 3px lower.
   const popupButtonLabelStyle = (label) => ({
     width: "100%",
     maxHeight: "2.1em",
     overflow: "hidden",
     fontFamily: FONT_FAMILY,
-    fontSize: `${popupLabelFont(label)}px`,
+    fontSize: `${popupLabelFont(label) * BUTTON_LABEL_SCALE}px`,
     lineHeight: 0.95,
     fontWeight: 700,
     color: "var(--colour-6)",
@@ -1226,7 +1568,9 @@ const WordleGame = ({
     whiteSpace: "normal",
     overflowWrap: "normal",
     textTransform: "uppercase",
+    transform: `translateY(${BUTTON_LABEL_OFFSET}px)`,
   });
+
   const popupButtonStyle = {
     fontFamily: FONT_FAMILY,
     width: popupBtn,
@@ -1251,14 +1595,21 @@ const WordleGame = ({
     overflow: "hidden",
     boxShadow: "0 3px 10px rgba(0, 0, 0, 0.22)",
   };
+
+  /* =====================================
+     CHOOSE POPUP
+  ===================================== */
+
   const renderChoosePopup = () => (
     <>
       <div style={popupTitleStyle}>
         {popupTitle}
       </div>
+
       <div style={popupBodyStyle}>
         {popupBodyText}
       </div>
+
       <div style={popupButtonRowStyle}>
         {/* Daily */}
         <button
@@ -1271,8 +1622,12 @@ const WordleGame = ({
           <div style={popupButtonIconStyle}>
             {renderIcon(icons.daily)}
           </div>
-          <span style={popupButtonLabelStyle("DAILY")}>DAILY</span>
+
+          <span style={popupButtonLabelStyle("DAILY")}>
+            DAILY
+          </span>
         </button>
+
         {/* Random */}
         <button
           type="button"
@@ -1284,22 +1639,33 @@ const WordleGame = ({
           <div style={popupButtonIconStyle}>
             {renderIcon(icons.random)}
           </div>
-          <span style={popupButtonLabelStyle("RANDOM")}>RANDOM</span>
+
+          <span style={popupButtonLabelStyle("RANDOM")}>
+            RANDOM
+          </span>
         </button>
       </div>
     </>
   );
+
+  /* =====================================
+     RESULT POPUP
+  ===================================== */
+
   const renderResultPopup = () => {
     if (!res) return null;
+
     return (
       <>
         <div style={popupTitleStyle}>
           {popupTitle}
         </div>
+
         <div style={popupBodyStyle}>
           {popupBodyText}
         </div>
-        {/* Results grid: desktop only. Mobile shows the guess count in the text above. */}
+
+        {/* Results grid: desktop only. */}
         {showShare && (
           <div
             style={{
@@ -1320,6 +1686,7 @@ const WordleGame = ({
             {shareText}
           </div>
         )}
+
         <div style={popupBodyStyle}>
           THE WORD WAS{" "}
           <span
@@ -1331,6 +1698,7 @@ const WordleGame = ({
             {res.word}
           </span>
         </div>
+
         <div style={popupButtonRowStyle}>
           {/* Copy results */}
           <button
@@ -1343,11 +1711,13 @@ const WordleGame = ({
             <div style={popupButtonIconStyle}>
               {renderIcon(copied ? icons.copied : icons.copy)}
             </div>
+
             <span style={popupButtonLabelStyle(copied ? "COPIED" : "COPY")}>
               {copied ? "COPIED" : "COPY"}
             </span>
           </button>
-          {/* Retry the current mode */}
+
+          {/* Retry */}
           <button
             type="button"
             style={popupButtonStyle}
@@ -1358,8 +1728,12 @@ const WordleGame = ({
             <div style={popupButtonIconStyle}>
               {renderIcon(icons.restart)}
             </div>
-            <span style={popupButtonLabelStyle("RETRY")}>RETRY</span>
+
+            <span style={popupButtonLabelStyle("RETRY")}>
+              RETRY
+            </span>
           </button>
+
           {/* Change mode */}
           <button
             type="button"
@@ -1371,15 +1745,20 @@ const WordleGame = ({
             <div style={popupButtonIconStyle}>
               {renderIcon(icons.change)}
             </div>
-            <span style={popupButtonLabelStyle("MODES")}>MODES</span>
+
+            <span style={popupButtonLabelStyle("MODES")}>
+              MODES
+            </span>
           </button>
         </div>
       </>
     );
   };
+
   /* =====================================
      RENDER
   ===================================== */
+
   return (
     <div
       ref={colContainerRef}
@@ -1394,49 +1773,116 @@ const WordleGame = ({
           80%  { transform: translateX(6px); }
           100% { transform: translateX(0); }
         }
+
         .wordle-shake {
           animation: wordleShake 0.4s ease;
         }
       `}</style>
+
       {/* =====================================
           TOP ROW
       ===================================== */}
+
       <div style={topRowStyle}>
         <div style={titleSectionStyle}>
           <div style={titleStyle}>
             {titleText}
           </div>
         </div>
+
         <div style={buttonRowStyle}>
-          {/* Surrender */}
+          {/* Surrender / Give up */}
           <button
             type="button"
-            style={iconButtonStyle(status !== "playing")}
+            style={{
+              ...iconButtonStyle(status !== "playing"),
+              flexDirection: "column",
+              gap: 2,
+              padding: "4px 3px",
+            }}
             disabled={status !== "playing"}
             onClick={handleSurrender}
-            aria-label="Surrender"
-            title="Surrender"
+            aria-label="Give up"
+            title="Give up"
           >
-            {renderIcon(icons.surrender, 0.68)}
+            {/* Icon remains in its original position and size. */}
+            <div
+              style={{
+                width: "68%",
+                height: "58%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {renderIcon(icons.surrender)}
+            </div>
+
+            {/* GIVE UP: 13% larger and 3px lower. */}
+            <span
+              style={{
+                fontFamily: FONT_FAMILY,
+                fontSize: `${Math.max(7, Math.round(rowH * 0.15)) * BUTTON_LABEL_SCALE}px`,
+                fontWeight: 700,
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                transform: `translateY(${BUTTON_LABEL_OFFSET}px)`,
+              }}
+            >
+              GIVE UP
+            </span>
           </button>
+
           {/* Exit activities */}
           <button
             type="button"
             style={{
               ...iconButtonStyle(false),
+              flexDirection: "column",
+              gap: 2,
+              padding: "4px 3px",
               backgroundColor: "var(--red-0)",
             }}
             onClick={leaveActivities}
             aria-label="Exit activities"
             title="Exit activities"
           >
-            {renderIcon(icons.cross, 0.68)}
+            {/* Icon remains in its original position and size. */}
+            <div
+              style={{
+                width: "68%",
+                height: "58%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {renderIcon(icons.cross, 0.68)}
+            </div>
+
+            {/* LEAVE: 13% larger and 3px lower. */}
+            <span
+              style={{
+                fontFamily: FONT_FAMILY,
+                fontSize: `${Math.max(7, Math.round(rowH * 0.15)) * BUTTON_LABEL_SCALE}px`,
+                fontWeight: 700,
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                transform: `translateY(${BUTTON_LABEL_OFFSET}px)`,
+              }}
+            >
+              LEAVE
+            </span>
           </button>
         </div>
       </div>
+
       {/* =====================================
           HINT
       ===================================== */}
+
       <div
         ref={hintSectionRef}
         style={hintSectionStyle}
@@ -1454,9 +1900,11 @@ const WordleGame = ({
           )}
         </div>
       </div>
+
       {/* =====================================
           GAME PANEL
       ===================================== */}
+
       <div style={panelStyle}>
         {/* Guess grid */}
         <div style={gridStyle}>
@@ -1465,6 +1913,7 @@ const WordleGame = ({
           }).map((_, i) => {
             const row = Math.floor(i / nLetters);
             const col = i % nLetters;
+
             return (
               <div
                 key={i}
@@ -1480,6 +1929,7 @@ const WordleGame = ({
             );
           })}
         </div>
+
         {/* Keyboard */}
         <div style={keyboardStyle}>
           {KEYBOARD_ROWS.map((row, ri) => (
@@ -1510,9 +1960,11 @@ const WordleGame = ({
             </div>
           ))}
         </div>
+
         {/* =====================================
             POPUP
         ===================================== */}
+
         {showPopup && (
           <div style={overlayStyle}>
             {popupInfo.kind === "choose"
