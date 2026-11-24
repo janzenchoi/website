@@ -172,9 +172,9 @@ const WASABI_CYCLE_MS = 20000; // One full cycle.
 const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
-const WASABI_SPEED_BOOST = 0.1; // +10% speed per wasabi (permanent for the run).
+const WASABI_SPEED_BOOST = 0.05; // +5% speed per wasabi (permanent for the run).
 const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi.
-const WASABI_MAX_EATEN = 10; // No more wasabi spawn after this many are eaten.
+const WASABI_MAX_EATEN = 128; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
 const DARK_MODE_IMAGE_DARKEN = 0.15; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
@@ -277,7 +277,7 @@ const FOOD_SIZE = 1.0; // Food image size in cells. Each food scales this by its
 const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
 const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
-const BELLY_BLEND = 0.3; // Fade-in band above the belly, as a fraction of the belly's depth (0 = hard edge).
+const BELLY_BLEND = 0.6; // Fade-in band above the belly, as a fraction of the belly's depth (0 = hard edge).
 const OUTLINE_LIGHT_COLOUR = "#000000";
 const OUTLINE_DARK_COLOUR = "#484848";
 const OUTLINE_WIDTH = 0.02;
