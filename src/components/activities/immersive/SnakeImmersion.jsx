@@ -90,7 +90,7 @@ const DIFFICULTIES = {
   normal: {
     label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
-    speedMult: 0.7, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
+    speedMult: 0.6, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
     hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
     foodCount: 3, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
@@ -103,7 +103,7 @@ const DIFFICULTIES = {
   hard: {
     label: "NORMAL",
     icon: "hard",
-    speedMult: 0.7,
+    speedMult: 0.6,
     hungerMult: 1.5,
     foodCount: 3,
     respawnAllAtOnce: true,
@@ -116,7 +116,7 @@ const DIFFICULTIES = {
   veryHard: {
     label: "HARD",
     icon: "vhard",
-    speedMult: 0.7,
+    speedMult: 0.6,
     hungerMult: 2,
     foodCount: 3,
     respawnAllAtOnce: true,
@@ -169,11 +169,12 @@ const WASABI_SPAWN_AT_MS = 10000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 10000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
 const WASABI_SPEED_BOOST = 0.1; // +10% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 0.2; // +0.1x calorie multiplier per wasabi.
-const WASABI_MAX_EATEN = 10; // No more wasabi spawn after this many are eaten.
+const WASABI_CALORIE_BOOST = 0.5; // +0.5x calorie multiplier per wasabi.
+const WASABI_MAX_EATEN = 100; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
-const WASABI_ARENA_GLOW = 0.5; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
+const DARK_MODE_IMAGE_DARKEN = 0.15; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
+const WASABI_ARENA_GLOW = 0.3; // Glow of the wasabi on the arena. 1 = previous strength, 0.5 = half (radius and opacity).
 
 // Body lost to wasabi is not removed at once: the tail retracts smoothly over this long.
 const WASABI_SHRINK_MS = 1200; // Doubled (was 600): the shrink takes twice as long.
@@ -270,8 +271,9 @@ const FOOD_SIZE = 1.0; // Food image size in cells. Each food scales this by its
 const FOOD_EMOJI = "🍎";
 const BODY_WIDTH = 0.8;
 const BELLY_WIDTH = 0.2; // Belly occupies exactly 20% of the body's diameter.
-const OUTLINE_COLOUR = "#000000";
-const OUTLINE_WIDTH = 0.01;
+const OUTLINE_LIGHT_COLOUR = "#000000";
+const OUTLINE_DARK_COLOUR = "#757575";
+const OUTLINE_WIDTH = 0.02;
 const EDGE_WOBBLE = 1;
 const BELLY_COLOUR = "#D7AFA8";
 const BELLY_LIGHTNESS_RANGE = 10;
@@ -1614,7 +1616,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           ctx.globalAlpha = deathAlpha(sQ[i]);
           ctx.beginPath();
           ctx.arc(sx[i], sy[i], sFull[i] + O, 0, Math.PI * 2);
-          ctx.fillStyle = OUTLINE_COLOUR;
+          ctx.fillStyle = darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR;
           ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -1625,7 +1627,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         tailShape();
         ctx.lineWidth = 2 * O;
         ctx.lineJoin = "round";
-        ctx.strokeStyle = OUTLINE_COLOUR;
+        ctx.strokeStyle = darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR;
         ctx.stroke();
         ctx.globalAlpha = 1;
       });
@@ -2784,6 +2786,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         fontSize: foodSize,
         lineHeight: 1,
         transform: `translate(${food.x * cell}px, ${food.y * cell}px)`,
+        filter: food.name === "wasabi"
+          ? `drop-shadow(0 0 ${cell * 0.12 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${cell * 0.3 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.7 * WASABI_ARENA_GLOW}))`
+          : "none",
         ...extraStyle,
       }}
     >
@@ -2796,9 +2801,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             width: foodSize,
             height: foodSize,
             objectFit: "contain",
-            filter: food.name === "wasabi"
-              ? `drop-shadow(0 0 ${cell * 0.12 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${cell * 0.3 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.7 * WASABI_ARENA_GLOW}))`
-              : "none",
           }}
         />
       ) : (
@@ -2879,11 +2881,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   return (
     <div
       ref={colContainerRef}
+      className="snake-game"
       style={colContainer}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <style>{`@keyframes hungerFoodFade {
+      <style>{`${darkMode ? `.snake-game img { filter: brightness(${1 - DARK_MODE_IMAGE_DARKEN}); }` : ""}
+      @keyframes hungerFoodFade {
         0% { opacity: 1; width: ${eatenSlot}px; }
         55% { opacity: 1; width: ${eatenSlot}px; }
         100% { opacity: 0; width: 0px; }
