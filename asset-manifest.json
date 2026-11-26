@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.cd3e51f8.css",
-    "main.js": "/website/static/js/main.a9322fba.js",
+    "main.js": "/website/static/js/main.19e355f5.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -28,20 +28,28 @@
     "static/media/profile_light.png": "/website/static/media/profile_light.f87136944d63d71ee774.png",
     "static/media/tv_buzz.png": "/website/static/media/tv_buzz.881bf55cf5c7af236876.png",
     "static/media/head.png": "/website/static/media/head.349f07b8ccbe5197f8ab.png",
+    "static/media/futomaki_9.png": "/website/static/media/futomaki_9.0e935d8e6aaf3b943c85.png",
+    "static/media/cube_1.png": "/website/static/media/cube_1.947d529f9d3f13624108.png",
+    "static/media/cube_2.png": "/website/static/media/cube_2.2de9713b5b2727e65103.png",
     "static/media/paper.png": "/website/static/media/paper.9d884b5b93d721816798.png",
+    "static/media/gunkan_5.png": "/website/static/media/gunkan_5.4da739e4ae01a0a5f84d.png",
     "static/media/pu_dark.png": "/website/static/media/pu_dark.e5f946385ef429aa9cb4.png",
     "static/media/torso.png": "/website/static/media/torso.449897efd818dae13ec7.png",
     "static/media/fore_upper_leg.png": "/website/static/media/fore_upper_leg.dad1fbbbb0d506ca9ed6.png",
+    "static/media/swirl_2.png": "/website/static/media/swirl_2.8e50b216ced643d2ba14.png",
     "static/media/fatzen.png": "/website/static/media/fatzen.2a64187161839904b839.png",
+    "static/media/swirl_1.png": "/website/static/media/swirl_1.285536fa4d71d219c471.png",
     "static/media/fore_lower_leg.png": "/website/static/media/fore_lower_leg.2b2cee2304c7cd3d7961.png",
     "static/media/pin.png": "/website/static/media/pin.108644771843c29428b8.png",
+    "static/media/swirl_3.png": "/website/static/media/swirl_3.f7ee28831ae4ee3ecedc.png",
     "static/media/fg_light.png": "/website/static/media/fg_light.39385fc7318fcaeca27a.png",
     "static/media/hip.png": "/website/static/media/hip.e4ddfa07a20705640143.png",
+    "static/media/gunkan_4.png": "/website/static/media/gunkan_4.4d243286abdb9a7d87f7.png",
     "static/media/ig.png": "/website/static/media/ig.2bcd9096b694910eb5d8.png",
     "static/media/ball_icon.png": "/website/static/media/ball_icon.e3acf160bde1744351f6.png",
     "static/media/eight.png": "/website/static/media/eight.20dfd5377d6be11d8abc.png",
     "static/media/hind_upper_leg.png": "/website/static/media/hind_upper_leg.18d87d9f3eb21decae59.png",
-    "static/media/omega.png": "/website/static/media/omega.7ad6624470f59e0e59f5.png",
+    "static/media/omega_1.png": "/website/static/media/omega_1.7ad6624470f59e0e59f5.png",
     "static/media/mail.png": "/website/static/media/mail.38fc999bf547540af18b.png",
     "static/media/hind_lower_leg.png": "/website/static/media/hind_lower_leg.b43d771cb0001d9c822e.png",
     "static/media/fg_dark.png": "/website/static/media/fg_dark.cb0370575ea0e93967cc.png",
@@ -131,11 +139,11 @@
     "static/media/death_1.mp3": "/website/static/media/death_1.95303e4b24b5fcd163d3.mp3",
     "index.html": "/website/index.html",
     "main.cd3e51f8.css.map": "/website/static/css/main.cd3e51f8.css.map",
-    "main.a9322fba.js.map": "/website/static/js/main.a9322fba.js.map",
+    "main.19e355f5.js.map": "/website/static/js/main.19e355f5.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cd3e51f8.css",
-    "static/js/main.a9322fba.js"
+    "static/js/main.19e355f5.js"
   ]
 }
