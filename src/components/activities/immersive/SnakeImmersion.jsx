@@ -35,6 +35,10 @@ import icon_pause_light from "../../../assets/activities/symbols/pause_light.png
 import icon_pause_dark from "../../../assets/activities/symbols/pause_dark.png";
 import icon_play_light from "../../../assets/activities/symbols/play_light.png";
 import icon_play_dark from "../../../assets/activities/symbols/play_dark.png";
+import icon_sound_light from "../../../assets/activities/symbols/sound_light.png";
+import icon_sound_dark from "../../../assets/activities/symbols/sound_dark.png";
+import icon_muted_light from "../../../assets/activities/symbols/muted_light.png";
+import icon_muted_dark from "../../../assets/activities/symbols/muted_dark.png";
 
 const THEME_ICONS = {
   light: {
@@ -49,6 +53,8 @@ const THEME_ICONS = {
     auto: icon_auto_light,
     pause: icon_pause_light,
     play: icon_play_light,
+    sound: icon_sound_light,
+    muted: icon_muted_light,
   },
   dark: {
     cross: icon_cross_dark,
@@ -62,6 +68,8 @@ const THEME_ICONS = {
     auto: icon_auto_dark,
     pause: icon_pause_dark,
     play: icon_play_dark,
+    sound: icon_sound_dark,
+    muted: icon_muted_dark,
   },
 };
 
@@ -82,6 +90,28 @@ const ALL_FOODS = foodContext.keys().map((key) => {
 const FOODS = ALL_FOODS.filter((f) => f.name !== "wasabi"); // Wasabi never spawns as normal food.
 const WASABI_IMAGE = ALL_FOODS.find((f) => f.name === "wasabi")?.image ?? null;
 const FOOD_IMAGES = ALL_FOODS.map((f) => f.image);
+
+// Every audio file in the sounds folder. "crunch_*" files are eating sounds (one is picked at
+// random each time), "wasabi" plays when wasabi is eaten, "death_*" files play as the snake dies
+// (several, spread over its body) and "burp_*" files play when the snake burps after a feast.
+const soundContext = require.context(
+  "../../../assets/activities/snake/sounds",
+  false,
+  /\.(mp3|wav|ogg|m4a|aac|flac)$/
+);
+const ALL_SOUNDS = soundContext.keys().map((key) => {
+  const m = soundContext(key);
+  return {
+    name: key.replace(/^\.\//, "").replace(/\.[^.]+$/, "").toLowerCase(),
+    src: typeof m === "string" ? m : m.default,
+  };
+});
+const CRUNCH_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("crunch")).map((s) => s.src);
+const WASABI_SOUND = ALL_SOUNDS.find((s) => s.name === "wasabi")?.src ?? null;
+const GAMEOVER_SOUND = ALL_SOUNDS.find((s) => s.name === "gameover")?.src ?? null; // Only used if there are no death_ files.
+const DEATH_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("death")).map((s) => s.src);
+const BURP_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("burp")).map((s) => s.src);
+const ALL_SOUND_SRCS = ALL_SOUNDS.map((s) => s.src);
 
 /* =====================================
    SETTINGS: ARENA AND BASE SPEED
@@ -236,6 +266,48 @@ const DEATH_REASONS = {
 };
 
 /* =====================================
+   SETTINGS: TAIL COLLISION
+   The drawn tail is a tapering tip that reaches TAIL_LENGTH cells PAST the last body
+   point, and the big head sprite overlaps the cell it is entering. If the game treated
+   the tail's cell as already empty, the head would visibly bite the tip of its own tail.
+   true  = the cell the tail is leaving still counts as solid for that move (no bite).
+   false = the old rule: the head may step into the cell the tail is just vacating.
+===================================== */
+const TAIL_CELL_BLOCKS = true;
+
+/* =====================================
+   SETTINGS: SOUND
+   The SOUND button mutes / unmutes everything below. Sound effects come from the files in
+   assets/activities/sounds (see ALL_SOUNDS at the top). For music, import a track at the top
+   of the file and set MUSIC_SRC to it (it loops while a game is being played).
+===================================== */
+const MUSIC_SRC = null;
+const MUSIC_VOLUME = 0.4;
+const SFX_VOLUME = 0.8; // 0 to 1.
+const DEATH_SOUND_LEAD_MS = 150; // Death sounds play this much ahead of each segment vanishing (0 = in sync).
+const BURP_EAT_COUNT = 8; // Sushis eaten within BURP_WINDOW_MS that make the snake burp.
+const BURP_WINDOW_MS = 10000;
+const BURP_MS = 300; // How long the mouth stays slightly open for the burp.
+
+// "eat" = a random crunch_ file, "wasabi" = the wasabi file, "burp" = a random burp_ file.
+// A new Audio object is made for each play, so quick repeats can overlap.
+const playSfx = (name) => {
+  const src =
+    name === "eat"
+      ? CRUNCH_SOUNDS[Math.floor(Math.random() * CRUNCH_SOUNDS.length)]
+      : name === "wasabi"
+        ? WASABI_SOUND
+        : name === "burp"
+          ? BURP_SOUNDS[Math.floor(Math.random() * BURP_SOUNDS.length)]
+          : null;
+  if (!src) return;
+
+  const audio = new Audio(src);
+  audio.volume = SFX_VOLUME;
+  audio.play().catch(() => {});
+};
+
+/* =====================================
    SETTINGS: SCREEN, PANELS AND CONTROLS
 ===================================== */
 const JOYSTICK_SIZE = 170;
@@ -295,6 +367,7 @@ const LINGER_FRAMES = 2;
 const REST_FRAME = 1;
 const FULL_OPEN_FRAME = 5;
 const OPEN_STEPS = [2, 3, 4, 5];
+const BURP_FRAME = 2; // Slightly open mouth shown while burping.
 const CLOSE_STEPS = [6, 7, 8, 9, 0];
 // How many cells ahead of a food the mouth starts opening (depends on the tick speed).
 const openDistance = (tickMs) =>
@@ -581,13 +654,15 @@ const inArena = (x, y) => x >= 0 && x < ARENA_COLS && y >= 0 && y < ARENA_ROWS;
 
 // Flood-fills from body[0]. `steps` maps each reachable cell to the moves needed to reach it;
 // `parent` rebuilds routes. Body cells are not permanent walls: segment j (head = 0) is free
-// once the snake has moved (length - j) times. `firstMoves` limits the first step (no reversing).
+// once the snake has moved (length - j) times (one more when TAIL_CELL_BLOCKS is on, because the
+// drawn tail is still leaving that cell). `firstMoves` limits the first step (no reversing).
 const floodFrom = (body, walls, firstMoves = MOVES) => {
   const len = body.length;
+  const extra = TAIL_CELL_BLOCKS ? 1 : 0;
   const freeAt = new Map();
   for (let j = 1; j < len; j++) {
     const key = cellKey(body[j]);
-    freeAt.set(key, Math.max(freeAt.get(key) ?? 0, len - j));
+    freeAt.set(key, Math.max(freeAt.get(key) ?? 0, len - j + extra));
   }
 
   const start = body[0];
@@ -622,13 +697,15 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
   const len = snake.length;
   const legal = MOVES.filter((d) => !isOpposite(d, g.dir));
 
-  // Can the head step this way now without dying? (The move vacates the tail cell.)
+  // Can the head step this way now without dying? Normally the move vacates the tail cell,
+  // but with TAIL_CELL_BLOCKS the tail's cell still counts as solid.
   const canStep = (d) => {
     const n = { x: head.x + d.x, y: head.y + d.y };
+    const solidCount = TAIL_CELL_BLOCKS ? len : Math.max(1, len - 1);
     return (
       inArena(n.x, n.y) &&
       !isWallBetween(walls, head, n) &&
-      !snake.slice(0, Math.max(1, len - 1)).some((s) => s.x === n.x && s.y === n.y)
+      !snake.slice(0, solidCount).some((s) => s.x === n.x && s.y === n.y)
     );
   };
 
@@ -642,12 +719,29 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
   const now = performance.now();
   const eta = (f) => (steps.get(cellKey(f)) ?? Infinity) * tickMs;
 
-  const candidates = [
-    ...(g.wasabi && now + eta(g.wasabi) < g.wasabi.expiresAt ? [g.wasabi] : []),
-    ...[...(g.foods ?? [])]
-      .filter((f) => steps.has(cellKey(f)))
-      .sort((a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))),
-  ].slice(0, AUTO_MAX_TARGETS);
+  const wasabiTarget =
+    g.wasabi && steps.has(cellKey(g.wasabi)) && now + eta(g.wasabi) < g.wasabi.expiresAt
+      ? g.wasabi
+      : null;
+  const foodTargets = [...(g.foods ?? [])]
+    .filter((f) => steps.has(cellKey(f)))
+    .sort((a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b)));
+
+  // Starving: even the closest meal (wasabi or food) is cutting it fine. Then the wasabi loses
+  // its top priority and every target is simply tried nearest first.
+  const nearestEta = Math.min(
+    wasabiTarget ? eta(wasabiTarget) : Infinity,
+    foodTargets.length ? eta(foodTargets[0]) : Infinity
+  );
+  const starving = nearestEta * AUTO_URGENCY >= timeLeftMs;
+
+  const candidates = (
+    starving
+      ? [...(wasabiTarget ? [wasabiTarget] : []), ...foodTargets].sort(
+          (a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))
+        )
+      : [...(wasabiTarget ? [wasabiTarget] : []), ...foodTargets]
+  ).slice(0, AUTO_MAX_TARGETS);
 
   const routeTo = (target) => {
     const route = [];
@@ -1289,6 +1383,52 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const autoPlayRef = useRef(false);
   const autoManualUntilRef = useRef(0); // performance.now() until which auto is blocked after manual input
   const runAteSushiRef = useRef(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const soundOnRef = useRef(true);
+  const musicRef = useRef(null);
+  const deathAudiosRef = useRef([]);
+  const deathTimeoutsRef = useRef([]);
+  const recentEatsRef = useRef([]); // Timestamps of recent sushis, used to decide when to burp.
+  const burpPendingRef = useRef(false); // A burp is owed and fires once the snake isn't about to eat.
+  const burpUntilRef = useRef(0); // performance.now() until which the burp mouth is shown.
+
+  const stopDeathSounds = () => {
+    deathTimeoutsRef.current.forEach(clearTimeout);
+    deathTimeoutsRef.current = [];
+    deathAudiosRef.current.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    deathAudiosRef.current = [];
+  };
+
+  // Plays a random death_ sound for every segment, slightly ahead of that segment disappearing.
+  const playDeathSounds = (segments) => {
+    stopDeathSounds();
+    if (!soundOnRef.current || segments < 1) return;
+    const pool = DEATH_SOUNDS.length ? DEATH_SOUNDS : GAMEOVER_SOUND ? [GAMEOVER_SOUND] : [];
+    if (!pool.length) return;
+
+    let lastIndex = -1;
+    for (let segment = 0; segment < segments; segment++) {
+      const timeout = setTimeout(() => {
+        if (!soundOnRef.current) return;
+        let index = Math.floor(Math.random() * pool.length);
+        if (pool.length > 1 && index === lastIndex) index = (index + 1) % pool.length; // Avoid back-to-back repeats.
+        lastIndex = index;
+        const audio = new Audio(pool[index]);
+        audio.volume = SFX_VOLUME;
+        deathAudiosRef.current.push(audio);
+        audio.play().catch(() => {});
+      }, Math.max(0, segment * DEATH_STAGGER_PER_SEGMENT_MS - DEATH_SOUND_LEAD_MS));
+      deathTimeoutsRef.current.push(timeout);
+    }
+  };
+
+  // Reads a ref, so timers and the game loop always see the current setting.
+  const sfx = (name) => {
+    if (soundOnRef.current) playSfx(name);
+  };
 
   const popupTimeoutRef = useRef(null);
   const playAgainRef = useRef(null);
@@ -1319,12 +1459,21 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   const commit = (next) => {
     const previousStatus = gameRef.current?.status;
+    const deadSegments = next.status === "dead"
+      ? Math.max(next.snake.length, next.prev.length)
+      : 0;
+    const bodyFadeDuration =
+      Math.max(0, deadSegments - 1) * DEATH_STAGGER_PER_SEGMENT_MS +
+      DEATH_FADE_MS;
 
     if (next.status === "dead" && previousStatus !== "dead") {
       // Preserve whether this run was controlled by AUTO for the game-over prompt.
       const wasBotGame = autoPlayRef.current;
       next.botGame = wasBotGame;
       if (wasBotGame) setAutoUnlocked(true);
+      playDeathSounds(deadSegments);
+      burpPendingRef.current = false;
+      recentEatsRef.current = [];
       if (!runAteSushiRef.current) setNoSushiLosses((count) => count + 1);
       autoPlayRef.current = false;
     }
@@ -1334,11 +1483,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       if (next.status === "dead") {
         setDeathElapsed(0);
         // Hold the prompt back until every segment has faded out, plus a short pause.
-        const segments = Math.max(next.snake.length, next.prev.length);
-        const delay =
-          Math.max(0, segments - 1) * DEATH_STAGGER_PER_SEGMENT_MS +
-          DEATH_FADE_MS +
-          POPUP_AFTER_DEATH_MS;
+        const delay = bodyFadeDuration + POPUP_AFTER_DEATH_MS;
         setPopupHidden(true);
         popupTimeoutRef.current = setTimeout(() => setPopupHidden(false), delay);
       } else {
@@ -1363,6 +1508,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     () => () => {
       clearTimeout(popupTimeoutRef.current);
       clearTimeout(scoreBonusTimeoutRef.current);
+      stopDeathSounds();
       eatenTimeoutsRef.current.forEach(clearTimeout);
     },
     []
@@ -1374,6 +1520,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const img = new Image();
       img.src = src;
     });
+    ALL_SOUND_SRCS.forEach((src) => {
+      const audio = new Audio();
+      audio.preload = "auto";
+      audio.src = src;
+    });
   }, []);
 
   // Move the snake one cell every tickMs.
@@ -1384,6 +1535,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       const now = performance.now();
       const { cfg, tickMs, drainMs } = paramsRef.current;
+
+      // After a quick run of sushis, burp as soon as the snake is not about to eat any more.
+      if (burpPendingRef.current && !shouldOpen(g, paramsRef.current.openDist)) {
+        burpPendingRef.current = false;
+        burpUntilRef.current = now + BURP_MS;
+        sfx("burp");
+      }
 
       // The snake starves if the hunger bar empties before it eats.
       if (hungerLevel(g.hunger, now, drainMs) <= 0) {
@@ -1451,8 +1609,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       );
       const shrinkPending = lengthAfterMove - removeNow <= MIN_SNAKE_LENGTH ? 0 : pendingTotal - removeNow;
       // Predict which old tail cells remain occupied after this move.
+      // With TAIL_CELL_BLOCKS the cell the tail is leaving this move still counts as solid,
+      // because the drawn tail tip is still in it while the head arrives.
       const cellsRemovedFromTail = (willGrow ? 0 : 1) + removeNow;
-      const keepCount = Math.max(1, g.snake.length - cellsRemovedFromTail);
+      const keepCount = Math.min(
+        g.snake.length,
+        Math.max(1, g.snake.length - cellsRemovedFromTail + (TAIL_CELL_BLOCKS ? 1 : 0))
+      );
       const solid = g.snake.slice(0, keepCount);
       const hitSelf = solid.some((s) => s.x === newHead.x && s.y === newHead.y);
       const hitWall = outOfBounds || isWallBetween(g.walls, head, newHead);
@@ -1496,6 +1659,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       if (eating) {
         swallowing = eatenItem;
+        sfx(eatenWasabi ? "wasabi" : "eat");
         const baseCalories = Number(eatenItem.calories ?? DEFAULT_FOOD_CALORIES) || 0;
         const calorieChange = roundPoints(
           baseCalories * (1 + WASABI_CALORIE_BOOST * g.wasabiEaten) * (cfg.scoreMult ?? 1)
@@ -1526,6 +1690,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         if (eatenFood) {
           runAteSushiRef.current = true;
           setNoSushiLosses(0);
+          recentEatsRef.current = [...recentEatsRef.current.filter((ts) => ts > now - BURP_WINDOW_MS), now];
+          if (recentEatsRef.current.length >= BURP_EAT_COUNT) {
+            recentEatsRef.current = [];
+            burpPendingRef.current = true;
+          }
           const blocked = wasabiNow ? [wasabiNow] : [];
           const remaining = g.foods.filter((f) => f !== eatenFood);
           // Hard modes: wait until every food is eaten, then spawn the whole set again.
@@ -1576,7 +1745,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     const id = setInterval(() => {
       if (pausedRef.current) return;
       advanceMouth(mouthRef.current, wantOpenRef.current);
-      setFrame(mouthRef.current.frame);
+      const m = mouthRef.current;
+      // While burping, a closed mouth is shown slightly open. Eating animations still take over.
+      const burping = performance.now() < burpUntilRef.current && m.phase === "closed";
+      setFrame(burping ? BURP_FRAME : m.frame);
     }, FRAME_MS);
 
     return () => clearInterval(id);
@@ -2170,12 +2342,16 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Clears everything left over from the previous run.
   const resetRun = () => {
+    stopDeathSounds();
     dirQueueRef.current = [];
     autoManualUntilRef.current = 0;
     pausedRef.current = false;
     setPaused(false);
     runAteSushiRef.current = false;
     mouthRef.current = newMouth();
+    burpPendingRef.current = false;
+    burpUntilRef.current = 0;
+    recentEatsRef.current = [];
     deathParticlesRef.current = [];
     deathEmittedRef.current = new Set();
 
@@ -2351,6 +2527,30 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   };
 
 
+  // Mute / unmute all music and sound effects.
+  const toggleSound = () => {
+    const next = !soundOnRef.current;
+    soundOnRef.current = next;
+    if (!next) stopDeathSounds();
+    setSoundOn(next);
+  };
+
+  // Music plays only while a game is running, unmuted and not paused.
+  useEffect(() => {
+    if (!MUSIC_SRC) return;
+    if (!musicRef.current) {
+      const audio = new Audio(MUSIC_SRC);
+      audio.loop = true;
+      audio.volume = MUSIC_VOLUME;
+      musicRef.current = audio;
+    }
+    const audio = musicRef.current;
+    if (soundOn && game.status === "playing" && !paused) audio.play().catch(() => {});
+    else audio.pause();
+  }, [soundOn, game.status, paused]);
+
+  useEffect(() => () => musicRef.current?.pause(), []);
+
   const toggleMobileControls = () => {
     setMobileControlMode((mode) => mode === "joystick" ? "arrows" : "joystick");
     setActiveDirection(null);
@@ -2386,7 +2586,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : 2 * keySize + keyGap;
 
   // Calorie text is doubled but shrinks if the narrower score rectangle needs it.
-  const scoreW = boxW - (mobileMode ? 3 : 2) * (rowH + GAP);
+  const scoreW = boxW - (mobileMode ? 4 : 3) * (rowH + GAP);
   const scoreFontPx = Math.floor(Math.min(textPx, (scoreW - 16) / 6));
 
   // Panel height = whole stack minus score row, hunger row, the two stack gaps and the border.
@@ -3073,50 +3273,65 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   /* =====================================
      SNAKE AND FOOD LAYERS
   ===================================== */
-  const headLayer = (src, z, visible = true) => (
-    <div
-      style={{
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: cell,
-        height: cell,
-        zIndex: z,
-        pointerEvents: "none",
-        visibility: visible ? "visible" : "hidden",
-        opacity:
-          game.status === "dead"
-            ? Math.max(0, 1 - Math.min(1, deathElapsed / DEATH_FADE_MS))
-            : 1,
-        transform: `translate(${head.x * cell}px, ${head.y * cell}px)`,
-        transition: `transform ${tickMs}ms linear, opacity 0.02s linear`,
-      }}
-    >
+  const headLayer = (src, z, visible = true) => {
+    // The head is a DOM element sliding with a CSS transition, while the body is drawn on the
+    // canvas from a clock that freezes on pause. While paused, pin the head to the same
+    // interpolated point the canvas body is frozen at. After resuming, movedAt has been shifted
+    // forward by the paused time, so the transition only covers what is left of the current move.
+    const prevHead = game.prev[0] ?? head;
+    const nowT = paused ? pausedAtRef.current : performance.now();
+    const moveT = Math.min(1, Math.max(0, (nowT - game.movedAt) / tickMs));
+    const headX = paused ? prevHead.x + (head.x - prevHead.x) * moveT : head.x;
+    const headY = paused ? prevHead.y + (head.y - prevHead.y) * moveT : head.y;
+    const moveMs = paused
+      ? 0
+      : Math.min(tickMs, Math.max(0, Math.round(game.movedAt + tickMs - nowT)));
+
+    return (
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          transform: `rotate(${rotation + lift + HEAD_ANGLE_OFFSET}deg) scaleX(${flip})`,
-          transition: `transform ${TURN_MS}ms ease-out`,
+          left: 0,
+          top: 0,
+          width: cell,
+          height: cell,
+          zIndex: z,
+          pointerEvents: "none",
+          visibility: visible ? "visible" : "hidden",
+          opacity:
+            game.status === "dead"
+              ? Math.max(0, 1 - Math.min(1, deathElapsed / DEATH_FADE_MS))
+              : 1,
+          transform: `translate(${headX * cell}px, ${headY * cell}px)`,
+          transition: `transform ${moveMs}ms linear, opacity 0.02s linear`,
         }}
       >
-        <img
-          src={src}
-          alt=""
-          draggable={false}
+        <div
           style={{
             position: "absolute",
-            width: headSize,
-            height: headSize,
-            left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
-            top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
-            objectFit: "contain",
-            filter: `drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR}) drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR})`,
+            inset: 0,
+            transform: `rotate(${rotation + lift + HEAD_ANGLE_OFFSET}deg) scaleX(${flip})`,
+            transition: `transform ${TURN_MS}ms ease-out`,
           }}
-        />
+        >
+          <img
+            src={src}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              width: headSize,
+              height: headSize,
+              left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
+              top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
+              objectFit: "contain",
+              filter: `drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR}) drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR})`,
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Layering: walls (1) < closed-mouth food (10 + row) < snake body canvas (400)
   // < head (500) < open-mouth food (600 + row) < mouth overlay (900) < glass (1000).
@@ -3303,6 +3518,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               <span style={popupButtonLabelStyle(toggleLabel)}>{toggleLabel}</span>
             </button>
           )}
+
+          <button
+            type="button"
+            style={toggleButtonStyle}
+            onClick={toggleSound}
+            aria-label={soundOn ? "Mute sound" : "Turn sound on"}
+            aria-pressed={!soundOn}
+            title={soundOn ? "Mute sound" : "Turn sound on"}
+          >
+            <div style={popupButtonIconStyle}>{renderIcon(soundOn ? icons.sound : icons.muted)}</div>
+            <span style={popupButtonLabelStyle(soundOn ? "SOUND" : "MUTED")}>
+              {soundOn ? "SOUND" : "MUTED"}
+            </span>
+          </button>
 
           <button
             type="button"
