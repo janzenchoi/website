@@ -171,7 +171,7 @@ const DIFFICULTIES = {
     label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
     speedMult: 0.5, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
-    hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
+    hungerMult: 0.8, // 1.2 = hunger bar empties 20% faster.
     scoreMult: 1, // Multiplier applied to calories gained (and lost) in this mode.
     foodCount: 4, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
@@ -185,7 +185,7 @@ const DIFFICULTIES = {
     label: "NORMAL",
     icon: "hard",
     speedMult: 0.5,
-    hungerMult: 1.1,
+    hungerMult: 0.9,
     scoreMult: 1.2,
     foodCount: 3,
     respawnAllAtOnce: false,
@@ -199,7 +199,7 @@ const DIFFICULTIES = {
     label: "HARD",
     icon: "vhard",
     speedMult: 0.5,
-    hungerMult: 1.2,
+    hungerMult: 1.0,
     scoreMult: 1.4,
     foodCount: 3,
     respawnAllAtOnce: true,
@@ -304,11 +304,11 @@ const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
    SETTINGS: SOY SAUCE
 ===================================== */
 const SAUCE_UNLOCK_LEVEL = 1; // Wasabis that must have been eaten before sauce can appear.
-const SAUCE_DELAY_MS = 8000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
+const SAUCE_DELAY_MS = 4000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
 const SAUCE_LIFETIME_MS = 8000; // ...and despawns this long after.
 const SAUCE_HUNGER_LEVEL = 1.0; // Drinking it drops the hunger bar to this (0 to 1), unless already lower.
 const SAUCE_LENGTH_LOSS = 100; // Segments lost per sauce (never below MIN_SNAKE_LENGTH, so it shrinks to 3).
-const SAUCE_SIZE = 0.5; // 0 to 1, like food `size`.
+const SAUCE_SIZE = 0.8; // 0 to 1, like food `size`.
 const SAUCE_GLOW_RGB = "255, 170, 60";
 // Permanent multipliers from sauce are half of wasabi's (additive with wasabi).
 const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
