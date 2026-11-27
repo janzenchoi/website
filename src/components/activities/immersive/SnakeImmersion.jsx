@@ -319,7 +319,7 @@ const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" 
 const SAUCE_DEATH_PARTICLES_PER_SAUCE = 3;
 const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8b5a2b"];
 const HUNGER_PULSE_MS = 700; // Length of one pulse of the hunger bar after drinking wasabi / soy sauce.
-const HUNGER_PULSE_COUNT = 2; // How many pulses play.
+const HUNGER_PULSE_COUNT = 1; // How many pulses play.
 const HUNGER_PULSE_STRENGTH = 30; // % of the green / brown mixed into the bar at the peak of a pulse (lower = more faded).
 const SAUCE_SCORE_BANNER_MS = 1800; // How long "X WASABI" / "X SOY SAUCE" replaces the score after drinking.
 
