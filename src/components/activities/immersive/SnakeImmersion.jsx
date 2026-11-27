@@ -257,14 +257,14 @@ const FOOD_CONFIG = {
   gunkan_5:   { satiation: 2, length: 2, calories: 6000, spawnWeight: 12, count: 1, size: 0.6, minWasabi: 11 },
   
   cube_1:     { satiation: 1.0, length: 0.6, calories: 3000, spawnWeight: 9,  count: 1, size: 0.8, minWasabi: 8 },
-  cube_2:     { satiation: 1.0, length: 0.6, calories: 4500, spawnWeight: 11, count: 2, size: 0.8, minWasabi: 10 },
+  cube_2:     { satiation: 1.0, length: 0.6, calories: 4500, spawnWeight: 11, count: 1, size: 0.8, minWasabi: 10 },
   
-  swirl_1:    { satiation: 0.3, length: 0.3, calories: 3000, spawnWeight: 13, count: 4, size: 0.5, minWasabi: 12 },
-  swirl_2:    { satiation: 0.3, length: 0.3, calories: 5000, spawnWeight: 15, count: 4, size: 0.5, minWasabi: 14 },
-  swirl_3:    { satiation: 0.3, length: 0.3, calories: 7000, spawnWeight: 17, count: 4, size: 0.5, minWasabi: 16 },
+  swirl_1:    { satiation: 0.3, length: 0.3, calories: 2000, spawnWeight: 12, count: 4, size: 0.5, minWasabi: 11 },
+  swirl_2:    { satiation: 0.3, length: 0.3, calories: 2500, spawnWeight: 13, count: 4, size: 0.5, minWasabi: 12 },
+  swirl_3:    { satiation: 0.3, length: 0.3, calories: 3000, spawnWeight: 14, count: 4, size: 0.5, minWasabi: 13 },
 
-  omega_1:    { satiation: 8, length: 4, calories: 10000, spawnWeight: 18, count: 1, size: 1.4, minWasabi: 18 },
-  omega_2:    { satiation: 8, length: 4, calories: 20000, spawnWeight: 21, count: 1, size: 1.6, minWasabi: 24 },
+  omega_1:    { satiation: 8, length: 4, calories: 10000, spawnWeight: 18, count: 1, size: 1.4, minWasabi: 14 },
+  omega_2:    { satiation: 8, length: 4, calories: 20000, spawnWeight: 21, count: 1, size: 1.6, minWasabi: 16 },
 };
 const DEFAULT_FOOD_SATIATION = 0.4; // Hunger refill for foods not listed above.
 const DEFAULT_FOOD_LENGTH = 1; // Length change for foods not listed above.
@@ -282,9 +282,9 @@ const WASABI_CYCLE_MS = 16000; // One full cycle.
 const WASABI_SPAWN_AT_MS = 8000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 8000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 0; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
-const WASABI_SPEED_BOOST = 0.05; // +5% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 0.5; // +50% calorie multiplier per wasabi (additive with sauce).
-const WASABI_MAX_EATEN = 32; // No more wasabi spawn after this many are eaten.
+const WASABI_SPEED_BOOST = 0.10; // +10% speed per wasabi (permanent for the run).
+const WASABI_CALORIE_BOOST = 1; // +100% calorie multiplier per wasabi (additive with sauce).
+const WASABI_MAX_GLOW = 16; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
 const DARK_MODE_IMAGE_DARKEN = 0.20; // Dark mode only: every image is this much darker (0.15 = 15%, 0 = off).
@@ -312,7 +312,7 @@ const SAUCE_GLOW_RGB = "255, 170, 60";
 // Permanent multipliers from sauce (additive with wasabi).
 const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
 const SAUCE_CALORIE_BOOST = WASABI_CALORIE_BOOST; // Same calorie multiplier as wasabi.
-const SAUCE_HUNGER_BOOST = 0.05; // +5% hunger depletion rate per sauce (permanent for the run).
+const SAUCE_HUNGER_BOOST = 0.10; // +10% hunger depletion rate per sauce (permanent for the run).
 const SAUCE_TEXT_LIGHT_COLOUR = "#5c3317"; // Dark brown for the "X SOY SAUCE" text on the result prompt.
 const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" text on the result prompt (dark mode).
 // On death, each body segment also bursts into dark-brown particles: this many per sauce eaten.
@@ -1090,7 +1090,6 @@ const refillFoods = (snake, foods, count, walls = null, blocked = [], wasabiEate
 const updateWasabi = (g, wasabi, now, snake, foods, eatenCount) => {
   let wasabiCycle = g.wasabiCycle;
   if (wasabi && now >= wasabi.expiresAt) wasabi = null;
-  if (eatenCount >= WASABI_MAX_EATEN) return { wasabi: null, wasabiCycle };
 
   const elapsed = now - g.wasabiStart;
   const cycle = Math.floor(elapsed / WASABI_CYCLE_MS);
@@ -3080,8 +3079,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   };
 
   // The score turns greener (wasabi) and/or dark browner (sauce) and glows as more are eaten.
-  const wasabiT = Math.min(1, game.wasabiEaten / WASABI_MAX_EATEN);
-  const sauceT = Math.min(1, (game.sauceEaten ?? 0) / Math.max(1, WASABI_MAX_EATEN / 2));
+  const wasabiT = Math.min(1, game.wasabiEaten / WASABI_MAX_GLOW);
+  const sauceT = Math.min(1, (game.sauceEaten ?? 0) / Math.max(1, WASABI_MAX_GLOW / 2));
   let scoreColour = "var(--colour-7)";
   if (wasabiT > 0 && sauceT > 0) {
     // Mix green then a touch of brown over the base colour.
@@ -3409,11 +3408,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     "EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY AND AVOID HITTING WALLS OR YOURSELF",
     <>
       <span style={{ color: helpWasabiColour, fontWeight: 700 }}>WASABI</span>
-      {" MAKES YOU MOVE FASTER (+5%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+50%)"}
+      {" MAKES YOU MOVE FASTER (+10%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+100%)"}
     </>,
     <>
       <span style={{ color: helpSauceColour, fontWeight: 700 }}>SOY SAUCE</span>
-      {" MAKES YOU STARVE SOONER (+5%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+50%)"}
+      {" MAKES YOU STARVE SOONER (+10%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+100%)"}
     </>,
     "DIE THREE TIMES WITHOUT EATING TO UNLOCK BOT MODE",
   ];
