@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.cd3e51f8.css",
-    "main.js": "/website/static/js/main.64520260.js",
+    "main.js": "/website/static/js/main.a9a646e5.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -17,7 +17,6 @@
     "static/media/butter.mp4": "/website/static/media/butter.0f0ff6415e2b6fe45279.mp4",
     "static/media/juggle.mp4": "/website/static/media/juggle.d14f797be3ca7e757df8.mp4",
     "static/media/paper_1.pdf": "/website/static/media/paper_1.424d510ffa78c3761fe7.pdf",
-    "static/media/sauce.png": "/website/static/media/sauce.20be2dd52c4c73361286.png",
     "static/media/image_4.png": "/website/static/media/image_4.9834ab8383371dfd56b5.png",
     "static/media/image_1.png": "/website/static/media/image_1.e1308a6988be577ea654.png",
     "static/media/image_3.png": "/website/static/media/image_3.d9ba2890853195a6d9cc.png",
@@ -78,6 +77,7 @@
     "static/media/nigiri_5.png": "/website/static/media/nigiri_5.a3beaa4facf5be19a833.png",
     "static/media/gunkan_3.png": "/website/static/media/gunkan_3.ca1d446c44d293cccf03.png",
     "static/media/fore_lower_arm.png": "/website/static/media/fore_lower_arm.cf8d434d8f65b9145448.png",
+    "static/media/sauce.png": "/website/static/media/sauce.df1057f04f84291a45ae.png",
     "static/media/futomaki_6.png": "/website/static/media/futomaki_6.005f0e85cd677ae17efe.png",
     "static/media/volley.png": "/website/static/media/volley.4fad8476940bf27d0b4a.png",
     "static/media/nigiri_4.png": "/website/static/media/nigiri_4.c7fd2810d723fca2f87d.png",
@@ -141,11 +141,11 @@
     "static/media/death_1.mp3": "/website/static/media/death_1.95303e4b24b5fcd163d3.mp3",
     "index.html": "/website/index.html",
     "main.cd3e51f8.css.map": "/website/static/css/main.cd3e51f8.css.map",
-    "main.64520260.js.map": "/website/static/js/main.64520260.js.map",
+    "main.a9a646e5.js.map": "/website/static/js/main.a9a646e5.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cd3e51f8.css",
-    "static/js/main.64520260.js"
+    "static/js/main.a9a646e5.js"
   ]
 }
