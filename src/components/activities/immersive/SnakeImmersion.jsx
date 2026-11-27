@@ -283,7 +283,7 @@ const WASABI_SPAWN_AT_MS = 8000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 8000; // ...and despawns this long after.
 const WASABI_LENGTH_LOSS = 0; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
 const WASABI_SPEED_BOOST = 0.05; // +5% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 0.2; // +20% calorie multiplier per wasabi (additive with sauce).
+const WASABI_CALORIE_BOOST = 0.5; // +50% calorie multiplier per wasabi (additive with sauce).
 const WASABI_MAX_EATEN = 32; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
@@ -306,7 +306,7 @@ const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
 const SAUCE_UNLOCK_LEVEL = 1; // Wasabis that must have been eaten before sauce can appear.
 const SAUCE_DELAY_MS = 8000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
 const SAUCE_LIFETIME_MS = 8000; // ...and despawns this long after.
-const SAUCE_HUNGER_LEVEL = 0.25; // Drinking it drops the hunger bar to this (0 to 1), unless already lower.
+const SAUCE_HUNGER_LEVEL = 1.0; // Drinking it drops the hunger bar to this (0 to 1), unless already lower.
 const SAUCE_LENGTH_LOSS = 100; // Segments lost per sauce (never below MIN_SNAKE_LENGTH, so it shrinks to 3).
 const SAUCE_SIZE = 0.5; // 0 to 1, like food `size`.
 const SAUCE_GLOW_RGB = "255, 170, 60";
@@ -3336,25 +3336,27 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const helpWasabiColour = darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR;
   const helpSauceColour = darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR;
   const helpParagraphs = [
-    "EAT SUSHI AND AVOID HITTING WALLS OR YOURSELF",
+    "EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY AND AVOID HITTING WALLS OR YOURSELF",
     <>
       <span style={{ color: helpWasabiColour, fontWeight: 700 }}>WASABI</span>
-      {" MAKES YOU FASTER BUT INCREASES YOUR CALORIE MULTIPLIER AND UNLOCKS BETTER SUSHIS"}
+      {" MAKES YOU MOVE FASTER (+5%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+50%)"}
     </>,
     <>
       <span style={{ color: helpSauceColour, fontWeight: 700 }}>SOY SAUCE</span>
-      {" MAKES YOU VERY HUNGRY BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER"}
+      {" MAKES YOU STARVE SOONER (+5%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+50%)"}
     </>,
+    "DIE THREE TIMES WITHOUT EATING TO UNLOCK BOT MODE",
   ];
   // Plain-string versions for width/height estimates (no JSX).
   const helpParagraphsPlain = [
-    "EAT SUSHI AND AVOID HITTING WALLS OR YOURSELF",
-    "WASABI MAKES YOU FASTER BUT INCREASES YOUR CALORIE MULTIPLIER AND UNLOCKS BETTER SUSHIS",
-    "SOY SAUCE MAKES YOU VERY HUNGRY BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER",
+    "EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY AND AVOID HITTING WALLS OR YOURSELF",
+    "WASABI MAKES YOU MOVE FASTER (+5%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+50%)",
+    "SOY SAUCE MAKES YOU STARVE SOONER (+5%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+50%)",
+    "DIE THREE TIMES WITHOUT EATING TO UNLOCK BOT MODE",
   ];
   const popupBody =
     popupInfo.status === "choose"
-      ? `EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY`
+      ? `FEED THE HUNGRY JANZEN SNAKE AN ASSORTMENT OF SUSHIS`
       : popupInfo.status === "help"
         ? helpParagraphsPlain.join(" ")
       : popupInfo.status === "paused"
