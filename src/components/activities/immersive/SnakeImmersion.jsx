@@ -1889,8 +1889,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           clearTimeout(unlockFadeRef.current);
           const count = eatenWasabi ? wasabiEaten : sauceEaten;
           const label = eatenWasabi
-            ? `${count} WASABI${count === 1 ? "" : "S"}!`
-            : `${count} SOY SAUCE${count === 1 ? "" : "S"}!`;
+            ? `${count} WASABI!`
+            : `${count} SOY SAUCE!`;
           setUnlockBanner({
             key: now,
             visible: true,
@@ -3323,10 +3323,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           : `GAME OVER`;
   // Wasabis / soy sauce are only mentioned if at least one was eaten.
   const wasabiText = popupInfo.wasabi > 0
-    ? ` AND ${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`
+    ? ` AND ${popupInfo.wasabi} WASABI`
     : "";
   const sauceText = (popupInfo.sauce ?? 0) > 0
-    ? ` AND ${popupInfo.sauce} SOY SAUCE${(popupInfo.sauce ?? 0) === 1 ? "" : "S"}`
+    ? ` AND ${popupInfo.sauce} SOY SAUCE`
     : "";
   // Help text: the goal, wasabi, sushi upgrades, sauce and what each difficulty changes.
   const wallsOf = (d) => {
@@ -3364,10 +3364,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
   // Coloured + bold nodes for wasabi (green) and soy sauce (dark brown) on pause / results.
   const popupWasabiNode = popupInfo.wasabi > 0
-    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
+    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.wasabi} WASABI`}</span></>
     : null;
   const popupSauceNode = (popupInfo.sauce ?? 0) > 0
-    ? <>{" AND "}<span style={{ color: darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.sauce} SOY SAUCE${(popupInfo.sauce ?? 0) === 1 ? "" : "S"}`}</span></>
+    ? <>{" AND "}<span style={{ color: darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.sauce} SOY SAUCE`}</span></>
     : null;
   const calorieBold = { fontWeight: 700 };
   const caloriesPhrase = (
