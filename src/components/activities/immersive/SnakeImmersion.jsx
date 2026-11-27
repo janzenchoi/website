@@ -409,6 +409,7 @@ const DESKTOP_PANEL_SPACE_SCALE = 0.5; // Halve the spacing around and between t
 const POPUP_SPACE = GAP * 2; // Three times the top-right button gap; use this everywhere the prompt previously used 14px.
 const POPUP_PARA_GAP = POPUP_SPACE; // Help paragraphs use the same 3x button-gap spacing as every prompt component.
 const POPUP_TEXT_GAP = POPUP_SPACE; // Keep the title/body gap equal to the prompt's other gaps.
+const POPUP_FOOD_BUTTON_EXTRA = POPUP_SPACE; // Extra space between the sushi box and the buttons (on top of the normal gap).
 const MONO_CHAR_EM = 0.6; // Courier New is approximately 0.6em; matching this keeps prompt height estimates aligned with rendered wrapping.
 const TITLE_CHAR_EM = 0.66; // Width of one title character, in em (includes its letter spacing).
 const LABEL_FONT_SCALE = 1.13; // Button label text is this much bigger than the base fitted size.
@@ -1565,7 +1566,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [eatenFoods, setEatenFoods] = useState([]);
   const [scoreBonus, setScoreBonus] = useState(null);
   const [unlockBanner, setUnlockBanner] = useState(null); // { image, key } while SUSHI UNLOCKED is shown.
-  const [foodScrollOffset, setFoodScrollOffset] = useState(0); // Row index of the first visible sushi row in the result prompt.
+  const [foodPage, setFoodPage] = useState(0); // Page of sushis shown in the result prompt (15 per page).
   const unlockTimeoutRef = useRef(null);
   const unlockFadeRef = useRef(null);
   const [noSushiLosses, setNoSushiLosses] = useState(0);
@@ -2671,7 +2672,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     clearTimeout(unlockTimeoutRef.current);
     clearTimeout(unlockFadeRef.current);
     setUnlockBanner(null);
-    setFoodScrollOffset(0);
+    setFoodPage(0);
     setFrame(REST_FRAME);
     setDeathElapsed(0);
     setActiveDirection(null);
@@ -3098,16 +3099,16 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   }
   const scoreGlow = glowParts.length ? glowParts.join(", ") : "none";
   // Same layers as scoreGlow, but as a filter so the banner icons glow exactly like the text.
+  // Compose with dark-mode brightness so the global `.snake-game img` rule does not strip the glow.
   const scoreGlowFilter = glowParts.length
     ? glowParts.map((part) => `drop-shadow(${part})`).join(" ")
-    : "none";
-  // Mobile: every banner icon uses the text's glow. Desktop keeps the arena-style glow.
-  const bannerIconFilter = (kind) =>
-    mobileMode
-      ? scoreGlowFilter
-      : kind === "wasabi" || kind === "sauce"
-        ? bannerGlowFilter(kind)
-        : "none";
+    : "";
+  const bannerIconFilter = (_kind) => {
+    const parts = [];
+    if (darkMode) parts.push(`brightness(${1 - DARK_MODE_IMAGE_DARKEN})`);
+    if (scoreGlowFilter) parts.push(scoreGlowFilter);
+    return parts.length ? parts.join(" ") : "none";
+  };
   const scoreStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
@@ -3474,37 +3475,34 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     return lines;
   };
 
-  // Sushi types: fixed 6 per row, up to 3 rows visible. Extra rows scroll with 12px arrows.
-  const popupFoodsPerRow = 6;
-  const popupFoodMaxVisibleRows = 3;
-  const POPUP_FOOD_ARROW_H = 12; // Vertical space each scroll arrow occupies.
+  // Sushi types: 5 per row, 3 rows per page (15 per page). With more than one page,
+  // clicking the box shows the next page and wraps back to the first.
+  const popupFoodsPerRow = 5;
+  const popupFoodRowsPerPage = 3;
+  const popupFoodsPerPage = popupFoodsPerRow * popupFoodRowsPerPage;
   const popupFoodsAll = (popupInfo.foods ?? []).filter((f) => f.image);
-  const popupFoodAllRows = (() => {
-    const rows = [];
-    for (let i = 0; i < popupFoodsAll.length; i += popupFoodsPerRow) {
-      rows.push(popupFoodsAll.slice(i, i + popupFoodsPerRow));
-    }
-    return rows;
-  })();
-  const popupFoodScrollMax = Math.max(0, popupFoodAllRows.length - popupFoodMaxVisibleRows);
-  const popupFoodScroll = Math.min(Math.max(0, foodScrollOffset), popupFoodScrollMax);
-  const popupFoodRows = popupFoodAllRows.slice(
-    popupFoodScroll,
-    popupFoodScroll + popupFoodMaxVisibleRows
+  const popupFoodPageCount = Math.max(1, Math.ceil(popupFoodsAll.length / popupFoodsPerPage));
+  const popupFoodPaged = popupFoodPageCount > 1;
+  const popupFoodPageIndex = popupFoodPaged ? foodPage % popupFoodPageCount : 0;
+  const popupFoodPageItems = popupFoodsAll.slice(
+    popupFoodPageIndex * popupFoodsPerPage,
+    (popupFoodPageIndex + 1) * popupFoodsPerPage
   );
-  const popupFoodCanScrollUp = popupFoodScroll > 0;
-  const popupFoodCanScrollDown = popupFoodScroll < popupFoodScrollMax;
+  const popupFoodRows = [];
+  for (let i = 0; i < popupFoodPageItems.length; i += popupFoodsPerRow) {
+    popupFoodRows.push(popupFoodPageItems.slice(i, i + popupFoodsPerRow));
+  }
   const popupFoodsShown = popupFoodsAll; // Used for "has any sushi" checks.
   const popupImgGap = 4;
-  const popupImgBoxPad = 8;
+  const popupImgBoxPad = 16; // Doubled (was 8).
   const popupImgBoxBottomPad = popupImgBoxPad + 4; // Extra breathing room below the sushi images.
   const popupImgBase = Math.round(popupBodyFont * 1.6);
   const popupEatenLabel = `SUSHIS EATEN (${popupInfo.eatenCount ?? 0})`;
   const popupLabelPx = Math.max(7, Math.round(popupBodyFont * 0.8));
   const popupLabelGap = 4; // Between the label and the sushi rows inside the box.
-  // Width is always based on a full 6-wide row so the box does not jump as you scroll.
+  // Width is always based on a full 5-wide row so the box does not jump between pages.
   const popupFoodsGridW = (imgPx) =>
-    popupFoodAllRows.length
+    popupFoodsAll.length
       ? popupFoodsPerRow * imgPx + (popupFoodsPerRow - 1) * popupImgGap
       : 0;
   const popupFoodsBoxW = (imgPx) =>
@@ -3516,20 +3514,21 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupParas = popupInfo.status === "help" ? helpParagraphsPlain : [popupBody];
   const longestWord = Math.max(...popupBody.split(" ").map((x) => x.length));
   const popupBoxHeight = (imgPx) => {
-    if (!popupFoodAllRows.length) return 0;
-    const visibleRows = Math.min(popupFoodMaxVisibleRows, popupFoodAllRows.length);
+    if (!popupFoodsAll.length) return 0;
+    // With several pages, always reserve 3 rows so the prompt doesn't resize between pages.
+    const visibleRows = popupFoodPaged
+      ? popupFoodRowsPerPage
+      : Math.ceil(popupFoodsAll.length / popupFoodsPerRow);
     const rowsH = visibleRows * imgPx + (visibleRows - 1) * popupImgGap;
-    // Reserve arrow slots only when there are more than 3 rows (scrolling is possible).
-    const arrowSlots = popupFoodAllRows.length > popupFoodMaxVisibleRows ? 2 * POPUP_FOOD_ARROW_H : 0;
     return (
       popupLabelPx * 1.2 +
       popupLabelGap +
-      arrowSlots +
       rowsH +
       popupImgBoxPad +
       popupImgBoxBottomPad +
-      2
-    ); // Include the sushi container's top and bottom borders.
+      2 +
+      POPUP_FOOD_BUTTON_EXTRA
+    ); // Includes the sushi container's borders and the extra gap above the buttons.
   };
   const popupWidthNeeded = (bodyFontPx, imgPx) => Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
@@ -3693,7 +3692,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexShrink: 0,
   };
 
-  // Most recently unlocked sushis in a rounded box with a label on top; 3 rows of 6, with scroll arrows when needed.
+  // Sushis eaten in a rounded box with a label on top; 5 per row, 3 rows per page.
+  // With several pages the whole box is clickable and cycles to the next page.
   const popupFoodBoxStyle = {
     display: "flex",
     flexDirection: "column",
@@ -3706,6 +3706,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     borderRadius: 12,
     backgroundColor: "var(--colour-2)",
     flexShrink: 0,
+    cursor: popupFoodPaged ? "pointer" : "default",
+    marginBottom: POPUP_FOOD_BUTTON_EXTRA,
   };
   const popupFoodLabelStyle = {
     fontSize: `${popupLabelPx}px`,
@@ -3718,8 +3720,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: popupImgGap,
     overflow: "visible",
+    // Keep the grid 3 rows tall on every page so a short last page doesn't shrink the box.
+    minHeight: popupFoodPaged
+      ? popupFoodRowsPerPage * popupImgPx + (popupFoodRowsPerPage - 1) * popupImgGap
+      : undefined,
   };
   const popupFoodRowStyle = {
     display: "flex",
@@ -3727,28 +3734,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     alignItems: "center",
     justifyContent: "center",
     gap: popupImgGap,
-  };
-  const popupFoodArrowStyle = {
-    width: "100%",
-    height: POPUP_FOOD_ARROW_H,
-    flexShrink: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 0,
-    margin: 0,
-    border: "none",
-    background: "transparent",
-    color: "var(--colour-7)",
-    cursor: "pointer",
-    lineHeight: 1,
-    fontSize: Math.max(8, POPUP_FOOD_ARROW_H - 2),
-    opacity: 0.85,
-  };
-  const popupFoodArrowSpacerStyle = {
-    width: "100%",
-    height: POPUP_FOOD_ARROW_H,
-    flexShrink: 0,
   };
   const popupFoodItemStyle = {
     position: "relative",
@@ -4130,11 +4115,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <style>{`${darkMode ? `.snake-game img { filter: brightness(${1 - DARK_MODE_IMAGE_DARKEN}); }` : ""}
+      <style>{`${darkMode ? `.snake-game img:not(.banner-icon) { filter: brightness(${1 - DARK_MODE_IMAGE_DARKEN}); }` : ""}
       .snake-game.paused, .snake-game.paused * { animation-play-state: paused !important; }
       .imm-btn { background-color: var(--colour-1); }
       @media (hover: hover) { .imm-btn:hover:not(:disabled) { background-color: var(--colour-2); } }
       @media (hover: hover) { .imm-key:hover { background: var(--colour-4) !important; } }
+      @media (hover: hover) { .sushi-box-paged:hover { background-color: var(--colour-3) !important; } }
       @keyframes hungerFoodFade {
         0% { opacity: 1; width: var(--slot); }
         55% { opacity: 1; width: var(--slot); }
@@ -4217,6 +4203,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                         alt=""
                         aria-hidden="true"
                         draggable={false}
+                        className="banner-icon"
                         style={{
                           width: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
                           height: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
@@ -4236,6 +4223,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                         alt=""
                         aria-hidden="true"
                         draggable={false}
+                        className="banner-icon"
                         style={{
                           width: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
                           height: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
@@ -4533,25 +4521,16 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             </div>
 
             {popupFoodsShown.length > 0 && (
-              <div style={popupFoodBoxStyle} aria-label="Sushis eaten">
+              <div
+                className={popupFoodPaged && !mobileMode ? "sushi-box-paged" : undefined}
+                style={popupFoodBoxStyle}
+                aria-label="Sushis eaten"
+                onClick={popupFoodPaged ? () => setFoodPage((p) => (p + 1) % popupFoodPageCount) : undefined}
+              >
                 <div style={popupFoodLabelStyle}>{popupEatenLabel}</div>
-                {popupFoodAllRows.length > popupFoodMaxVisibleRows ? (
-                  popupFoodCanScrollUp ? (
-                    <button
-                      type="button"
-                      style={popupFoodArrowStyle}
-                      aria-label="Previous sushi rows"
-                      onClick={() => setFoodScrollOffset((o) => Math.max(0, o - 1))}
-                    >
-                      ▲
-                    </button>
-                  ) : (
-                    <div style={popupFoodArrowSpacerStyle} aria-hidden="true" />
-                  )
-                ) : null}
                 <div style={popupFoodGridStyle}>
                   {popupFoodRows.map((row, ri) => (
-                    <div key={`${popupFoodScroll}-${ri}-${row[0]?.name ?? ri}`} style={popupFoodRowStyle}>
+                    <div key={`${popupFoodPageIndex}-${ri}-${row[0]?.name ?? ri}`} style={popupFoodRowStyle}>
                       {row.map((f) => (
                         <div key={f.name} style={popupFoodItemStyle}>
                           <img
@@ -4567,20 +4546,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     </div>
                   ))}
                 </div>
-                {popupFoodAllRows.length > popupFoodMaxVisibleRows ? (
-                  popupFoodCanScrollDown ? (
-                    <button
-                      type="button"
-                      style={popupFoodArrowStyle}
-                      aria-label="Next sushi rows"
-                      onClick={() => setFoodScrollOffset((o) => Math.min(popupFoodScrollMax, o + 1))}
-                    >
-                      ▼
-                    </button>
-                  ) : (
-                    <div style={popupFoodArrowSpacerStyle} aria-hidden="true" />
-                  )
-                ) : null}
               </div>
             )}
 
