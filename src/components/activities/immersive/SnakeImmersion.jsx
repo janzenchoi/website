@@ -307,7 +307,7 @@ const SAUCE_UNLOCK_LEVEL = 1; // Wasabis that must have been eaten before sauce 
 const SAUCE_DELAY_MS = 4000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
 const SAUCE_LIFETIME_MS = 8000; // ...and despawns this long after.
 const SAUCE_LENGTH_LOSS = 100; // Segments lost per sauce (never below MIN_SNAKE_LENGTH, so it shrinks to 3).
-const SAUCE_SIZE = 0.8; // 0 to 1, like food `size`.
+const SAUCE_SIZE = 0.7; // 0 to 1, like food `size`.
 const SAUCE_GLOW_RGB = "255, 170, 60";
 // Permanent multipliers from sauce (additive with wasabi).
 const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
@@ -318,11 +318,14 @@ const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" 
 // On death, each body segment also bursts into dark-brown particles: this many per sauce eaten.
 const SAUCE_DEATH_PARTICLES_PER_SAUCE = 3;
 const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8b5a2b"];
+const HUNGER_PULSE_MS = 700; // Length of one pulse of the hunger bar after drinking wasabi / soy sauce.
+const HUNGER_PULSE_COUNT = 2; // How many pulses play.
+const HUNGER_PULSE_STRENGTH = 30; // % of the green / brown mixed into the bar at the peak of a pulse (lower = more faded).
 const SAUCE_SCORE_BANNER_MS = 1800; // How long "X WASABI" / "X SOY SAUCE" replaces the score after drinking.
 
 // Keep score and growth values precise while avoiding floating-point display artefacts.
 const roundPoints = (value) => Math.round((Number(value) + Number.EPSILON) * 10000) / 10000;
-const formatPoints = (value) => String(Math.round(roundPoints(value))); // Shown as whole calories; the exact value is kept internally.
+const formatPoints = (value) => Math.round(roundPoints(value)).toLocaleString("en-US"); // Shown as whole calories; the exact value is kept internally.
 const CLUSTER_SEED_ATTEMPTS = 40; // Random starting cells tried to find room for a full cluster.
 const HUNGER_BAR_FRAC = 0.52; // Bar height as a fraction of its rectangle (bigger = less space above/below).
 const EAT_FILL_MS = 450; // How long the bar takes to slide up after eating.
@@ -1566,6 +1569,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [eatenFoods, setEatenFoods] = useState([]);
   const [scoreBonus, setScoreBonus] = useState(null);
   const [unlockBanner, setUnlockBanner] = useState(null); // { image, key } while SUSHI UNLOCKED is shown.
+  const [hungerPulse, setHungerPulse] = useState(null); // { kind, key } while the hunger bar pulses green / brown.
   const [foodPage, setFoodPage] = useState(0); // Page of sushis shown in the result prompt (15 per page).
   const unlockTimeoutRef = useRef(null);
   const unlockFadeRef = useRef(null);
@@ -1890,6 +1894,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         if (eatenWasabi || eatenSauce) {
           clearTimeout(unlockTimeoutRef.current);
           clearTimeout(unlockFadeRef.current);
+          setHungerPulse({ kind: eatenWasabi ? "wasabi" : "sauce", key: now });
           const count = eatenWasabi ? wasabiEaten : sauceEaten;
           const label = eatenWasabi
             ? `${count} WASABI`
@@ -1951,6 +1956,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               kind: "sushi",
               size: eatenFood.size ?? DEFAULT_FOOD_SIZE,
             });
+            setHungerPulse({ kind: "sushi", key: now }); // A new sushi darkens the bar (--colour-3 to --colour-4).
             unlockTimeoutRef.current = setTimeout(() => {
               setUnlockBanner((b) => (b ? { ...b, visible: false } : b)); // Starts the fade back to the score.
               unlockFadeRef.current = setTimeout(() => setUnlockBanner(null), UNLOCK_FADE_MS);
@@ -2673,6 +2679,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     clearTimeout(unlockFadeRef.current);
     setUnlockBanner(null);
     setFoodPage(0);
+    setHungerPulse(null);
     setFrame(REST_FRAME);
     setDeathElapsed(0);
     setActiveDirection(null);
@@ -3154,6 +3161,14 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   const hungerIcon = Math.round(hungerH * HUNGER_BAR_FRAC * 0.75);
 
+  // Pulse colour: the light variant in dark mode and the dark variant in light mode, faded into the bar colour.
+  const hungerPulseBase = hungerPulse?.kind === "sauce"
+    ? (darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR)
+    : (darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR);
+  const hungerPulseColour = hungerPulse?.kind === "sushi"
+    ? "var(--colour-4)"
+    : `color-mix(in srgb, ${hungerPulseBase} ${HUNGER_PULSE_STRENGTH}%, var(--colour-3))`;
+
   const hungerFillStyle = {
     position: "absolute",
     left: 0,
@@ -3162,6 +3177,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     width: `${hungerShown * 100}%`,
     borderRadius: "5px",
     backgroundColor: "var(--colour-3)",
+    ...(hungerPulse
+      ? {
+          "--pulse": hungerPulseColour,
+          animation: `hungerPulse ${HUNGER_PULSE_MS}ms ease-in-out ${HUNGER_PULSE_COUNT}`,
+        }
+      : null),
   };
 
   // One shared panel with no padding or gap of its own. space-evenly puts the same
@@ -4121,6 +4142,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       @media (hover: hover) { .imm-btn:hover:not(:disabled) { background-color: var(--colour-2); } }
       @media (hover: hover) { .imm-key:hover { background: var(--colour-4) !important; } }
       @media (hover: hover) { .sushi-box-paged:hover { background-color: var(--colour-3) !important; } }
+      @keyframes hungerPulse {
+        0% { background-color: var(--colour-3); }
+        50% { background-color: var(--pulse); }
+        100% { background-color: var(--colour-3); }
+      }
       @keyframes hungerFoodFade {
         0% { opacity: 1; width: var(--slot); }
         55% { opacity: 1; width: var(--slot); }
@@ -4294,7 +4320,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       <div style={hungerSectionStyle}>
         <div style={hungerTrackStyle}>
-          <div style={hungerFillStyle} />
+          <div key={hungerPulse?.key ?? "fill"} style={hungerFillStyle} />
 
           {/* Eaten foods appear side by side at the left of the bar; each fades away on its own.
               Each icon is scaled by the food's own size, like everywhere else. */}
