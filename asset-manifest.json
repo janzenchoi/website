@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/website/static/css/main.cd3e51f8.css",
-    "main.js": "/website/static/js/main.19e355f5.js",
+    "main.js": "/website/static/js/main.0ce40ee6.js",
     "static/js/453.484b8427.chunk.js": "/website/static/js/453.484b8427.chunk.js",
     "static/media/paper_5.pdf": "/website/static/media/paper_5.16166db6723f7bd4509e.pdf",
     "static/media/paper_4.pdf": "/website/static/media/paper_4.3ff84c9898825e61e7e9.pdf",
@@ -82,6 +82,7 @@
     "static/media/nigiri_4.png": "/website/static/media/nigiri_4.c7fd2810d723fca2f87d.png",
     "static/media/futomaki_8.png": "/website/static/media/futomaki_8.58987a2627c8df6a18e0.png",
     "static/media/hind_lower_arm.png": "/website/static/media/hind_lower_arm.4af0c9ececba0364ba43.png",
+    "static/media/omega_2.png": "/website/static/media/omega_2.ecfad349c586ca465fdb.png",
     "static/media/nigiri_6.png": "/website/static/media/nigiri_6.f5819c89b1bf81404567.png",
     "static/media/fore_foot.png": "/website/static/media/fore_foot.dd4804981a8c710ebae9.png",
     "static/media/wasabi.png": "/website/static/media/wasabi.5a39fd51a5c4ffe9037e.png",
@@ -113,13 +114,14 @@
     "static/media/crunch_4.mp3": "/website/static/media/crunch_4.9fc7186fb627aa9dab5f.mp3",
     "static/media/futomaki_5.png": "/website/static/media/futomaki_5.1cd16f27f88aaaf887ea.png",
     "static/media/futomaki_2.png": "/website/static/media/futomaki_2.8d446f2d05602dea11b3.png",
-    "static/media/wasabi.mp3": "/website/static/media/wasabi.6cdb79d3cb4ae4f892bb.mp3",
+    "static/media/drink.mp3": "/website/static/media/drink.6cdb79d3cb4ae4f892bb.mp3",
     "static/media/sf_dark.png": "/website/static/media/sf_dark.78895bede200ee42f302.png",
     "static/media/se_dark.png": "/website/static/media/se_dark.355f603cc349c80505d0.png",
     "static/media/crunch_5.mp3": "/website/static/media/crunch_5.e610e54b5707e05560b3.mp3",
     "static/media/nigiri_3.png": "/website/static/media/nigiri_3.fff667dd66fef81a7765.png",
     "static/media/crunch_2.mp3": "/website/static/media/crunch_2.b125b8bb80aab7ae90df.mp3",
     "static/media/crunch_3.mp3": "/website/static/media/crunch_3.5f37f5b9fc606043e297.mp3",
+    "static/media/sauce.png": "/website/static/media/sauce.2c5fa476e8dfee80d76f.png",
     "static/media/futomaki_1.png": "/website/static/media/futomaki_1.f48aec933e55542258d6.png",
     "static/media/crunch_1.mp3": "/website/static/media/crunch_1.ff0429271ba897b271a1.mp3",
     "static/media/sf_light.png": "/website/static/media/sf_light.25cd087fab9fe1b36560.png",
@@ -139,11 +141,11 @@
     "static/media/death_1.mp3": "/website/static/media/death_1.95303e4b24b5fcd163d3.mp3",
     "index.html": "/website/index.html",
     "main.cd3e51f8.css.map": "/website/static/css/main.cd3e51f8.css.map",
-    "main.19e355f5.js.map": "/website/static/js/main.19e355f5.js.map",
+    "main.0ce40ee6.js.map": "/website/static/js/main.0ce40ee6.js.map",
     "453.484b8427.chunk.js.map": "/website/static/js/453.484b8427.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cd3e51f8.css",
-    "static/js/main.19e355f5.js"
+    "static/js/main.0ce40ee6.js"
   ]
 }
