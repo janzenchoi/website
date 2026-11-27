@@ -467,8 +467,8 @@ const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free o
 const HEAD_SIZE = 2.2;
 const HEAD_OFFSET = { x: 0.3, y: 0 };
 const HEAD_ANGLE_OFFSET = 0;
-const HEAD_LIFT_ANGLE = 45;
-const TURN_MS = 110;
+const HEAD_LIFT_ANGLE = 12; // Keep the eating nod subtle to avoid unnecessary head movement.
+const TURN_MS = 190; // Longer, softer quarter-turns. The actual duration is capped by the move time.
 
 /* =====================================
    SETTINGS: MOUTH ANIMATION
@@ -530,10 +530,10 @@ const DEATH_PARTICLE_LIFE_MAX = 1120; // Doubled (was 560).
    grows with the snake's length. Detail is reduced as the snake grows to keep it cheap.
 ===================================== */
 const DRAW_FPS_CAP = 60; // The snake canvas is redrawn at most this often (saves work on 120 / 144 Hz screens).
-const BODY_SAMPLES_PER_CELL = 16; // Discs drawn per body cell for short snakes (full detail).
-const BODY_SAMPLES_MIN = 5; // The fewest discs per cell, used for very long snakes.
-const BODY_SAMPLE_BUDGET = 240; // Detail starts dropping once the snake would need more discs than this in total.
-const STRIPE_LOD_LENGTH = 16; // Belly stripes are thinned out (every 2nd, 3rd, ...) by one step per this many body cells.
+const BODY_SAMPLES_PER_CELL = 10; // Fewer discs per cell; still smooth at the arena cell size.
+const BODY_SAMPLES_MIN = 4; // Minimum detail for very long snakes.
+const BODY_SAMPLE_BUDGET = 144; // Target budget; the minimum density is retained for very long snakes.
+const STRIPE_LOD_LENGTH = 20; // Thin belly stripes slightly sooner on longer snakes.
 
 // Spots: each new game picks one hue (each spot gets its own shade of it).
 const PATTERN_HUES = [0, 28, 55, 120, 170, 210, 270, 320];
@@ -2394,7 +2394,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       // Its belly is drawn per slice, so the belly narrows with the tail and slides across
       // it together with the body's twist.
       const TL = TAIL_LENGTH * c;
-      const TAIL_STEPS = 28;
+      const TAIL_STEPS = 18; // A simpler taper needs fewer path points.
       const tailHalf = (s) => hwT * Math.pow(Math.max(0, 1 - s / TL), TAIL_TAPER);
 
       const inTailFrame = (fn) => {
@@ -3051,7 +3051,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   );
 
   cellRef.current = cell;
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // Avoid expensive 3x canvas rendering; 2x remains crisp.
   dprRef.current = dpr;
 
   // Measure the immersion area (the parent box), not the whole screen.
@@ -3120,6 +3120,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const rotation = game.dir.y !== 0 ? (game.dir.y < 0 ? 90 : -90) * flip : 0;
   const mouthOpen = OPEN_STEPS.includes(frame);
   const lift = mouthOpen ? HEAD_LIFT_ANGLE * flip : 0;
+  const turnMs = Math.max(70, Math.min(TURN_MS, Math.round(tickMs * 0.72)));
 
   /* =====================================
      STYLES
@@ -4063,28 +4064,47 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           transition: `transform ${moveMs}ms linear, opacity 0.02s linear`,
         }}
       >
+        {/* Keep rotation and mirroring separate: combining them in one transition can squash the head when scaleX changes sign. */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            transform: `rotate(${rotation + lift + HEAD_ANGLE_OFFSET}deg) scaleX(${flip})`,
-            transition: `transform ${TURN_MS}ms ease-out`,
+            transform: `rotate(${rotation + HEAD_ANGLE_OFFSET}deg)`,
+            transition: `transform ${turnMs}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+            willChange: "transform",
           }}
         >
-          <img
-            src={src}
-            alt=""
-            draggable={false}
+          <div
             style={{
               position: "absolute",
-              width: headSize,
-              height: headSize,
-              left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
-              top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
-              objectFit: "contain",
-              filter: `drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR}) drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR})`,
+              inset: 0,
+              transform: `rotate(${lift}deg)`,
+              transition: "transform 90ms ease-out",
             }}
-          />
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                transform: `scaleX(${flip})`,
+              }}
+            >
+              <img
+                src={src}
+                alt=""
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  width: headSize,
+                  height: headSize,
+                  left: cell / 2 - headSize / 2 - HEAD_OFFSET.x * cell,
+                  top: cell / 2 - headSize / 2 + HEAD_OFFSET.y * cell,
+                  objectFit: "contain",
+                  filter: `drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR}) drop-shadow(0 0 1px ${darkMode ? OUTLINE_DARK_COLOUR : OUTLINE_LIGHT_COLOUR})`,
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -121,8 +121,9 @@ const BUTTON_LABEL_SCALE = 1.13;
    SETTINGS: PROMPT (POPUP)
 ===================================== */
 
-const POPUP_GAP = 10;
-const POPUP_SLACK = 6;
+// Match Snake: the same 12px spacing is used above, below and between prompt components.
+const POPUP_SPACE = GAP * 2;
+const POPUP_TEXT_GAP = POPUP_SPACE;
 
 const MONO_CHAR_EM = 0.62;
 const TITLE_CHAR_EM = 0.66;
@@ -1125,24 +1126,14 @@ const WordleGame = ({
     Math.round(popupFont * 0.8)
   );
 
-  const popupPad = Math.max(
-    10,
-    Math.round(popupFont * 0.7)
-  );
-
   const popupBtn = rowH;
-
-  const popupBtnGap = mobileMode
-    ? 6
-    : Math.max(6, Math.round(popupBtn * 0.3));
-
+  const popupBtnGap = GAP; // Same 6px gap as Snake's prompt buttons.
   const popupLabelMaxFont = Math.min(
     10,
     Math.round(popupBtn * 0.2)
   );
 
   const popupActionsHeight = popupBtn;
-
   const popupButtonCount = res ? 3 : 2;
 
   const popupLabelFont = (label) => {
@@ -1162,7 +1153,6 @@ const WordleGame = ({
   };
 
   const shareFont = mobileMode ? 16 : 20;
-
   const bodyCharPx = MONO_CHAR_EM * popupBodyFont;
 
   const bodyWidths = popupBodyText
@@ -1186,29 +1176,28 @@ const WordleGame = ({
       )
     : 0;
 
-  const widthNeeded = Math.max(
-    popupTitle.length * TITLE_CHAR_EM * popupFont,
-    popupButtonCount * popupBtn +
-      (popupButtonCount - 1) * popupBtnGap,
-    Math.max(...bodyWidths) * bodyCharPx,
-    shareBoxW,
-    wordWidths
-      ? Math.max(...wordWidths) * bodyCharPx
-      : 0
+  // Title, body, share results and answer are kept together as one scrollable area.
+  const popupTextItemCount =
+    2 + (showShare ? 1 : 0) + (wordWidths ? 1 : 0);
+  const popupTextGapCount = popupTextItemCount - 1;
+
+  const popupWidthNeeded = Math.ceil(
+    Math.max(
+      popupTitle.length * TITLE_CHAR_EM * popupFont,
+      popupButtonCount * popupBtn +
+        (popupButtonCount - 1) * popupBtnGap,
+      Math.max(...bodyWidths) * bodyCharPx,
+      shareBoxW,
+      wordWidths
+        ? Math.max(...wordWidths) * bodyCharPx
+        : 0
+    ) +
+      2 * POPUP_SPACE +
+      2
   );
 
-  const rowCount =
-    3 +
-    (showShare ? 1 : 0) +
-    (wordWidths ? 1 : 0);
-
-  let popupSide = Math.ceil(
-    widthNeeded + 2 * popupPad + 2 + POPUP_SLACK
-  );
-
-  for (let guard = 0; guard < 2000; guard++) {
-    const innerW = popupSide - 2 * popupPad - 2;
-
+  const popupHeightNeeded = (width) => {
+    const innerW = width - 2 * POPUP_SPACE - 2;
     const maxUnits = Math.max(
       1,
       Math.floor(innerW / bodyCharPx)
@@ -1217,35 +1206,106 @@ const WordleGame = ({
     const bodyH =
       wrapLineCount(bodyWidths, maxUnits) *
       popupBodyFont *
-      1.25;
+      1.2;
 
     const wordH = wordWidths
       ? wrapLineCount(wordWidths, maxUnits) *
         popupBodyFont *
-        1.25
+        1.2
       : 0;
 
-    const needH =
-      2 * popupPad +
+    // Two outer paddings, one gap before the actions, and the gaps inside the text area.
+    const spacingCount = 3 + popupTextGapCount;
+
+    return Math.ceil(
       2 +
-      POPUP_SLACK +
-      popupFont * 1.1 +
-      bodyH +
-      shareBoxH +
-      wordH +
-      popupActionsHeight +
-      (rowCount - 1) * POPUP_GAP;
+        spacingCount * POPUP_SPACE +
+        popupFont * 1.1 +
+        bodyH +
+        shareBoxH +
+        wordH +
+        popupActionsHeight
+    );
+  };
 
-    if (needH <= popupSide) break;
+  // Keep the prompt as square as the available viewport allows.
+  const popupWidthCap = Math.max(
+    160,
+    Math.min(boxW, window.innerWidth - 16)
+  );
 
-    popupSide += 1;
+  const popupHeightCap = Math.max(
+    160,
+    Math.min(boxH, window.innerHeight - 16)
+  );
+
+  const popupTargetAspect = 1;
+  const minPopupWidth = Math.min(
+    popupWidthCap,
+    popupWidthNeeded
+  );
+  const maxPopupWidth = Math.max(
+    minPopupWidth,
+    Math.min(popupWidthCap, popupHeightCap)
+  );
+
+  const popupAspectAt = (width) =>
+    width / Math.max(1, popupHeightNeeded(width));
+
+  let low = minPopupWidth;
+  let high = maxPopupWidth;
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (popupAspectAt(mid) < popupTargetAspect) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
   }
+
+  const popupWidthCandidates = new Set(
+    [
+      minPopupWidth,
+      maxPopupWidth,
+      low - 2,
+      low - 1,
+      low,
+      low + 1,
+      low + 2,
+    ].map((width) =>
+      Math.min(maxPopupWidth, Math.max(minPopupWidth, width))
+    )
+  );
+
+  let popupWidth = minPopupWidth;
+  let bestAspectDifference = Infinity;
+
+  for (const candidate of popupWidthCandidates) {
+    const difference = Math.abs(
+      popupAspectAt(candidate) - popupTargetAspect
+    );
+
+    if (difference < bestAspectDifference) {
+      bestAspectDifference = difference;
+      popupWidth = candidate;
+    }
+  }
+
+  const requiredPopupHeight = popupHeightNeeded(popupWidth);
+  const popupHeight = Math.min(
+    requiredPopupHeight,
+    popupHeightCap
+  );
+  const popupScroll = requiredPopupHeight > popupHeightCap;
 
   /* =====================================
      MAIN STYLES
   ===================================== */
 
   const colContainer = {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "stretch",
@@ -1340,6 +1400,16 @@ const WordleGame = ({
     boxShadow: "0 3px 10px rgba(0, 0, 0, 0.22)",
     opacity: dimmed ? 0.45 : 1,
     transition: "background-color 0.15s, opacity 0.15s",
+  });
+
+  // Top-right buttons use Snake's layout: icon slot + fitted label, like the prompt buttons.
+  const toggleButtonStyle = (dimmed = false) => ({
+    ...iconButtonStyle(dimmed),
+    flexDirection: "column",
+    justifyContent: "space-evenly",
+    gap: 1,
+    padding: "4px 1px",
+    overflow: "hidden",
   });
 
   /* =====================================
@@ -1491,17 +1561,17 @@ const WordleGame = ({
     position: "fixed",
     left: "50vw",
     top: "50vh",
-    width: popupSide,
-    height: popupSide,
+    width: popupWidth,
+    height: popupHeight,
     boxSizing: "border-box",
     transform: "translate(-50%, -50%)",
     zIndex: 25,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: POPUP_GAP,
-    padding: `${popupPad}px`,
+    justifyContent: "center",
+    gap: `${POPUP_SPACE}px`,
+    padding: `${POPUP_SPACE}px`,
     overflow: "visible",
     textAlign: "center",
     color: "var(--colour-7)",
@@ -1516,6 +1586,21 @@ const WordleGame = ({
     pointerEvents: popupClosing ? "none" : "auto",
   };
 
+  // Keeps the title, description, results and answer together with consistent spacing.
+  // When content is too tall, this area scrolls while the action buttons remain visible.
+  const popupTextAreaStyle = {
+    flex: "0 1 auto",
+    minHeight: 0,
+    overflowY: popupScroll ? "auto" : "visible",
+    overflowX: "hidden",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: `${POPUP_TEXT_GAP}px`,
+  };
+
   const popupTitleStyle = {
     fontSize: `${popupFont}px`,
     lineHeight: 1.1,
@@ -1528,7 +1613,7 @@ const WordleGame = ({
     width: "100%",
     boxSizing: "border-box",
     fontSize: `${popupBodyFont}px`,
-    lineHeight: 1.25,
+    lineHeight: 1.2,
     fontWeight: 400,
     textTransform: "uppercase",
   };
@@ -1599,12 +1684,14 @@ const WordleGame = ({
 
   const renderChoosePopup = () => (
     <>
-      <div style={popupTitleStyle}>
-        {popupTitle}
-      </div>
+      <div style={popupTextAreaStyle}>
+        <div style={popupTitleStyle}>
+          {popupTitle}
+        </div>
 
-      <div style={popupBodyStyle}>
-        {popupBodyText}
+        <div style={popupBodyStyle}>
+          {popupBodyText}
+        </div>
       </div>
 
       <div style={popupButtonRowStyle}>
@@ -1656,46 +1743,50 @@ const WordleGame = ({
 
     return (
       <>
-        <div style={popupTitleStyle}>
-          {popupTitle}
-        </div>
-
-        <div style={popupBodyStyle}>
-          {popupBodyText}
-        </div>
-
-        {/* Results grid: desktop only. */}
-        {showShare && (
-          <div
-            style={{
-              boxSizing: "border-box",
-              background: "var(--colour-2)",
-              border: "1px solid var(--colour-4)",
-              borderRadius: "8px",
-              padding: "8px 10px",
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: `${shareFont}px`,
-              lineHeight: 1.5,
-              whiteSpace: "pre",
-              textAlign: "left",
-              userSelect: "text",
-            }}
-          >
-            {shareText}
+        <div style={popupTextAreaStyle}>
+          <div style={popupTitleStyle}>
+            {popupTitle}
           </div>
-        )}
 
-        <div style={popupBodyStyle}>
-          THE WORD WAS{" "}
-          <span
-            style={{
-              fontWeight: 900,
-              letterSpacing: "0.1em",
-            }}
-          >
-            {res.word}
-          </span>
+          <div style={popupBodyStyle}>
+            {popupBodyText}
+          </div>
+
+          {/* Results grid: desktop only. */}
+          {showShare && (
+            <div
+              style={{
+                boxSizing: "border-box",
+                background: "var(--colour-2)",
+                border: "1px solid var(--colour-4)",
+                borderRadius: "8px",
+                padding: "8px 10px",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: `${shareFont}px`,
+                lineHeight: 1.5,
+                whiteSpace: "pre",
+                textAlign: "left",
+                userSelect: "text",
+                maxWidth: "100%",
+                overflowX: "auto",
+              }}
+            >
+              {shareText}
+            </div>
+          )}
+
+          <div style={popupBodyStyle}>
+            THE WORD WAS{" "}
+            <span
+              style={{
+                fontWeight: 900,
+                letterSpacing: "0.1em",
+              }}
+            >
+              {res.word}
+            </span>
+          </div>
         </div>
 
         <div style={popupButtonRowStyle}>
@@ -1800,87 +1891,26 @@ const WordleGame = ({
           <button
             type="button"
             className="imm-btn"
-            style={{
-              ...iconButtonStyle(status !== "playing"),
-              flexDirection: "column",
-              gap: 2,
-              padding: "4px 3px",
-            }}
+            style={toggleButtonStyle(status !== "playing")}
             disabled={status !== "playing"}
             onClick={handleSurrender}
             aria-label="Give up"
             title="Give up"
           >
-            {/* Icon remains in its original position and size. */}
-            <div
-              style={{
-                width: "68%",
-                height: "58%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {renderIcon(icons.surrender)}
-            </div>
-
-            {/* GIVE UP: 13% larger and 3px lower. */}
-            <span
-              style={{
-                fontFamily: FONT_FAMILY,
-                fontSize: `${Math.max(7, Math.round(rowH * 0.15)) * BUTTON_LABEL_SCALE}px`,
-                fontWeight: 700,
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-                transform: `translateY(${BUTTON_LABEL_OFFSET}px)`,
-              }}
-            >
-              GIVE UP
-            </span>
+            <div style={popupButtonIconStyle}>{renderIcon(icons.surrender)}</div>
+            <span style={popupButtonLabelStyle("QUIT")}>QUIT</span>
           </button>
 
           {/* Exit activities */}
           <button
             type="button"
-            style={{
-              ...iconButtonStyle(false),
-              flexDirection: "column",
-              gap: 2,
-              padding: "4px 3px",
-              backgroundColor: "var(--red-0)",
-            }}
+            style={{ ...toggleButtonStyle(false), backgroundColor: "var(--red-0)" }}
             onClick={leaveActivities}
             aria-label="Exit activities"
             title="Exit activities"
           >
-            {/* Icon remains in its original position and size. */}
-            <div
-              style={{
-                width: "68%",
-                height: "58%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {renderIcon(icons.cross, 0.68)}
-            </div>
-
-            {/* LEAVE: 13% larger and 3px lower. */}
-            <span
-              style={{
-                fontFamily: FONT_FAMILY,
-                fontSize: `${Math.max(7, Math.round(rowH * 0.15)) * BUTTON_LABEL_SCALE}px`,
-                fontWeight: 700,
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-                transform: `translateY(${BUTTON_LABEL_OFFSET}px)`,
-              }}
-            >
-              LEAVE
-            </span>
+            <div style={popupButtonIconStyle}>{renderIcon(icons.cross)}</div>
+            <span style={popupButtonLabelStyle("LEAVE")}>LEAVE</span>
           </button>
         </div>
       </div>
