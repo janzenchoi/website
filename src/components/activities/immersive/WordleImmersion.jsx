@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Immersion } from "./Immersion";
 import { WORDS } from "../../../assets/activities/wordle/words";
@@ -1328,7 +1327,6 @@ const WordleGame = ({
     boxSizing: "border-box",
     borderRadius: "8px",
     border: "1px solid var(--colour-5)",
-    backgroundColor: "transparent",
     color: "var(--colour-7)",
     fontSize: `${Math.round(rowH * 0.5)}px`,
     fontWeight: 700,
@@ -1586,7 +1584,6 @@ const WordleGame = ({
     gap: 1,
     border: "1px solid var(--colour-5)",
     borderRadius: "8px",
-    backgroundColor: pageBg ?? "transparent",
     color: "var(--colour-7)",
     fontWeight: 700,
     lineHeight: 1,
@@ -1614,6 +1611,7 @@ const WordleGame = ({
         {/* Daily */}
         <button
           type="button"
+          className="imm-btn"
           style={popupButtonStyle}
           aria-label="Daily word"
           title="Daily word"
@@ -1631,6 +1629,7 @@ const WordleGame = ({
         {/* Random */}
         <button
           type="button"
+          className="imm-btn"
           style={popupButtonStyle}
           aria-label="Random word"
           title="Random word"
@@ -1703,6 +1702,7 @@ const WordleGame = ({
           {/* Copy results */}
           <button
             type="button"
+            className="imm-btn"
             style={popupButtonStyle}
             aria-label="Copy results"
             title="Copy results"
@@ -1720,6 +1720,7 @@ const WordleGame = ({
           {/* Retry */}
           <button
             type="button"
+            className="imm-btn"
             style={popupButtonStyle}
             aria-label="Retry game"
             title="Retry game"
@@ -1737,6 +1738,7 @@ const WordleGame = ({
           {/* Change mode */}
           <button
             type="button"
+            className="imm-btn"
             style={popupButtonStyle}
             aria-label="Choose game mode"
             title="Choose game mode"
@@ -1777,6 +1779,9 @@ const WordleGame = ({
         .wordle-shake {
           animation: wordleShake 0.4s ease;
         }
+
+        .imm-btn { background-color: var(--colour-1); }
+        @media (hover: hover) { .imm-btn:hover:not(:disabled) { background-color: var(--colour-2); } }
       `}</style>
 
       {/* =====================================
@@ -1794,6 +1799,7 @@ const WordleGame = ({
           {/* Surrender / Give up */}
           <button
             type="button"
+            className="imm-btn"
             style={{
               ...iconButtonStyle(status !== "playing"),
               flexDirection: "column",

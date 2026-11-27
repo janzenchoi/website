@@ -39,6 +39,8 @@ import icon_sound_light from "../../../assets/activities/symbols/sound_light.png
 import icon_sound_dark from "../../../assets/activities/symbols/sound_dark.png";
 import icon_muted_light from "../../../assets/activities/symbols/muted_light.png";
 import icon_muted_dark from "../../../assets/activities/symbols/muted_dark.png";
+import icon_random_light from "../../../assets/activities/symbols/random_light.png";
+import icon_random_dark from "../../../assets/activities/symbols/random_dark.png";
 
 const THEME_ICONS = {
   light: {
@@ -55,6 +57,7 @@ const THEME_ICONS = {
     play: icon_play_light,
     sound: icon_sound_light,
     muted: icon_muted_light,
+    random: icon_random_light,
   },
   dark: {
     cross: icon_cross_dark,
@@ -70,6 +73,7 @@ const THEME_ICONS = {
     play: icon_play_dark,
     sound: icon_sound_dark,
     muted: icon_muted_dark,
+    random: icon_random_dark,
   },
 };
 
@@ -87,12 +91,13 @@ const ALL_FOODS = foodContext.keys().map((key) => {
     image: typeof m === "string" ? m : m.default,
   };
 });
-const FOODS = ALL_FOODS.filter((f) => f.name !== "wasabi"); // Wasabi never spawns as normal food.
+const FOODS = ALL_FOODS.filter((f) => f.name !== "wasabi" && f.name !== "sauce"); // Wasabi and sauce never spawn as normal food.
 const WASABI_IMAGE = ALL_FOODS.find((f) => f.name === "wasabi")?.image ?? null;
+const SAUCE_IMAGE = ALL_FOODS.find((f) => f.name === "sauce")?.image ?? null;
 const FOOD_IMAGES = ALL_FOODS.map((f) => f.image);
 
 // Every audio file in the sounds folder. "crunch_*" files are eating sounds (one is picked at
-// random each time), "wasabi" plays when wasabi is eaten, "death_*" files play as the snake dies
+// random each time), "drink" plays when wasabi or sauce is consumed, "death_*" files play as the snake dies
 // (several, spread over its body) and "burp_*" files play when the snake burps after a feast.
 const soundContext = require.context(
   "../../../assets/activities/snake/sounds",
@@ -107,11 +112,44 @@ const ALL_SOUNDS = soundContext.keys().map((key) => {
   };
 });
 const CRUNCH_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("crunch")).map((s) => s.src);
-const WASABI_SOUND = ALL_SOUNDS.find((s) => s.name === "wasabi")?.src ?? null;
+const DRINK_SOUND = (ALL_SOUNDS.find((s) => s.name === "drink") ?? ALL_SOUNDS.find((s) => s.name === "wasabi"))?.src ?? null; // Plays for both wasabi and sauce.
 const GAMEOVER_SOUND = ALL_SOUNDS.find((s) => s.name === "gameover")?.src ?? null; // Only used if there are no death_ files.
 const DEATH_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("death")).map((s) => s.src);
 const BURP_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("burp")).map((s) => s.src);
 const ALL_SOUND_SRCS = ALL_SOUNDS.map((s) => s.src);
+
+// Death sounds use the Web Audio API: each file is decoded once, then every segment's sound is
+// scheduled in a single pass. Creating an Audio element per segment made long snakes lag badly.
+const DEATH_POOL = DEATH_SOUNDS.length ? DEATH_SOUNDS : GAMEOVER_SOUND ? [GAMEOVER_SOUND] : [];
+let deathCtx = null;
+let deathGain = null;
+let deathBuffersRequested = false;
+const deathBuffers = [];
+const getDeathCtx = () => {
+  if (deathCtx) return deathCtx;
+  const Ctx = typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext);
+  if (!Ctx) return null;
+  deathCtx = new Ctx();
+  deathGain = deathCtx.createGain();
+  // The compressor stops many overlapping sounds from clipping.
+  const compressor = deathCtx.createDynamicsCompressor();
+  deathGain.connect(compressor);
+  compressor.connect(deathCtx.destination);
+  return deathCtx;
+};
+const loadDeathBuffers = () => {
+  if (deathBuffersRequested) return;
+  const ctx = getDeathCtx();
+  if (!ctx) return;
+  deathBuffersRequested = true;
+  DEATH_POOL.forEach((src) => {
+    fetch(src)
+      .then((res) => res.arrayBuffer())
+      .then((data) => ctx.decodeAudioData(data))
+      .then((buffer) => deathBuffers.push(buffer))
+      .catch(() => {});
+  });
+};
 
 /* =====================================
    SETTINGS: ARENA AND BASE SPEED
@@ -133,7 +171,7 @@ const DIFFICULTIES = {
     label: "EASY",
     icon: "normal", // Key into THEME_ICONS (normal_light / normal_dark). Used on the start prompt and the game over prompt.
     speedMult: 0.5, // 1.1 = 10% faster, 1.2 = 20% faster. (Kept at 1.0 so every difficulty moves at the same speed.)
-    hungerMult: 0.8, // 1.2 = hunger bar empties 20% faster.
+    hungerMult: 1.0, // 1.2 = hunger bar empties 20% faster.
     scoreMult: 1, // Multiplier applied to calories gained (and lost) in this mode.
     foodCount: 4, // How many GROUPS of food are on the board at once.
     respawnAllAtOnce: false, // false = a new group spawns as soon as one is eaten. true = nothing spawns until EVERY food on the board is eaten, then a full new set appears.
@@ -147,7 +185,7 @@ const DIFFICULTIES = {
     label: "NORMAL",
     icon: "hard",
     speedMult: 0.5,
-    hungerMult: 0.9,
+    hungerMult: 1.1,
     scoreMult: 1.2,
     foodCount: 3,
     respawnAllAtOnce: false,
@@ -161,7 +199,7 @@ const DIFFICULTIES = {
     label: "HARD",
     icon: "vhard",
     speedMult: 0.5,
-    hungerMult: 1.0,
+    hungerMult: 1.2,
     scoreMult: 1.4,
     foodCount: 3,
     respawnAllAtOnce: true,
@@ -210,11 +248,23 @@ const FOOD_CONFIG = {
   futomaki_6: { satiation: 0.7,  length: 1.6, calories: 550, spawnWeight: 6, count: 1, size: 0.8, minWasabi: 5 },
   futomaki_7: { satiation: 0.8,  length: 1.8, calories: 660, spawnWeight: 7, count: 1, size: 0.9, minWasabi: 6 },
   futomaki_8: { satiation: 0.9,  length: 2.0, calories: 770, spawnWeight: 8, count: 1, size: 1.0, minWasabi: 7 },
+  futomaki_9: { satiation: 0.9,  length: 2.0, calories: 880, spawnWeight: 9, count: 1, size: 1.1, minWasabi: 8 },
   
-  gunkan_1:   { satiation: 4, length: 4, calories: 1200, spawnWeight: 4, count: 1, size: 0.7, minWasabi: 3 },
-  gunkan_2:   { satiation: 4, length: 4, calories: 2400, spawnWeight: 6, count: 1, size: 0.6, minWasabi: 5 },
-  gunkan_3:   { satiation: 4, length: 4, calories: 3600, spawnWeight: 8, count: 1, size: 0.6, minWasabi: 7 },
-  omega:      { satiation: 8, length: 4, calories: 4800, spawnWeight: 9, count: 1, size: 1.2, minWasabi: 8 },
+  gunkan_1:   { satiation: 2, length: 2, calories: 1200, spawnWeight: 4, count: 1, size: 0.7, minWasabi: 3 },
+  gunkan_2:   { satiation: 2, length: 2, calories: 2400, spawnWeight: 6, count: 1, size: 0.6, minWasabi: 5 },
+  gunkan_3:   { satiation: 2, length: 2, calories: 3600, spawnWeight: 8, count: 1, size: 0.6, minWasabi: 7 },
+  gunkan_4:   { satiation: 2, length: 2, calories: 4800, spawnWeight: 10, count: 1, size: 0.6, minWasabi: 9 },
+  gunkan_5:   { satiation: 2, length: 2, calories: 6000, spawnWeight: 12, count: 1, size: 0.6, minWasabi: 11 },
+  
+  cube_1:     { satiation: 1.0, length: 0.6, calories: 3000, spawnWeight: 9,  count: 1, size: 0.8, minWasabi: 8 },
+  cube_2:     { satiation: 1.0, length: 0.6, calories: 4500, spawnWeight: 11, count: 2, size: 0.8, minWasabi: 10 },
+  
+  swirl_1:    { satiation: 0.3, length: 0.3, calories: 3000, spawnWeight: 13, count: 4, size: 0.5, minWasabi: 12 },
+  swirl_2:    { satiation: 0.3, length: 0.3, calories: 5000, spawnWeight: 15, count: 4, size: 0.5, minWasabi: 14 },
+  swirl_3:    { satiation: 0.3, length: 0.3, calories: 7000, spawnWeight: 17, count: 4, size: 0.5, minWasabi: 16 },
+
+  omega_1:    { satiation: 8, length: 4, calories: 10000, spawnWeight: 18, count: 1, size: 1.4, minWasabi: 18 },
+  omega_2:    { satiation: 8, length: 4, calories: 20000, spawnWeight: 21, count: 1, size: 1.6, minWasabi: 24 },
 };
 const DEFAULT_FOOD_SATIATION = 0.4; // Hunger refill for foods not listed above.
 const DEFAULT_FOOD_LENGTH = 1; // Length change for foods not listed above.
@@ -231,9 +281,9 @@ const MIN_SNAKE_LENGTH = 3; // The snake can never shrink below this.
 const WASABI_CYCLE_MS = 16000; // One full cycle.
 const WASABI_SPAWN_AT_MS = 8000; // Wasabi appears this far into each cycle...
 const WASABI_LIFETIME_MS = 8000; // ...and despawns this long after.
-const WASABI_LENGTH_LOSS = 100; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
-const WASABI_SPEED_BOOST = 0.10; // +10% speed per wasabi (permanent for the run).
-const WASABI_CALORIE_BOOST = 1; // +20% calorie multiplier per wasabi.
+const WASABI_LENGTH_LOSS = 0; // Segments lost per wasabi (never below MIN_SNAKE_LENGTH).
+const WASABI_SPEED_BOOST = 0.05; // +5% speed per wasabi (permanent for the run).
+const WASABI_CALORIE_BOOST = 0.2; // +20% calorie multiplier per wasabi (additive with sauce).
 const WASABI_MAX_EATEN = 32; // No more wasabi spawn after this many are eaten.
 const WASABI_SIZE = 0.5; // 0 to 1, like food `size`.
 const WASABI_GLOW_RGB = "80, 255, 80";
@@ -250,6 +300,26 @@ const WASABI_TEXT_DARK_COLOUR = "#4bcf58"; // Darker green for the "X WASABIS" t
 const WASABI_DEATH_PARTICLES_PER_WASABI = 3;
 const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
 
+/* =====================================
+   SETTINGS: SOY SAUCE
+===================================== */
+const SAUCE_UNLOCK_LEVEL = 1; // Wasabis that must have been eaten before sauce can appear.
+const SAUCE_DELAY_MS = 8000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
+const SAUCE_LIFETIME_MS = 8000; // ...and despawns this long after.
+const SAUCE_HUNGER_LEVEL = 0.25; // Drinking it drops the hunger bar to this (0 to 1), unless already lower.
+const SAUCE_LENGTH_LOSS = 100; // Segments lost per sauce (never below MIN_SNAKE_LENGTH, so it shrinks to 3).
+const SAUCE_SIZE = 0.5; // 0 to 1, like food `size`.
+const SAUCE_GLOW_RGB = "255, 170, 60";
+// Permanent multipliers from sauce are half of wasabi's (additive with wasabi).
+const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
+const SAUCE_CALORIE_BOOST = WASABI_CALORIE_BOOST; // +50% calorie multiplier per sauce.
+const SAUCE_TEXT_LIGHT_COLOUR = "#5c3317"; // Dark brown for the "X SOY SAUCE" text on the result prompt.
+const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" text on the result prompt (dark mode).
+// On death, each body segment also bursts into dark-brown particles: this many per sauce eaten.
+const SAUCE_DEATH_PARTICLES_PER_SAUCE = 3;
+const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8b5a2b"];
+const SAUCE_SCORE_BANNER_MS = 1800; // How long "X WASABIS" / "X SOY SAUCE" replaces the score after drinking.
+
 // Keep score and growth values precise while avoiding floating-point display artefacts.
 const roundPoints = (value) => Math.round((Number(value) + Number.EPSILON) * 10000) / 10000;
 const formatPoints = (value) => String(Math.round(roundPoints(value))); // Shown as whole calories; the exact value is kept internally.
@@ -259,6 +329,8 @@ const EAT_FILL_MS = 450; // How long the bar takes to slide up after eating.
 const EATEN_FOOD_FADE_MS = 3200; // How long each eaten food stays in the bar (fading out) before it is gone.
 const EATEN_FOOD_MAX = 8; // Most eaten foods shown side by side at once.
 const SCORE_BONUS_DURATION_MS = 1100; // How long the (+points) indicator stays visible.
+const UNLOCK_FADE_MS = 500; // The banner then fades back into the score over this long.
+const UNLOCK_BANNER_MS = 2500; // How long "SUSHI UNLOCKED" replaces the score after a new sushi is eaten.
 const DEATH_REASONS = {
   wall: "hitting a wall",
   self: "running into yourself",
@@ -286,17 +358,17 @@ const MUSIC_VOLUME = 0.4;
 const SFX_VOLUME = 0.8; // 0 to 1.
 const DEATH_SOUND_LEAD_MS = 150; // Death sounds play this much ahead of each segment vanishing (0 = in sync).
 const BURP_EAT_COUNT = 8; // Sushis eaten within BURP_WINDOW_MS that make the snake burp.
-const BURP_WINDOW_MS = 10000;
+const BURP_WINDOW_MS = 4000;
 const BURP_MS = 300; // How long the mouth stays slightly open for the burp.
 
-// "eat" = a random crunch_ file, "wasabi" = the wasabi file, "burp" = a random burp_ file.
+// "eat" = a random crunch_ file, "drink" = the drink file (wasabi and sauce), "burp" = a random burp_ file.
 // A new Audio object is made for each play, so quick repeats can overlap.
 const playSfx = (name) => {
   const src =
     name === "eat"
       ? CRUNCH_SOUNDS[Math.floor(Math.random() * CRUNCH_SOUNDS.length)]
-      : name === "wasabi"
-        ? WASABI_SOUND
+      : name === "drink"
+        ? DRINK_SOUND
         : name === "burp"
           ? BURP_SOUNDS[Math.floor(Math.random() * BURP_SOUNDS.length)]
           : null;
@@ -313,7 +385,7 @@ const playSfx = (name) => {
 const JOYSTICK_SIZE = 170;
 const AUTO_MANUAL_OVERRIDE_MS = 1000; // After a manual turn in auto mode, ignore AI for this long.
 const FONT_FAMILY = "'Courier New', Courier, monospace";
-const GRID_SCALE = 0.925; // Grid is 7.5% smaller than the space available (was 10%, now 25% less padding).
+const GRID_SCALE = 0.925; // Mobile keeps its existing 7.5% inset; desktop uses the full available grid area.
 const OUTER_PAD = 5; // Gap between the outer border and the wall ring around the grid.
 const WALL_THICKNESS = OUTER_PAD; // Walls (and the ring) are as thick as that gap.
 const RING_EXT = WALL_THICKNESS / 2 + 1; // How far the ring's outline reaches past the arena edge.
@@ -324,18 +396,20 @@ const ROW_H_MOBILE = 55;
 const ROW_H_DESKTOP = 50; // 0.8x of the previous 62.5.
 // Per side: outer pad + the ring's overhang (the shared panel owns the border).
 const GRID_CHROME = 2 * (OUTER_PAD + RING_EXT);
-const KEY_SIZE_DESKTOP = 49.6; // px (3.1rem).
+const KEY_SIZE_DESKTOP = 49.6; // px (3.1rem) before the desktop-only 20% reduction.
+const DESKTOP_KEY_SCALE = 0.8; // Desktop keypad keys are 20% smaller.
 const KEY_GAP = 5.6; // px between desktop keys.
+const DESKTOP_PANEL_SPACE_SCALE = 0.5; // Halve the spacing around and between the desktop grid and keypad.
 
 /* =====================================
    SETTINGS: PROMPT (POPUP)
-   The prompt is a square, made as small as it can be while still holding its text
-   at full font size (nothing clipped, overflowing or shrunk).
+   The prompt stays as square as the viewport allows, using a rectangle when that
+   makes better use of the available vertical or horizontal space.
 ===================================== */
-const POPUP_GAP = 10; // Space between the text block and the buttons, in px.
-const POPUP_TEXT_GAP = 8; // Space between title, body and icon, in px.
-const POPUP_SLACK = 6; // Extra px of room so text never touches an edge.
-const MONO_CHAR_EM = 0.62; // Width of one body character, in em (Courier is 0.6; a little slack added).
+const POPUP_SPACE = GAP * 2; // Three times the top-right button gap; use this everywhere the prompt previously used 14px.
+const POPUP_PARA_GAP = POPUP_SPACE; // Help paragraphs use the same 3x button-gap spacing as every prompt component.
+const POPUP_TEXT_GAP = POPUP_SPACE; // Keep the title/body gap equal to the prompt's other gaps.
+const MONO_CHAR_EM = 0.6; // Courier New is approximately 0.6em; matching this keeps prompt height estimates aligned with rendered wrapping.
 const TITLE_CHAR_EM = 0.66; // Width of one title character, in em (includes its letter spacing).
 const LABEL_FONT_SCALE = 1.13; // Button label text is this much bigger than the base fitted size.
 const LABEL_OFFSET_PX = 3; // Button label text sits this many px lower.
@@ -647,7 +721,17 @@ const isOpposite = (a, b) => a.x === -b.x && a.y === -b.y;
 ===================================== */
 const MOVES = [UP, RIGHT, DOWN, LEFT];
 const AUTO_MAX_TARGETS = 8; // Food pieces checked (nearest first) before giving up on a safe meal.
+const AUTO_SAUCE_MIN_EXTRA = 5; // The bot only drinks sauce if it cuts at least this many segments...
+const AUTO_SAUCE_CRAMPED_EXTRA = 2; // ...or at least this many when the snake is boxed in...
+const AUTO_SAUCE_CRAMPED_AREA = 3; // ...meaning it can reach fewer cells than its length times this.
+const AUTO_SAUCE_SAFETY = 1.5; // After drinking, some food must be reachable within (hunger left / this).
+// Sauce also grants a permanent calorie multiplier. When the run still has few sauces,
+// the bot is willing to take it with slightly less length to cut (down to this floor).
+const AUTO_SAUCE_BOOST_MIN_EXTRA = 3;
+const AUTO_SAUCE_BOOST_VALUE_UNTIL = 6; // Prefer the calorie boost until this many sauces have been drunk.
 const AUTO_URGENCY = 1.5; // Stop being picky when the nearest food takes over 1/1.5 of the remaining hunger time.
+// Wasabi is pure upside (speed + calorie mult + unlocks, full hunger refill, no shrink).
+// Prefer it over ordinary food unless starving forces a nearer meal.
 
 const cellKey = (c) => `${c.x},${c.y}`;
 const inArena = (x, y) => x >= 0 && x < ARENA_COLS && y >= 0 && y < ARENA_ROWS;
@@ -688,7 +772,7 @@ const floodFrom = (body, walls, firstMoves = MOVES) => {
   return { steps, parent };
 };
 
-const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
+const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity, drainMs = Infinity } = {}) => {
   const snake = g?.snake;
   if (!snake?.length) return null;
 
@@ -723,25 +807,69 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
     g.wasabi && steps.has(cellKey(g.wasabi)) && now + eta(g.wasabi) < g.wasabi.expiresAt
       ? g.wasabi
       : null;
+  const sauceTarget =
+    g.sauce && steps.has(cellKey(g.sauce)) && now + eta(g.sauce) < g.sauce.expiresAt
+      ? g.sauce
+      : null;
   const foodTargets = [...(g.foods ?? [])]
     .filter((f) => steps.has(cellKey(f)))
     .sort((a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b)));
 
-  // Starving: even the closest meal (wasabi or food) is cutting it fine. Then the wasabi loses
-  // its top priority and every target is simply tried nearest first.
+  // Starving: even the closest hunger-refilling meal is cutting it fine. Wasabi fully refills
+  // hunger, so it counts alongside ordinary food. Then priorities collapse to nearest first.
   const nearestEta = Math.min(
     wasabiTarget ? eta(wasabiTarget) : Infinity,
     foodTargets.length ? eta(foodTargets[0]) : Infinity
   );
   const starving = nearestEta * AUTO_URGENCY >= timeLeftMs;
 
+  // Non-starving order: wasabi first (speed + calorie mult + unlocks + full hunger, no shrink),
+  // then sauce (calorie mult + shrink tradeoff), then ordinary food.
+  // When starving, ignore sauce (it lowers hunger) and race to the nearest refill.
   const candidates = (
     starving
       ? [...(wasabiTarget ? [wasabiTarget] : []), ...foodTargets].sort(
           (a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))
         )
-      : [...(wasabiTarget ? [wasabiTarget] : []), ...foodTargets]
+      : [
+          ...(wasabiTarget ? [wasabiTarget] : []),
+          ...(sauceTarget ? [sauceTarget] : []),
+          ...foodTargets,
+        ]
   ).slice(0, AUTO_MAX_TARGETS);
+
+  // Sauce shrinks the snake to MIN_SNAKE_LENGTH and drops hunger to SAUCE_HUNGER_LEVEL, but also
+  // grants a permanent calorie multiplier (same strength as wasabi). Drink it when:
+  //  - it cuts enough length (or the snake is boxed in), with a lower bar while the permanent
+  //    boost is still especially valuable early in the run, AND
+  //  - some food remains reachable from the short body before the lowered hunger runs out.
+  const sauceIsWorthIt = (route) => {
+    const extra = len - MIN_SNAKE_LENGTH;
+    const cramped = steps.size < len * AUTO_SAUCE_CRAMPED_AREA;
+    const sauceEaten = g.sauceEaten ?? 0;
+    const boostStillValuable = sauceEaten < AUTO_SAUCE_BOOST_VALUE_UNTIL;
+    const minExtra = cramped
+      ? AUTO_SAUCE_CRAMPED_EXTRA
+      : boostStillValuable
+        ? Math.min(AUTO_SAUCE_MIN_EXTRA, AUTO_SAUCE_BOOST_MIN_EXTRA)
+        : AUTO_SAUCE_MIN_EXTRA;
+    if (extra < minExtra) return false;
+
+    const leftOnArrival = timeLeftMs - route.length * tickMs;
+    if (leftOnArrival <= 0) return false;
+    // After drinking, hunger becomes min(current, SAUCE_HUNGER_LEVEL).
+    const leftAfter = Math.min(leftOnArrival, SAUCE_HUNGER_LEVEL * drainMs);
+    if (leftAfter <= 0) return false;
+
+    const shortBody = [...route.slice().reverse(), ...snake].slice(0, MIN_SNAKE_LENGTH);
+    const { steps: after } = floodFrom(shortBody, walls);
+    // Prefer a path that can still reach ordinary food (wasabi may not be available after).
+    const meals = [...(g.foods ?? []), ...(wasabiTarget && wasabiTarget !== g.sauce ? [wasabiTarget] : [])];
+    return meals.some((f) => {
+      const n = after.get(cellKey(f));
+      return n !== undefined && n * tickMs * AUTO_SAUCE_SAFETY < leftAfter;
+    });
+  };
 
   const routeTo = (target) => {
     const route = [];
@@ -751,20 +879,37 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity } = {}) => {
   const firstMove = (route) =>
     MOVES.find((d) => head.x + d.x === route[0].x && head.y + d.y === route[0].y) ?? null;
 
-  // 1. Go for the first food (wasabi first) that leaves the snake a way out afterwards.
+  // 1. Go for the first worthwhile target (wasabi first) that leaves the snake a way out afterwards.
   for (const target of candidates) {
     if (eta(target) >= timeLeftMs) continue; // Would starve before arriving.
     const route = routeTo(target);
     if (!route.length) continue;
+    if (target === g.sauce && !sauceIsWorthIt(route)) continue;
 
-    // Assume the longest growth the food could give, to be on the safe side.
-    const growth = target === g.wasabi ? 0 : Math.max(1, Math.ceil(Number(target.length) || 1));
-    const future = [...route.slice().reverse(), ...snake].slice(0, len + growth);
+    // Wasabi no longer shrinks; sauce shrinks to MIN after the move. Ordinary food may grow.
+    // Be conservative: assume the most length the future body might have when checking exits.
+    let growth = 0;
+    if (target === g.wasabi) {
+      growth = 0; // Permanent buffs only; length unchanged (WASABI_LENGTH_LOSS is 0).
+    } else if (target === g.sauce) {
+      growth = 0; // Body is rebuilt to MIN_SNAKE_LENGTH below when needed.
+    } else {
+      growth = Math.max(1, Math.ceil(Number(target.length) || 1));
+    }
+
+    let future;
+    if (target === g.sauce) {
+      // After sauce the body is short; check exit from the post-shrink snake.
+      future = [...route.slice().reverse(), ...snake].slice(0, MIN_SNAKE_LENGTH);
+    } else {
+      future = [...route.slice().reverse(), ...snake].slice(0, len + growth);
+    }
     if (hasExit(future)) return firstMove(route);
   }
 
-  // 2. Nothing is safe. If starving is the bigger danger, take the nearest food anyway.
-  const nearest = [...candidates].sort(
+  // 2. Nothing is safe. If starving is the bigger danger, take the nearest hunger refill
+  // (wasabi or food — never sauce, which lowers the bar).
+  const nearest = candidates.filter((c) => c !== g.sauce).sort(
     (a, b) => steps.get(cellKey(a)) - steps.get(cellKey(b))
   )[0];
   if (nearest && steps.get(cellKey(nearest)) * tickMs * AUTO_URGENCY >= timeLeftMs) {
@@ -982,6 +1127,42 @@ const updateWasabi = (g, wasabi, now, snake, foods, eatenCount) => {
   return { wasabi, wasabiCycle };
 };
 
+// Spawns the sauce once its due time passes (set when a wasabi disappears at SAUCE_UNLOCK_LEVEL or
+// above) and removes it SAUCE_LIFETIME_MS later. Returns the new { sauce, sauceDueAt }.
+const updateSauce = (sauce, dueAt, now, snake, foods, wasabi) => {
+  if (sauce && now >= sauce.expiresAt) sauce = null;
+
+  if (dueAt != null && now >= dueAt) {
+    if (!sauce) {
+      const taken = new Set(
+        [...snake, ...foods, ...(wasabi ? [wasabi] : [])].map((c) => `${c.x},${c.y}`)
+      );
+      const free = [];
+      for (let x = 0; x < ARENA_COLS; x++) {
+        for (let y = 0; y < ARENA_ROWS; y++) {
+          if (!taken.has(`${x},${y}`)) free.push({ x, y });
+        }
+      }
+      if (free.length) {
+        const cell = free[Math.floor(Math.random() * free.length)];
+        sauce = {
+          ...cell,
+          name: "sauce",
+          image: SAUCE_IMAGE,
+          size: SAUCE_SIZE,
+          satiation: 0, // Hunger is set by SAUCE_HUNGER_LEVEL instead.
+          calories: 0,
+          length: -SAUCE_LENGTH_LOSS,
+          expiresAt: now + SAUCE_LIFETIME_MS,
+        };
+      }
+    }
+    dueAt = null;
+  }
+
+  return { sauce, sauceDueAt: dueAt };
+};
+
 /* =====================================
    WALLS
    Walls sit on the lines BETWEEN cells. Each wall is a list of unit edges:
@@ -1173,6 +1354,9 @@ const createGame = (cfg) => ({
   wasabiEaten: 0,
   wasabiCycle: -1,
   wasabiStart: 0,
+  sauce: null,
+  sauceEaten: 0,
+  sauceDueAt: null, // When the next sauce spawns (set after a wasabi disappears).
   shrinkPending: 0, // Segments still to be removed by earlier wasabis.
   shrinkPerTick: 0,
 });
@@ -1206,6 +1390,9 @@ const activateGame = (g, cfg) => {
     wasabiEaten: 0,
     wasabiCycle: -1,
     wasabiStart: performance.now(),
+    sauce: null,
+    sauceEaten: 0,
+    sauceDueAt: null,
     shrinkPending: 0,
     shrinkPerTick: 0,
   };
@@ -1217,7 +1404,7 @@ const shouldOpen = (g, openDist) => {
 
   const head = g.snake[0];
 
-  return [...g.foods, ...(g.wasabi ? [g.wasabi] : [])].some((food) => {
+  return [...g.foods, ...(g.wasabi ? [g.wasabi] : []), ...(g.sauce ? [g.sauce] : [])].some((food) => {
     const dx = food.x - head.x;
     const dy = food.y - head.y;
     const dist = g.dir.x !== 0
@@ -1352,10 +1539,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   if (gameRef.current === null) gameRef.current = createGame(DIFFICULTIES[DEFAULT_DIFFICULTY]);
   const [game, setGame] = useState(() => gameRef.current);
 
-  // Each wasabi eaten permanently adds to the speed for the rest of the run (additive).
-  const speedMult = cfg.speedMult * (1 + WASABI_SPEED_BOOST * game.wasabiEaten);
+  // Each wasabi / sauce eaten permanently adds to the speed for the rest of the run (additive).
+  const speedMult = cfg.speedMult * (1 + WASABI_SPEED_BOOST * game.wasabiEaten + SAUCE_SPEED_BOOST * game.sauceEaten);
   const tickMs = Math.round(BASE_TICK_MS / speedMult);
-  const drainMs = BASE_HUNGER_DRAIN_MS / cfg.hungerMult;
+  // +5% overall hunger depletion rate.
+  const drainMs = BASE_HUNGER_DRAIN_MS / (cfg.hungerMult * 1.05);
   const openDist = openDistance(tickMs);
 
   // Timers and the draw loop read the current settings from here, so they follow the chosen mode.
@@ -1365,16 +1553,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [frame, setFrame] = useState(REST_FRAME);
   const [runId, setRunId] = useState(0);
   const [popupHidden, setPopupHidden] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false); // The help prompt on the start screen.
   const [popupClosing, setPopupClosing] = useState(false);
   const [deathElapsed, setDeathElapsed] = useState(0);
   const [measuredBox, setMeasuredBox] = useState(null);
   const [activeDirection, setActiveDirection] = useState(null);
-  const [mobileControlMode, setMobileControlMode] = useState("arrows");
+  const [mobileControlMode, setMobileControlMode] = useState("joystick");
   const [joyPos, setJoyPos] = useState(null);
   const [hungerShown, setHungerShown] = useState(1);
   const [pageBg, setPageBg] = useState(null);
   const [eatenFoods, setEatenFoods] = useState([]);
   const [scoreBonus, setScoreBonus] = useState(null);
+  const [unlockBanner, setUnlockBanner] = useState(null); // { image, key } while SUSHI UNLOCKED is shown.
+  const unlockTimeoutRef = useRef(null);
+  const unlockFadeRef = useRef(null);
   const [noSushiLosses, setNoSushiLosses] = useState(0);
   const [autoUnlocked, setAutoUnlocked] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -1386,42 +1578,49 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [soundOn, setSoundOn] = useState(true);
   const soundOnRef = useRef(true);
   const musicRef = useRef(null);
-  const deathAudiosRef = useRef([]);
-  const deathTimeoutsRef = useRef([]);
+  const deathSourcesRef = useRef([]);
   const recentEatsRef = useRef([]); // Timestamps of recent sushis, used to decide when to burp.
   const burpPendingRef = useRef(false); // A burp is owed and fires once the snake isn't about to eat.
   const burpUntilRef = useRef(0); // performance.now() until which the burp mouth is shown.
 
   const stopDeathSounds = () => {
-    deathTimeoutsRef.current.forEach(clearTimeout);
-    deathTimeoutsRef.current = [];
-    deathAudiosRef.current.forEach((audio) => {
-      audio.pause();
-      audio.currentTime = 0;
+    deathSourcesRef.current.forEach((source) => {
+      try {
+        source.stop();
+      } catch {
+        /* already stopped */
+      }
     });
-    deathAudiosRef.current = [];
+    deathSourcesRef.current = [];
   };
 
   // Plays a random death_ sound for every segment, slightly ahead of that segment disappearing.
   const playDeathSounds = (segments) => {
     stopDeathSounds();
-    if (!soundOnRef.current || segments < 1) return;
-    const pool = DEATH_SOUNDS.length ? DEATH_SOUNDS : GAMEOVER_SOUND ? [GAMEOVER_SOUND] : [];
-    if (!pool.length) return;
+    if (!soundOnRef.current || segments < 1 || !DEATH_POOL.length) return;
 
+    const ctx = getDeathCtx();
+    if (!ctx || !deathBuffers.length) {
+      // Fallback if Web Audio is unavailable or the sounds have not decoded yet: one sound only.
+      const audio = new Audio(DEATH_POOL[Math.floor(Math.random() * DEATH_POOL.length)]);
+      audio.volume = SFX_VOLUME;
+      audio.play().catch(() => {});
+      return;
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    deathGain.gain.value = SFX_VOLUME;
+
+    const startAt = ctx.currentTime + 0.02;
     let lastIndex = -1;
     for (let segment = 0; segment < segments; segment++) {
-      const timeout = setTimeout(() => {
-        if (!soundOnRef.current) return;
-        let index = Math.floor(Math.random() * pool.length);
-        if (pool.length > 1 && index === lastIndex) index = (index + 1) % pool.length; // Avoid back-to-back repeats.
-        lastIndex = index;
-        const audio = new Audio(pool[index]);
-        audio.volume = SFX_VOLUME;
-        deathAudiosRef.current.push(audio);
-        audio.play().catch(() => {});
-      }, Math.max(0, segment * DEATH_STAGGER_PER_SEGMENT_MS - DEATH_SOUND_LEAD_MS));
-      deathTimeoutsRef.current.push(timeout);
+      let index = Math.floor(Math.random() * deathBuffers.length);
+      if (deathBuffers.length > 1 && index === lastIndex) index = (index + 1) % deathBuffers.length; // Avoid back-to-back repeats.
+      lastIndex = index;
+      const source = ctx.createBufferSource();
+      source.buffer = deathBuffers[index];
+      source.connect(deathGain);
+      source.start(startAt + Math.max(0, segment * DEATH_STAGGER_PER_SEGMENT_MS - DEATH_SOUND_LEAD_MS) / 1000);
+      deathSourcesRef.current.push(source);
     }
   };
 
@@ -1438,7 +1637,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const mouthRef = useRef(newMouth());
   const wantOpenRef = useRef(false);
   const touchRef = useRef(null);
-  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0, wasabi: 0, botGame: false });
+  const popupInfoRef = useRef({ status: "choose", reason: null, score: 0, wasabi: 0, sauce: 0, botGame: false, foods: [], eatenCount: 0 });
+  const sessionFoodsRef = useRef(new Set()); // Sushi types eaten in earlier games of this session (leaving clears it).
+  const runFoodsRef = useRef(new Map()); // Sushi types eaten this game: name -> { image, count }.
+  const runEatCountRef = useRef(0); // Pieces of sushi eaten this game.
 
   const canvasRef = useRef(null);
   const cellRef = useRef(0);
@@ -1508,6 +1710,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     () => () => {
       clearTimeout(popupTimeoutRef.current);
       clearTimeout(scoreBonusTimeoutRef.current);
+      clearTimeout(unlockTimeoutRef.current);
+      clearTimeout(unlockFadeRef.current);
       stopDeathSounds();
       eatenTimeoutsRef.current.forEach(clearTimeout);
     },
@@ -1520,6 +1724,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const img = new Image();
       img.src = src;
     });
+    loadDeathBuffers();
     ALL_SOUND_SRCS.forEach((src) => {
       const audio = new Audio();
       audio.preload = "auto";
@@ -1558,6 +1763,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         const planned = autoDirection(g, {
           tickMs,
           timeLeftMs: hungerLevel(g.hunger, now, drainMs) * drainMs,
+          drainMs,
         });
         if (planned && !isOpposite(planned, dir)) dir = planned;
       }
@@ -1572,10 +1778,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       const eatenWasabi =
         g.wasabi && g.wasabi.x === newHead.x && g.wasabi.y === newHead.y ? g.wasabi : null;
-      const eatenFood = eatenWasabi
+      const eatenSauce =
+        !eatenWasabi && g.sauce && g.sauce.x === newHead.x && g.sauce.y === newHead.y ? g.sauce : null;
+      const eatenFood = eatenWasabi || eatenSauce
         ? null
         : g.foods.find((f) => f.x === newHead.x && f.y === newHead.y);
-      const eatenItem = eatenWasabi ?? eatenFood;
+      const eatenItem = eatenWasabi ?? eatenSauce ?? eatenFood;
       const eating = !!eatenItem;
 
       const outOfBounds =
@@ -1655,20 +1863,45 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       let status = "playing";
       let hunger = g.hunger;
       const wasabiEaten = g.wasabiEaten + (eatenWasabi ? 1 : 0);
+      const sauceEaten = g.sauceEaten + (eatenSauce ? 1 : 0);
       const wasabiNow = eatenWasabi ? null : g.wasabi;
+      const sauceNow = eatenSauce ? null : g.sauce;
 
       if (eating) {
         swallowing = eatenItem;
-        sfx(eatenWasabi ? "wasabi" : "eat");
+        sfx(eatenWasabi || eatenSauce ? "drink" : "eat");
         const baseCalories = Number(eatenItem.calories ?? DEFAULT_FOOD_CALORIES) || 0;
+        // Permanent calorie multipliers from wasabi and sauce stack additively.
         const calorieChange = roundPoints(
-          baseCalories * (1 + WASABI_CALORIE_BOOST * g.wasabiEaten) * (cfg.scoreMult ?? 1)
+          baseCalories *
+            (1 + WASABI_CALORIE_BOOST * g.wasabiEaten + SAUCE_CALORIE_BOOST * g.sauceEaten) *
+            (cfg.scoreMult ?? 1)
         );
         score = roundPoints(score + calorieChange);
         if (calorieChange !== 0) {
           clearTimeout(scoreBonusTimeoutRef.current);
           setScoreBonus({ id: now, amount: calorieChange });
           scoreBonusTimeoutRef.current = setTimeout(() => setScoreBonus(null), SCORE_BONUS_DURATION_MS);
+        }
+        // Briefly replace the calorie total with "X WASABIS" or "X SOY SAUCE" when drinking.
+        if (eatenWasabi || eatenSauce) {
+          clearTimeout(unlockTimeoutRef.current);
+          clearTimeout(unlockFadeRef.current);
+          const count = eatenWasabi ? wasabiEaten : sauceEaten;
+          const label = eatenWasabi
+            ? `${count} WASABI${count === 1 ? "" : "S"}!`
+            : `${count} SOY SAUCE${count === 1 ? "" : "S"}!`;
+          setUnlockBanner({
+            key: now,
+            visible: true,
+            kind: eatenWasabi ? "wasabi" : "sauce",
+            label,
+            image: null,
+          });
+          unlockTimeoutRef.current = setTimeout(() => {
+            setUnlockBanner((b) => (b ? { ...b, visible: false } : b));
+            unlockFadeRef.current = setTimeout(() => setUnlockBanner(null), UNLOCK_FADE_MS);
+          }, SAUCE_SCORE_BANNER_MS);
         }
         fillAnimRef.current = { from: hungerShownRef.current, start: now };
         // Show the eaten food in the hunger bar; each one fades on its own, side by side.
@@ -1678,24 +1911,46 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             setEatenFoods((prev) => prev.filter((f) => f.key !== now));
           }, EATEN_FOOD_FADE_MS)
         );
+        // Sauce drains the hunger bar down to SAUCE_HUNGER_LEVEL; everything else fills it.
         hunger = {
-          level: Math.min(
-            1,
-            hungerLevel(g.hunger, now, drainMs) + (eatenItem.satiation ?? DEFAULT_FOOD_SATIATION)
-          ),
+          level: eatenSauce
+            ? Math.min(hungerLevel(g.hunger, now, drainMs), SAUCE_HUNGER_LEVEL)
+            : Math.min(
+                1,
+                hungerLevel(g.hunger, now, drainMs) + (eatenItem.satiation ?? DEFAULT_FOOD_SATIATION)
+              ),
           at: now,
         };
 
         // Only normal food triggers respawns; wasabi lives outside the food-group limit.
         if (eatenFood) {
           runAteSushiRef.current = true;
+          runEatCountRef.current += 1;
+          // A sushi not eaten in this game or any earlier game of the session replaces the score for a moment.
+          if (
+            eatenFood.image &&
+            !sessionFoodsRef.current.has(eatenFood.name) &&
+            !runFoodsRef.current.has(eatenFood.name)
+          ) {
+            clearTimeout(unlockTimeoutRef.current);
+            clearTimeout(unlockFadeRef.current);
+            setUnlockBanner({ image: eatenFood.image, key: now, visible: true, kind: "sushi" });
+            unlockTimeoutRef.current = setTimeout(() => {
+              setUnlockBanner((b) => (b ? { ...b, visible: false } : b)); // Starts the fade back to the score.
+              unlockFadeRef.current = setTimeout(() => setUnlockBanner(null), UNLOCK_FADE_MS);
+            }, UNLOCK_BANNER_MS);
+          }
+          if (eatenFood.image) {
+            const before = runFoodsRef.current.get(eatenFood.name);
+            runFoodsRef.current.set(eatenFood.name, { image: eatenFood.image, count: (before?.count ?? 0) + 1 });
+          }
           setNoSushiLosses(0);
           recentEatsRef.current = [...recentEatsRef.current.filter((ts) => ts > now - BURP_WINDOW_MS), now];
           if (recentEatsRef.current.length >= BURP_EAT_COUNT) {
             recentEatsRef.current = [];
             burpPendingRef.current = true;
           }
-          const blocked = wasabiNow ? [wasabiNow] : [];
+          const blocked = [wasabiNow, sauceNow].filter(Boolean);
           const remaining = g.foods.filter((f) => f !== eatenFood);
           // Hard modes: wait until every food is eaten, then spawn the whole set again.
           // Normal mode: top the board up as soon as a group is finished.
@@ -1708,7 +1963,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         }
       }
 
-      const wasabiUpdate = updateWasabi(g, wasabiNow, now, snake, foods, wasabiEaten);
+      const wasabiUpdate = updateWasabi(
+        g,
+        wasabiNow,
+        now,
+        snake,
+        [...foods, ...(sauceNow ? [sauceNow] : [])],
+        wasabiEaten
+      );
+
+      // Once a wasabi disappears (eaten or expired) at the unlock level, sauce is due after a delay.
+      const wasabiVanished = !!g.wasabi && !wasabiUpdate.wasabi;
+      const sauceDueAt =
+        wasabiVanished && wasabiEaten >= SAUCE_UNLOCK_LEVEL ? now + SAUCE_DELAY_MS : g.sauceDueAt;
+      const sauceUpdate = updateSauce(sauceNow, sauceDueAt, now, snake, foods, wasabiUpdate.wasabi);
 
       commit({
         snake,
@@ -1729,8 +1997,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         bulges: eating ? [...g.bulges, { t0: now + tickMs }] : g.bulges,
         wasabi: wasabiUpdate.wasabi,
         wasabiCycle: wasabiUpdate.wasabiCycle,
+        sauce: sauceUpdate.sauce,
+        sauceDueAt: sauceUpdate.sauceDueAt,
         wasabiStart: g.wasabiStart,
         wasabiEaten,
+        sauceEaten,
         shrinkPending,
         shrinkPerTick,
       });
@@ -2273,12 +2544,28 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           const originY = sy[sampleIndex];
           const radius = sFull[sampleIndex];
           const greenCount = g.wasabiEaten * WASABI_DEATH_PARTICLES_PER_WASABI;
+          const brownCount = (g.sauceEaten ?? 0) * SAUCE_DEATH_PARTICLES_PER_SAUCE;
+          const totalExtra = greenCount + brownCount;
 
-          for (let p = 0; p < DEATH_PARTICLE_COUNT + greenCount; p++) {
+          for (let p = 0; p < DEATH_PARTICLE_COUNT + totalExtra; p++) {
             const angle = rand(0, Math.PI * 2);
             const speed = rand(28, 105);
             const life = rand(DEATH_PARTICLE_LIFE_MIN, DEATH_PARTICLE_LIFE_MAX);
             const offset = rand(0, radius * 0.45);
+
+            let colour = DEATH_PARTICLE_COLOUR;
+            if (p >= DEATH_PARTICLE_COUNT) {
+              const extraIndex = p - DEATH_PARTICLE_COUNT;
+              if (extraIndex < greenCount) {
+                colour = WASABI_DEATH_PARTICLE_COLOURS[
+                  Math.floor(Math.random() * WASABI_DEATH_PARTICLE_COLOURS.length)
+                ];
+              } else {
+                colour = SAUCE_DEATH_PARTICLE_COLOURS[
+                  Math.floor(Math.random() * SAUCE_DEATH_PARTICLE_COLOURS.length)
+                ];
+              }
+            }
 
             deathParticlesRef.current.push({
               x: originX + Math.cos(angle) * offset,
@@ -2289,11 +2576,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               size: rand(2.4, Math.max(4, c * 0.15)), // Doubled (was 1.2 / c * 0.075).
               bornAt: now,
               life,
-              colour: p < DEATH_PARTICLE_COUNT
-                ? DEATH_PARTICLE_COLOUR
-                : WASABI_DEATH_PARTICLE_COLOURS[
-                    Math.floor(Math.random() * WASABI_DEATH_PARTICLE_COLOURS.length)
-                  ],
+              colour,
             });
           }
         }
@@ -2342,6 +2625,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Clears everything left over from the previous run.
   const resetRun = () => {
+    setHelpOpen(false);
+    runFoodsRef.current.forEach((_, name) => sessionFoodsRef.current.add(name));
+    runFoodsRef.current = new Map();
+    runEatCountRef.current = 0;
     stopDeathSounds();
     dirQueueRef.current = [];
     autoManualUntilRef.current = 0;
@@ -2362,6 +2649,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     setEatenFoods([]);
     clearTimeout(scoreBonusTimeoutRef.current);
     setScoreBonus(null);
+    clearTimeout(unlockTimeoutRef.current);
+    clearTimeout(unlockFadeRef.current);
+    setUnlockBanner(null);
     setFrame(REST_FRAME);
     setDeathElapsed(0);
     setActiveDirection(null);
@@ -2427,6 +2717,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       hunger: { ...g.hunger, at: g.hunger.at + d },
       wasabiStart: g.wasabiStart + d,
       wasabi: g.wasabi ? { ...g.wasabi, expiresAt: g.wasabi.expiresAt + d } : g.wasabi,
+      sauce: g.sauce ? { ...g.sauce, expiresAt: g.sauce.expiresAt + d } : g.sauce,
+      sauceDueAt: g.sauceDueAt != null ? g.sauceDueAt + d : g.sauceDueAt,
       bulges: g.bulges.map((b) => ({ ...b, t0: b.t0 + d })),
     });
   };
@@ -2573,8 +2865,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Desktop keypad: two rows of keys. Mobile arrows: a console-style D-pad cross
   // whose size matches the joystick, so the layout does not jump when toggling.
-  const keySize = KEY_SIZE_DESKTOP;
+  const keySize = KEY_SIZE_DESKTOP * DESKTOP_KEY_SCALE;
   const keyGap = KEY_GAP;
+  const gridControlsSpace = mobileMode ? MIN_PANEL_SPACE : MIN_PANEL_SPACE * DESKTOP_PANEL_SPACE_SCALE;
+  // Desktop fills the grid's available slot instead of retaining the mobile 7.5% inset.
+  // This makes the visible arena about 8% larger while preserving the panel bounds.
+  const gridScale = mobileMode ? GRID_SCALE : 1;
   const dpadArm = Math.floor(JOYSTICK_SIZE / 3);
   const dpadSize = dpadArm * 3;
 
@@ -2588,19 +2884,24 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Calorie text is doubled but shrinks if the narrower score rectangle needs it.
   const scoreW = boxW - (mobileMode ? 4 : 3) * (rowH + GAP);
   const scoreFontPx = Math.floor(Math.min(textPx, (scoreW - 16) / 6));
+  // "SUSHI UNLOCKED" + the sushi image must fit the same score rectangle.
+  const unlockImgPx = Math.round(rowH * 0.55);
+  const unlockGapPx = 14; // Space between the text and the sushi image.
+  const unlockFontPx = Math.floor(Math.min(scoreFontPx, (scoreW - 16 - unlockImgPx - unlockGapPx) / (14 * MONO_CHAR_EM)));
 
   // Panel height = whole stack minus score row, hunger row, the two stack gaps and the border.
-  // The grid gets what is left after the controller and three MIN_PANEL_SPACE gaps.
+  // The grid gets what is left after the controller and three spacing gaps. Desktop uses half the
+  // usual gap around and between the grid and keypad; mobile keeps the original spacing.
   const panelH = boxH - rowH - hungerH - 2 * GAP - 2;
   const gridRectH = Math.max(
     2 * RING_EXT + 60,
-    panelH - controlsH - 3 * MIN_PANEL_SPACE
+    panelH - controlsH - 3 * gridControlsSpace
   );
 
   const cell = Math.max(
     4,
     Math.floor(
-      GRID_SCALE *
+      gridScale *
         Math.min(
           CELL_SIZE,
           (boxW - GRID_CHROME) / ARENA_COLS,
@@ -2738,14 +3039,32 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     padding: "0 0.5rem",
   };
 
-  // The score turns greener and starts glowing as more wasabis are eaten (up to WASABI_MAX_EATEN).
+  // The score turns greener (wasabi) and/or dark browner (sauce) and glows as more are eaten.
   const wasabiT = Math.min(1, game.wasabiEaten / WASABI_MAX_EATEN);
-  const scoreColour = wasabiT > 0
-    ? `color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-7))`
-    : "var(--colour-7)";
-  const scoreGlow = wasabiT > 0
-    ? `0 0 ${2 + wasabiT * 12}px rgba(${WASABI_GLOW_RGB}, ${0.35 + wasabiT * 0.65}), 0 0 ${wasabiT * 22}px rgba(${WASABI_GLOW_RGB}, ${wasabiT * 0.7})`
-    : "none";
+  const sauceT = Math.min(1, (game.sauceEaten ?? 0) / Math.max(1, WASABI_MAX_EATEN / 2));
+  let scoreColour = "var(--colour-7)";
+  if (wasabiT > 0 && sauceT > 0) {
+    // Mix green then a touch of brown over the base colour.
+    scoreColour = `color-mix(in srgb, #5c3317 ${Math.round(sauceT * 35)}%, color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-7)))`;
+  } else if (wasabiT > 0) {
+    scoreColour = `color-mix(in srgb, #3dff3d ${Math.round(wasabiT * 100)}%, var(--colour-7))`;
+  } else if (sauceT > 0) {
+    scoreColour = `color-mix(in srgb, #5c3317 ${Math.round(sauceT * 55)}%, var(--colour-7))`;
+  }
+  const glowParts = [];
+  if (wasabiT > 0) {
+    glowParts.push(
+      `0 0 ${2 + wasabiT * 12}px rgba(${WASABI_GLOW_RGB}, ${0.35 + wasabiT * 0.65})`,
+      `0 0 ${wasabiT * 22}px rgba(${WASABI_GLOW_RGB}, ${wasabiT * 0.7})`
+    );
+  }
+  if (sauceT > 0) {
+    glowParts.push(
+      `0 0 ${2 + sauceT * 10}px rgba(${SAUCE_GLOW_RGB}, ${0.3 + sauceT * 0.55})`,
+      `0 0 ${sauceT * 18}px rgba(${SAUCE_GLOW_RGB}, ${sauceT * 0.55})`
+    );
+  }
+  const scoreGlow = glowParts.length ? glowParts.join(", ") : "none";
   const scoreStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
@@ -2910,6 +3229,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const makeDirectionButton = (direction, label, ariaLabel, fontSize) => (
     <button
       type="button"
+      className="imm-key"
       style={directionButtonStyle(direction, fontSize)}
       onPointerDown={() => setActiveDirection(direction)}
       onPointerUp={() => setActiveDirection(null)}
@@ -2966,44 +3286,103 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // What the prompt says. Keep what it showed while it fades, so the game-over
   // text never appears behind the start popup.
+  // Sushi types eaten this game, most frequently eaten first.
+  const foodsNow = Array.from(runFoodsRef.current, ([name, v]) => ({ name, image: v.image, count: v.count })).sort(
+    (a, b) => b.count - a.count
+  );
   if (game.status === "choose" || game.status === "dead" || game.status === "won") {
     popupInfoRef.current = {
       status: game.status,
       reason: game.reason,
       score: game.score,
       wasabi: game.wasabiEaten,
+      sauce: game.sauceEaten ?? 0,
       botGame: !!game.botGame,
+      foods: foodsNow,
+      eatenCount: runEatCountRef.current,
     };
   }
-  const popupInfo = popupInfoRef.current;
+  // The pause prompt shows while the game is paused. It is not kept in popupInfoRef.
+  const showPause = paused && game.status === "playing";
+  // The help prompt shows over the start screen.
+  const showHelp = helpOpen && game.status === "choose";
+  const popupInfo = showPause
+    ? { status: "paused", reason: null, score: game.score, wasabi: game.wasabiEaten, sauce: game.sauceEaten ?? 0, botGame: false, foods: foodsNow, eatenCount: runEatCountRef.current }
+    : showHelp
+      ? { status: "help", reason: null, score: 0, wasabi: 0, sauce: 0, botGame: false, foods: [], eatenCount: 0 }
+      : popupInfoRef.current;
   const popupTitle =
     popupInfo.status === "choose"
       ? "CHOOSE MODE"
-      : popupInfo.status === "won"
-        ? `WINNER`
-        : `GAME OVER`;
-  // Wasabis are only mentioned if at least one was eaten.
+      : popupInfo.status === "help"
+        ? "HELP"
+      : popupInfo.status === "paused"
+        ? "PAUSED"
+        : popupInfo.status === "won"
+          ? `WINNER`
+          : `GAME OVER`;
+  // Wasabis / soy sauce are only mentioned if at least one was eaten.
   const wasabiText = popupInfo.wasabi > 0
     ? ` AND ${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`
     : "";
+  const sauceText = (popupInfo.sauce ?? 0) > 0
+    ? ` AND ${popupInfo.sauce} SOY SAUCE${(popupInfo.sauce ?? 0) === 1 ? "" : "S"}`
+    : "";
+  // Help text: the goal, wasabi, sushi upgrades, sauce and what each difficulty changes.
+  const wallsOf = (d) => {
+    const n = d.straightWalls + d.cornerWalls;
+    return n === 0 ? "NO WALLS" : `${n} WALLS`;
+  };
+  const helpWasabiColour = darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR;
+  const helpSauceColour = darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR;
+  const helpParagraphs = [
+    "EAT SUSHI AND AVOID HITTING WALLS OR YOURSELF",
+    <>
+      <span style={{ color: helpWasabiColour, fontWeight: 700 }}>WASABI</span>
+      {" MAKES YOU FASTER BUT INCREASES YOUR CALORIE MULTIPLIER AND UNLOCKS BETTER SUSHIS"}
+    </>,
+    <>
+      <span style={{ color: helpSauceColour, fontWeight: 700 }}>SOY SAUCE</span>
+      {" MAKES YOU VERY HUNGRY BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER"}
+    </>,
+  ];
+  // Plain-string versions for width/height estimates (no JSX).
+  const helpParagraphsPlain = [
+    "EAT SUSHI AND AVOID HITTING WALLS OR YOURSELF",
+    "WASABI MAKES YOU FASTER BUT INCREASES YOUR CALORIE MULTIPLIER AND UNLOCKS BETTER SUSHIS",
+    "SOY SAUCE MAKES YOU VERY HUNGRY BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER",
+  ];
   const popupBody =
     popupInfo.status === "choose"
       ? `EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY`
+      : popupInfo.status === "help"
+        ? helpParagraphsPlain.join(" ")
+      : popupInfo.status === "paused"
+        ? `YOU HAVE CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText}`
       : popupInfo.status === "won"
-        ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}`
-        : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
-  // Show the selected difficulty icon, plus AUTO when the completed run was a bot game.
-  const popupBodyIcon = popupInfo.status === "choose" ? null : icons[cfg.icon];
-  // Only the "X WASABIS" part is green (darker), and only if at least one wasabi was eaten.
+        ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText}`
+        : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
+  // Coloured + bold nodes for wasabi (green) and soy sauce (dark brown) on pause / results.
   const popupWasabiNode = popupInfo.wasabi > 0
-    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
+    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.wasabi} WASABI${popupInfo.wasabi === 1 ? "" : "S"}`}</span></>
     : null;
+  const popupSauceNode = (popupInfo.sauce ?? 0) > 0
+    ? <>{" AND "}<span style={{ color: darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.sauce} SOY SAUCE${(popupInfo.sauce ?? 0) === 1 ? "" : "S"}`}</span></>
+    : null;
+  const calorieBold = { fontWeight: 700 };
+  const caloriesPhrase = (
+    <span style={calorieBold}>{`${formatPoints(popupInfo.score)} CALORIES`}</span>
+  );
   const popupBodyNode =
     popupInfo.status === "choose"
       ? popupBody
+      : popupInfo.status === "help"
+        ? <>{helpParagraphs.map((para, i) => <div key={i} style={{ marginTop: i ? POPUP_PARA_GAP : 0 }}>{para}</div>)}</>
+      : popupInfo.status === "paused"
+        ? <>{`YOU HAVE CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}</>
       : popupInfo.status === "won"
-        ? <>{`YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}</>
-        : <>{`YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES`}{popupWasabiNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
+        ? <>{`YOU CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}</>
+        : <>{`YOU CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
 
   // Fonts stay at full size; the square grows to fit them instead.
   const popupFont = Math.round(textPx);
@@ -3012,16 +3391,15 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupBtn = rowH; // Result buttons match the top-right control buttons exactly.
   const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
-  const popupBtnGap = 8;
+  const popupBtnGap = GAP; // Match the horizontal gap between the top-right control buttons.
   const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
-  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length : (showAutoButton ? 3 : 2);
+  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length + 1 : popupInfo.status === "help" ? 2 : 1 + (popupInfo.status === "paused" ? 1 : (showAutoButton ? 3 : 2)); // +1: the disabled difficulty button.
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
     const longestWord = Math.max(...label.split(" ").map((word) => word.length));
     const availableWidth = popupBtn - 10;
     return LABEL_FONT_SCALE * Math.max(6, Math.min(popupLabelMaxFont, availableWidth / (longestWord * 0.62)));
   };
-  const popupDiffIconPx = Math.round(2 * 1.3 * popupBodyFont); // Larger difficulty icon shown above the action buttons on results.
 
   // Greedy word wrap for a monospace font, so the number of body lines is known exactly.
   const wrapLineCount = (text, maxChars) => {
@@ -3038,46 +3416,154 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     return lines;
   };
 
-  // Find the smallest square side whose width fits the title, buttons and longest word,
-  // and whose height holds the title, wrapped body, icon and buttons.
-  const bodyCharPx = MONO_CHAR_EM * popupBodyFont;
+  // Show up to three rows of sushi types (4 per row on mobile, 6 on desktop).
+  const popupFoodsPerRow = mobileMode ? 4 : 6;
+  const popupFoodsShown = (popupInfo.foods ?? [])
+    .filter((f) => f.image)
+    .slice(0, popupFoodsPerRow * 3);
+  const popupFoodRows = (() => {
+    if (!popupFoodsShown.length) return [];
+    if (popupFoodsShown.length <= popupFoodsPerRow) return [popupFoodsShown];
+    if (popupFoodsShown.length <= popupFoodsPerRow * 2) {
+      const top = Math.ceil(popupFoodsShown.length / 2);
+      return [popupFoodsShown.slice(0, top), popupFoodsShown.slice(top)].filter((r) => r.length);
+    }
+    // Three rows: distribute as evenly as possible.
+    const per = Math.ceil(popupFoodsShown.length / 3);
+    return [
+      popupFoodsShown.slice(0, per),
+      popupFoodsShown.slice(per, per * 2),
+      popupFoodsShown.slice(per * 2),
+    ].filter((r) => r.length);
+  })();
+  const popupImgGap = 4;
+  const popupImgBoxPad = 8;
+  const popupImgBoxBottomPad = popupImgBoxPad + 4; // Extra breathing room below the sushi images.
+  const popupImgBase = Math.round(popupBodyFont * 1.6);
+  const popupEatenLabel = `SUSHIS EATEN (${popupInfo.eatenCount ?? 0})`;
+  const popupLabelPx = Math.max(7, Math.round(popupBodyFont * 0.8));
+  const popupLabelGap = 4; // Between the label and the sushi rows inside the box.
+  const popupFoodsGridW = (imgPx) => Math.max(
+    0,
+    ...popupFoodRows.map((row) => row.length * imgPx + (row.length - 1) * popupImgGap)
+  );
+  const popupFoodsBoxW = (imgPx) =>
+    Math.max(popupFoodsGridW(imgPx), Math.ceil(popupEatenLabel.length * MONO_CHAR_EM * popupLabelPx)) + 2 * popupImgBoxPad + 2; // Include the sushi container's 1px border on each side.
+  const popupWidthCap =
+    typeof window !== "undefined" ? Math.max(160, window.innerWidth - 16) : Infinity;
+  const popupHeightCap =
+    typeof window !== "undefined" ? Math.max(160, window.innerHeight - 16) : Infinity;
+  const popupParas = popupInfo.status === "help" ? helpParagraphsPlain : [popupBody];
   const longestWord = Math.max(...popupBody.split(" ").map((x) => x.length));
-  const widthNeeded = Math.max(
+  const popupBoxHeight = (imgPx) => popupFoodRows.length
+    ? popupLabelPx * 1.2 + popupLabelGap + popupFoodRows.length * imgPx + (popupFoodRows.length - 1) * popupImgGap + popupImgBoxPad + popupImgBoxBottomPad + 2 // Include the sushi container's top and bottom borders.
+    : 0;
+  const popupWidthNeeded = (bodyFontPx, imgPx) => Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
     popupButtonCount * popupButtonSize + (popupButtonCount - 1) * popupBtnGap,
-    longestWord * bodyCharPx,
-    0
-  );
-  let popupSide = Math.ceil(widthNeeded + 2 * popupPad + 2 + POPUP_SLACK);
-  for (let guard = 0; guard < 2000; guard++) {
-    const innerW = popupSide - 2 * popupPad - 2;
-    const maxChars = Math.max(1, Math.floor(innerW / bodyCharPx));
-    const bodyLines = wrapLineCount(popupBody, maxChars);
-    const needH =
-      2 * popupPad + 2 + POPUP_SLACK +
-      popupFont * 1.1 +
-      POPUP_TEXT_GAP + bodyLines * popupBodyFont * 1.2 +
-      (popupBodyIcon ? POPUP_TEXT_GAP + popupDiffIconPx : 0) +
-      POPUP_GAP + popupButtonSize;
-    if (needH <= popupSide) break;
-    popupSide += 1;
+    longestWord * MONO_CHAR_EM * bodyFontPx,
+    popupFoodRows.length ? popupFoodsBoxW(imgPx) : 0
+  ) + 2 * POPUP_SPACE + 2;
+  const popupHeightNeeded = (width, bodyFontPx, imgPx) => {
+    const charPx = MONO_CHAR_EM * bodyFontPx;
+    const innerW = width - 2 * POPUP_SPACE - 2;
+    const maxChars = Math.max(1, Math.floor(innerW / charPx));
+    const bodyH =
+      popupParas.reduce((h, para) => h + wrapLineCount(para, maxChars) * bodyFontPx * 1.2, 0) +
+      (popupParas.length - 1) * POPUP_PARA_GAP;
+    const boxH = popupBoxHeight(imgPx);
+    // Account for every POPUP_SPACE in the rendered flex layout:
+    // top + bottom padding, title/body gap, and the gaps between the text,
+    // optional sushi container, and buttons. The help paragraph gaps are
+    // already included in bodyH above.
+    const componentGaps = (boxH ? 2 : 1) + 1; // Text-to-box/buttons, box-to-buttons, and title-to-body.
+    const spaces = componentGaps + 2; // Include the prompt's top and bottom padding.
+    return Math.ceil(
+      2 + popupFont * 1.1 + POPUP_TEXT_GAP + bodyH + boxH + popupButtonSize + spaces * POPUP_SPACE
+    );
+  };
+  const isHelp = popupInfo.status === "help";
+  const popupTargetAspect = isHelp ? 0.94 : 1; // Help may be slightly taller than it is wide.
+  let popupBodyFontUsed = isHelp ? Math.max(8, Math.round(popupBodyFont * 0.8)) : popupBodyFont;
+  let popupImgPx = popupImgBase;
+  const popupLayoutFor = (bodyFontPx, imgPx) => {
+    // Start with the width the content actually needs, then widen only as much as
+    // necessary to keep the prompt close to square. Help is allowed to be slightly taller
+    // so its bottom padding remains the intended 3x button gap without forcing extra width.
+    const minWidth = Math.min(popupWidthCap, popupWidthNeeded(bodyFontPx, imgPx));
+    // Capping the preferred width at the shorter viewport dimension avoids an overly wide prompt.
+    const maxWidth = Math.max(minWidth, Math.min(popupWidthCap, popupHeightCap));
+    const heightAt = (width) => popupHeightNeeded(width, bodyFontPx, imgPx);
+    const aspectAt = (width) => width / Math.max(1, heightAt(width));
+
+    // Find the width whose aspect ratio is closest to the target. The height falls as text wraps
+    // into fewer lines, so binary search is sufficient; nearby candidates handle line jumps.
+    let low = minWidth;
+    let high = maxWidth;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (aspectAt(mid) < popupTargetAspect) low = mid + 1;
+      else high = mid;
+    }
+
+    const candidates = new Set([
+      minWidth,
+      maxWidth,
+      low - 2,
+      low - 1,
+      low,
+      low + 1,
+      low + 2,
+    ].map((width) => Math.min(maxWidth, Math.max(minWidth, width))));
+    let width = minWidth;
+    let bestDifference = Infinity;
+    for (const candidate of candidates) {
+      const difference = Math.abs(aspectAt(candidate) - popupTargetAspect);
+      if (difference < bestDifference) {
+        bestDifference = difference;
+        width = candidate;
+      }
+    }
+
+    const neededHeight = heightAt(width);
+    return {
+      width,
+      height: Math.min(neededHeight, popupHeightCap),
+      scroll: neededHeight > popupHeightCap,
+    };
+  };
+  let popupLayout = popupLayoutFor(popupBodyFontUsed, popupImgPx);
+  if (popupFoodRows.length) {
+    while (popupLayout.scroll && popupImgPx > 12) {
+      popupImgPx -= 2;
+      popupLayout = popupLayoutFor(popupBodyFontUsed, popupImgPx);
+    }
   }
+  if (isHelp) {
+    while (popupLayout.scroll && popupBodyFontUsed > 8) {
+      popupBodyFontUsed -= 1;
+      popupLayout = popupLayoutFor(popupBodyFontUsed, popupImgPx);
+    }
+  }
+  const popupWidth = popupLayout.width;
+  const popupHeight = popupLayout.height;
+  const popupScroll = popupLayout.scroll; // If still too tall, the text area scrolls inside the prompt.
 
   const overlayStyle = {
     position: "fixed",
     left: "50vw",
     top: "50vh",
-    width: popupSide,
-    height: popupSide,
+    width: popupWidth,
+    height: popupHeight,
     boxSizing: "border-box",
     transform: "translate(-50%, -50%)",
     zIndex: 50,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: `${POPUP_GAP}px`,
-    padding: `${popupPad}px`,
+    justifyContent: "center",
+    gap: `${POPUP_SPACE}px`, // The same space above, between and below the text, sushi box and buttons.
+    padding: `${POPUP_SPACE}px`,
     overflow: "visible",
     textAlign: "center",
     color: "var(--colour-7)",
@@ -3094,8 +3580,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
   // Fills the space above the buttons and centres the title and body in it.
   const popupTextAreaStyle = {
-    flex: 1,
+    flex: "0 1 auto",
     minHeight: 0,
+    overflowY: popupScroll ? "auto" : "visible",
     width: "100%",
     display: "flex",
     flexDirection: "column",
@@ -3116,28 +3603,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupBodyStyle = {
     width: "100%",
     boxSizing: "border-box",
-    fontSize: `${popupBodyFont}px`,
+    fontSize: `${popupBodyFontUsed}px`,
     lineHeight: 1.2,
     fontWeight: 400,
     textTransform: "uppercase",
-  };
-
-  // Difficulty and AUTO icons sit together below the body on bot-game results.
-  const popupBodyIconRowStyle = {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Math.max(4, Math.round(popupDiffIconPx * 0.2)),
-    flexShrink: 0,
-  };
-  const popupBodyIconStyle = {
-    display: "block",
-    width: popupDiffIconPx,
-    height: popupDiffIconPx,
-    flexShrink: 0,
-    objectFit: "contain",
-    pointerEvents: "none",
   };
 
   const popupButtonRowStyle = {
@@ -3146,7 +3615,78 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     alignItems: "center",
     justifyContent: "center",
     gap: popupBtnGap,
+    marginLeft: "auto",
+    marginRight: "auto", // Keep the left and right prompt-to-button margins identical.
     flexShrink: 0,
+  };
+
+  // Most recently unlocked sushis in a rounded box with a label on top; two rows at most, each centred.
+  const popupFoodBoxStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: popupLabelGap,
+    width: popupFoodsBoxW(popupImgPx),
+    boxSizing: "border-box",
+    padding: `${popupImgBoxPad}px ${popupImgBoxPad}px ${popupImgBoxBottomPad}px`,
+    border: "1px solid var(--colour-6)",
+    borderRadius: 12,
+    backgroundColor: "var(--colour-2)",
+    flexShrink: 0,
+  };
+  const popupFoodLabelStyle = {
+    fontSize: `${popupLabelPx}px`,
+    lineHeight: 1.2,
+    fontWeight: 400,
+    whiteSpace: "nowrap",
+  };
+  const popupFoodGridStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: popupImgGap,
+  };
+  const popupFoodRowStyle = {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: popupImgGap,
+  };
+  const popupFoodItemStyle = {
+    position: "relative",
+    width: popupImgPx,
+    height: popupImgPx,
+    flexShrink: 0,
+  };
+  // Small filled circle on the corner of each sushi showing how many were eaten.
+  const popupBadgePx = Math.max(10, Math.round(popupImgPx * 0.45));
+  const popupBadgeStyle = {
+    position: "absolute",
+    right: -4,
+    bottom: -4,
+    minWidth: popupBadgePx,
+    height: popupBadgePx,
+    boxSizing: "border-box",
+    padding: "0 3px",
+    borderRadius: 999,
+    border: popupInfo.status === "paused" || popupInfo.status === "dead" ? "1px solid var(--colour-6)" : "none",
+    backgroundColor: "var(--colour-1)",
+    color: "var(--colour-7)",
+    fontSize: Math.max(6, Math.round(popupBadgePx * 0.62)),
+    fontWeight: 400,
+    lineHeight: `${popupBadgePx}px`,
+    textAlign: "center",
+    pointerEvents: "none",
+  };
+  const popupFoodImgStyle = {
+    display: "block",
+    width: popupImgPx,
+    height: popupImgPx,
+    flexShrink: 0,
+    objectFit: "contain",
+    filter: "drop-shadow(0 1px 1.5px var(--colour-5))",
+    pointerEvents: "none",
   };
 
   const popupButtonIconStyle = {
@@ -3206,7 +3746,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     gap: 1,
     border: "1px solid var(--colour-5)",
     borderRadius: "8px",
-    backgroundColor: pageBg ?? "transparent",
     color: "var(--colour-7)",
     fontWeight: 700,
     lineHeight: 1,
@@ -3224,6 +3763,40 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     minHeight: popupModeBtn,
     overflow: "visible", // Lets the larger icons spill past the button edge.
   };
+
+  // Disabled button on the left of the pause / results buttons showing the difficulty.
+  const difficultyButton = (
+    <button
+      type="button"
+      className="imm-btn"
+      style={{ ...modeButtonStyle, cursor: "default", opacity: 0.45 }} // Faded and disabled, like the pause button: it only shows the difficulty.
+      disabled
+      aria-label={`${cfg.label} mode`}
+      title={cfg.label}
+    >
+      <div style={popupModeButtonIconStyle}>
+        <img src={icons[cfg.icon]} alt="" aria-hidden="true" draggable={false} style={popupModeIconImageStyle} />
+      </div>
+      <span style={popupButtonLabelStyle(cfg.label)}>{cfg.label}</span>
+    </button>
+  );
+
+  // Disabled, faded HELP button shown on the help prompt itself.
+  const helpButtonDisabled = (
+    <button
+      type="button"
+      className="imm-btn"
+      style={{ ...popupButtonStyle, cursor: "default", opacity: 0.45 }}
+      disabled
+      aria-label="Help"
+      title="Help"
+    >
+      <div style={popupButtonIconStyle}>
+        {renderIcon(icons.random)}
+      </div>
+      <span style={popupButtonLabelStyle("HELP")}>HELP</span>
+    </button>
+  );
 
   const buttonSize = rowH; // Buttons are as tall as the score rectangle.
 
@@ -3245,7 +3818,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     boxSizing: "border-box",
     borderRadius: "8px",
     border: "1px solid var(--colour-5)",
-    backgroundColor: "transparent",
     color: "var(--colour-7)",
     fontSize: `${Math.round(rowH * 0.5)}px`,
     fontWeight: 700,
@@ -3268,7 +3840,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     padding: "4px 1px",
     overflow: "hidden",
   };
-  const toggleLabel = mobileControlMode === "joystick" ? "DPAD" : "JOYSTICK";
+  const toggleLabel = mobileControlMode === "joystick" ? "DPAD" : "STICK";
 
   /* =====================================
      SNAKE AND FOOD LAYERS
@@ -3364,7 +3936,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         transform: `translate(${food.x * cell}px, ${food.y * cell}px)`,
         filter: food.name === "wasabi"
           ? `drop-shadow(0 0 ${cell * 0.12 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${cell * 0.3 * WASABI_ARENA_GLOW}px rgba(${WASABI_GLOW_RGB}, ${0.7 * WASABI_ARENA_GLOW}))`
-          : "none",
+          : food.name === "sauce"
+            ? `drop-shadow(0 0 ${cell * 0.12 * WASABI_ARENA_GLOW}px rgba(${SAUCE_GLOW_RGB}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${cell * 0.3 * WASABI_ARENA_GLOW}px rgba(${SAUCE_GLOW_RGB}, ${0.7 * WASABI_ARENA_GLOW}))`
+            : "none",
         ...extraStyle,
       }}
     >
@@ -3470,6 +4044,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     >
       <style>{`${darkMode ? `.snake-game img { filter: brightness(${1 - DARK_MODE_IMAGE_DARKEN}); }` : ""}
       .snake-game.paused, .snake-game.paused * { animation-play-state: paused !important; }
+      .imm-btn { background-color: var(--colour-1); }
+      @media (hover: hover) { .imm-btn:hover:not(:disabled) { background-color: var(--colour-2); } }
+      @media (hover: hover) { .imm-key:hover { background: var(--colour-4) !important; } }
       @keyframes hungerFoodFade {
         0% { opacity: 1; width: ${eatenSlot}px; }
         55% { opacity: 1; width: ${eatenSlot}px; }
@@ -3490,16 +4067,77 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       <div style={topRowStyle}>
         <div style={scoreSectionStyle}>
-          <div style={scoreStyle}>
-            <span style={{ position: "relative", display: "inline-block", whiteSpace: "nowrap" }}>
-              {formatPoints(game.score)}
-              {!mobileMode && scoreBonus && (
-                <div key={scoreBonus.id} style={scoreBonusStyle}>
-                  (+{formatPoints(scoreBonus.amount)})
-                </div>
-              )}
-              {mobileMode ? " CALS" : " CALORIES"}
-            </span>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              style={{
+                ...scoreStyle,
+                opacity: unlockBanner?.visible ? 0 : 1,
+                transition: unlockBanner?.visible ? "none" : `opacity ${UNLOCK_FADE_MS}ms ease`,
+              }}
+            >
+              <span style={{ position: "relative", display: "inline-block", whiteSpace: "nowrap" }}>
+                {formatPoints(game.score)}
+                {!mobileMode && scoreBonus && (
+                  <div key={scoreBonus.id} style={scoreBonusStyle}>
+                    (+{formatPoints(scoreBonus.amount)})
+                  </div>
+                )}
+                {mobileMode ? " CALS" : " CALORIES"}
+              </span>
+            </div>
+
+            {unlockBanner && (
+              <div
+                key={unlockBanner.key}
+                style={{
+                  ...scoreStyle,
+                  position: "absolute",
+                  inset: 0,
+                  fontSize: unlockFontPx,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: unlockGapPx,
+                  pointerEvents: "none",
+                  opacity: unlockBanner.visible ? 1 : 0,
+                  transition: unlockBanner.visible ? "none" : `opacity ${UNLOCK_FADE_MS}ms ease`,
+                  // Wasabi / soy sauce banners: dark green / dark brown text, but the same blended glow as the calorie total.
+                  color:
+                    unlockBanner.kind === "wasabi"
+                      ? (darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR)
+                      : unlockBanner.kind === "sauce"
+                        ? (darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR)
+                        : scoreColour,
+                  textShadow: scoreGlow,
+                }}
+              >
+                {unlockBanner.kind === "wasabi" || unlockBanner.kind === "sauce" ? (
+                  <span>{unlockBanner.label}</span>
+                ) : (
+                  <>
+                    <span>SUSHI UNLOCKED!</span>
+                    {unlockBanner.image && (
+                      <img
+                        src={unlockBanner.image}
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        style={{ width: unlockImgPx, height: unlockImgPx, objectFit: "contain", flexShrink: 0 }}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -3507,6 +4145,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           {mobileMode && (
             <button
               type="button"
+              className="imm-btn"
               style={toggleButtonStyle}
               onClick={toggleMobileControls}
               aria-label={mobileControlMode === "joystick" ? "Use directional pad" : "Use joystick"}
@@ -3521,6 +4160,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
           <button
             type="button"
+            className="imm-btn"
             style={toggleButtonStyle}
             onClick={toggleSound}
             aria-label={soundOn ? "Mute sound" : "Turn sound on"}
@@ -3535,24 +4175,30 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
           <button
             type="button"
+            className="imm-btn"
             style={{
               ...toggleButtonStyle,
-              opacity: game.status === "playing" ? 1 : 0.45,
-              cursor: game.status === "playing" ? "pointer" : "default",
+              opacity: game.status === "playing" && !paused ? 1 : 0.45,
+              cursor: game.status === "playing" && !paused ? "pointer" : "default",
             }}
             onClick={togglePause}
-            disabled={game.status !== "playing"}
-            aria-label={paused ? "Resume game" : "Pause game"}
-            title={paused ? "Resume game" : "Pause game"}
+            disabled={game.status !== "playing" || paused} // Resume from the pause prompt instead.
+            aria-label="Pause game"
+            title="Pause game"
           >
-            <div style={popupButtonIconStyle}>{renderIcon(paused ? icons.play : icons.pause)}</div>
-            <span style={popupButtonLabelStyle(paused ? "PLAY" : "PAUSE")}>{paused ? "PLAY" : "PAUSE"}</span>
+            <div style={popupButtonIconStyle}>{renderIcon(icons.pause)}</div>
+            <span style={popupButtonLabelStyle("PAUSE")}>PAUSE</span>
           </button>
 
           <button
             type="button"
             style={{ ...toggleButtonStyle, backgroundColor: "var(--red-0)" }}
-            onClick={leaveActivities}
+            onClick={() => {
+              // Leaving ends the session: the sushis remembered from earlier games are forgotten.
+              sessionFoodsRef.current = new Set();
+              runFoodsRef.current = new Map();
+              leaveActivities();
+            }}
             aria-label="Exit activities"
             title="Exit activities"
           >
@@ -3636,6 +4282,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   {headLayer(FRAMES[frame], HEAD_Z)}
                   {game.foods.map((f) => foodLayer(f, `food-${f.x}-${f.y}`))}
                   {game.wasabi && foodLayer(game.wasabi, "wasabi")}
+                  {game.sauce && foodLayer(game.sauce, "sauce")}
                   {game.swallowing &&
                     foodLayer(game.swallowing, `swallowing-${game.movedAt}`, {
                       animation: `swallowFood ${tickMs}ms linear forwards`,
@@ -3768,23 +4415,37 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       </div>
 
       {/* The prompt sits over the whole play area and is sized from its shape, not from the grid. */}
-      {!popupHidden &&
-        (game.status === "choose" ||
-          game.status === "dead" ||
-          game.status === "won" ||
-          popupClosing) && (
+      {(showPause ||
+        (!popupHidden &&
+          (game.status === "choose" ||
+            game.status === "dead" ||
+            game.status === "won" ||
+            popupClosing))) && (
           <div style={overlayStyle}>
             <div style={popupTextAreaStyle}>
               <div style={popupTitleStyle}>{popupTitle}</div>
               {popupBody && (
                 <div style={popupBodyStyle}>{popupBodyNode}</div>
               )}
-              {popupBodyIcon && (
-                <div style={popupBodyIconRowStyle} aria-label="Difficulty">
-                  <img src={popupBodyIcon} alt="" aria-hidden="true" draggable={false} style={popupBodyIconStyle} />
-                </div>
-              )}
             </div>
+
+            {popupFoodsShown.length > 0 && (
+              <div style={popupFoodBoxStyle} aria-label="Sushis eaten">
+                <div style={popupFoodLabelStyle}>{popupEatenLabel}</div>
+                <div style={popupFoodGridStyle}>
+                  {popupFoodRows.map((row, ri) => (
+                    <div key={ri} style={popupFoodRowStyle}>
+                      {row.map((f) => (
+                        <div key={f.name} style={popupFoodItemStyle}>
+                          <img src={f.image} alt="" aria-hidden="true" draggable={false} style={popupFoodImgStyle} />
+                          <div style={popupBadgeStyle}>{f.count}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {popupInfo.status === "choose" ? (
               <div style={popupButtonRowStyle}>
@@ -3792,6 +4453,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   <button
                     key={key}
                     type="button"
+                    className="imm-btn"
                     style={modeButtonStyle}
                     aria-label={`${d.label} mode`}
                     title={d.label}
@@ -3809,11 +4471,60 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     <span style={popupButtonLabelStyle(d.label)}>{d.label}</span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  aria-label="Help"
+                  title="Help"
+                  onClick={() => setHelpOpen(true)}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.random)}
+                  </div>
+                  <span style={popupButtonLabelStyle("HELP")}>HELP</span>
+                </button>
+              </div>
+            ) : popupInfo.status === "help" ? (
+              <div style={popupButtonRowStyle}>
+                {helpButtonDisabled}
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  aria-label="Choose game mode"
+                  title="Choose game mode"
+                  onClick={() => setHelpOpen(false)}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.change)}
+                  </div>
+                  <span style={popupButtonLabelStyle("MODES")}>MODES</span>
+                </button>
+              </div>
+            ) : popupInfo.status === "paused" ? (
+              <div style={popupButtonRowStyle}>
+                {difficultyButton}
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  aria-label="Resume game"
+                  title="Resume game"
+                  onClick={togglePause}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.play)}
+                  </div>
+                  <span style={popupButtonLabelStyle("PLAY")}>PLAY</span>
+                </button>
               </div>
             ) : (
               <div style={popupButtonRowStyle}>
+                {difficultyButton}
                 <button
                   type="button"
+                  className="imm-btn"
                   style={popupButtonStyle}
                   aria-label="Play again"
                   title="Play again"
@@ -3822,11 +4533,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   <div style={popupButtonIconStyle}>
                     {renderIcon(icons.restart)}
                   </div>
-                  <span style={popupButtonLabelStyle("RETRY")}>RETRY</span>
+                  <span style={popupButtonLabelStyle("RETRY")}>{"RETRY"}</span>
                 </button>
                 {showAutoButton && (
                   <button
                     type="button"
+                    className="imm-btn"
                     style={popupButtonStyle}
                     aria-label="Play automatically"
                     title="Play automatically"
@@ -3835,11 +4547,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     <div style={popupButtonIconStyle}>
                       {renderIcon(icons.auto)}
                     </div>
-                    <span style={popupButtonLabelStyle("AUTO")}>AUTO</span>
+                    <span style={popupButtonLabelStyle("BOT")}>BOT</span>
                   </button>
                 )}
                 <button
                   type="button"
+                  className="imm-btn"
                   style={popupButtonStyle}
                   aria-label="Choose game mode"
                   title="Choose game mode"
