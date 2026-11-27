@@ -294,8 +294,8 @@ const WASABI_ARENA_GLOW = 0.4; // Glow of the wasabi on the arena. 1 = previous 
 const WASABI_SHRINK_MS = 1200; // Doubled (was 600): the shrink takes twice as long.
 const EATEN_FOOD_VISIBLE_FRAC = 0.65; // Fraction of the move during which an eaten food stays visible (1 = until the move ends).
 const EATEN_FOOD_FADE_FRAC = 0.1; // Fraction of the move over which it then fades out.
-const WASABI_TEXT_LIGHT_COLOUR = "#11801c"; // Darker green for the "X WASABIS" text on the result prompt.
-const WASABI_TEXT_DARK_COLOUR = "#4bcf58"; // Darker green for the "X WASABIS" text on the result prompt.
+const WASABI_TEXT_LIGHT_COLOUR = "#11801c"; // Darker green for the "X WASABI" text on the result prompt.
+const WASABI_TEXT_DARK_COLOUR = "#4bcf58"; // Darker green for the "X WASABI" text on the result prompt.
 // On death, each body segment also bursts into green particles: this many per wasabi eaten.
 const WASABI_DEATH_PARTICLES_PER_WASABI = 3;
 const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
@@ -306,19 +306,19 @@ const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
 const SAUCE_UNLOCK_LEVEL = 1; // Wasabis that must have been eaten before sauce can appear.
 const SAUCE_DELAY_MS = 4000; // Sauce spawns this long after a wasabi disappears (eaten or expired).
 const SAUCE_LIFETIME_MS = 8000; // ...and despawns this long after.
-const SAUCE_HUNGER_LEVEL = 1.0; // Drinking it drops the hunger bar to this (0 to 1), unless already lower.
 const SAUCE_LENGTH_LOSS = 100; // Segments lost per sauce (never below MIN_SNAKE_LENGTH, so it shrinks to 3).
 const SAUCE_SIZE = 0.8; // 0 to 1, like food `size`.
 const SAUCE_GLOW_RGB = "255, 170, 60";
-// Permanent multipliers from sauce are half of wasabi's (additive with wasabi).
+// Permanent multipliers from sauce (additive with wasabi).
 const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
-const SAUCE_CALORIE_BOOST = WASABI_CALORIE_BOOST; // +50% calorie multiplier per sauce.
+const SAUCE_CALORIE_BOOST = WASABI_CALORIE_BOOST; // Same calorie multiplier as wasabi.
+const SAUCE_HUNGER_BOOST = 0.05; // +5% hunger depletion rate per sauce (permanent for the run).
 const SAUCE_TEXT_LIGHT_COLOUR = "#5c3317"; // Dark brown for the "X SOY SAUCE" text on the result prompt.
 const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" text on the result prompt (dark mode).
 // On death, each body segment also bursts into dark-brown particles: this many per sauce eaten.
 const SAUCE_DEATH_PARTICLES_PER_SAUCE = 3;
 const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8b5a2b"];
-const SAUCE_SCORE_BANNER_MS = 1800; // How long "X WASABIS" / "X SOY SAUCE" replaces the score after drinking.
+const SAUCE_SCORE_BANNER_MS = 1800; // How long "X WASABI" / "X SOY SAUCE" replaces the score after drinking.
 
 // Keep score and growth values precise while avoiding floating-point display artefacts.
 const roundPoints = (value) => Math.round((Number(value) + Number.EPSILON) * 10000) / 10000;
@@ -838,11 +838,11 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity, drainMs = Infin
         ]
   ).slice(0, AUTO_MAX_TARGETS);
 
-  // Sauce shrinks the snake to MIN_SNAKE_LENGTH and drops hunger to SAUCE_HUNGER_LEVEL, but also
-  // grants a permanent calorie multiplier (same strength as wasabi). Drink it when:
+  // Sauce shrinks the snake to MIN_SNAKE_LENGTH and grants a permanent calorie multiplier
+  // (same strength as wasabi) plus a permanent +5% hunger depletion rate. Drink it when:
   //  - it cuts enough length (or the snake is boxed in), with a lower bar while the permanent
   //    boost is still especially valuable early in the run, AND
-  //  - some food remains reachable from the short body before the lowered hunger runs out.
+  //  - some food remains reachable from the short body before the remaining hunger runs out.
   const sauceIsWorthIt = (route) => {
     const extra = len - MIN_SNAKE_LENGTH;
     const cramped = steps.size < len * AUTO_SAUCE_CRAMPED_AREA;
@@ -857,8 +857,8 @@ const autoDirection = (g, { tickMs = 260, timeLeftMs = Infinity, drainMs = Infin
 
     const leftOnArrival = timeLeftMs - route.length * tickMs;
     if (leftOnArrival <= 0) return false;
-    // After drinking, hunger becomes min(current, SAUCE_HUNGER_LEVEL).
-    const leftAfter = Math.min(leftOnArrival, SAUCE_HUNGER_LEVEL * drainMs);
+    // Hunger level is unchanged by sauce; the permanent depletion boost applies afterwards.
+    const leftAfter = leftOnArrival;
     if (leftAfter <= 0) return false;
 
     const shortBody = [...route.slice().reverse(), ...snake].slice(0, MIN_SNAKE_LENGTH);
@@ -1150,7 +1150,7 @@ const updateSauce = (sauce, dueAt, now, snake, foods, wasabi) => {
           name: "sauce",
           image: SAUCE_IMAGE,
           size: SAUCE_SIZE,
-          satiation: 0, // Hunger is set by SAUCE_HUNGER_LEVEL instead.
+          satiation: 0, // No refill; permanent hunger-depletion boost is applied instead.
           calories: 0,
           length: -SAUCE_LENGTH_LOSS,
           expiresAt: now + SAUCE_LIFETIME_MS,
@@ -1542,8 +1542,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Each wasabi / sauce eaten permanently adds to the speed for the rest of the run (additive).
   const speedMult = cfg.speedMult * (1 + WASABI_SPEED_BOOST * game.wasabiEaten + SAUCE_SPEED_BOOST * game.sauceEaten);
   const tickMs = Math.round(BASE_TICK_MS / speedMult);
-  // +5% overall hunger depletion rate.
-  const drainMs = BASE_HUNGER_DRAIN_MS / (cfg.hungerMult * 1.05);
+  // +5% overall hunger depletion rate, plus a further +5% per soy sauce eaten (permanent).
+  const drainMs = BASE_HUNGER_DRAIN_MS / (cfg.hungerMult * 1.05 * (1 + SAUCE_HUNGER_BOOST * (game.sauceEaten ?? 0)));
   const openDist = openDistance(tickMs);
 
   // Timers and the draw loop read the current settings from here, so they follow the chosen mode.
@@ -1565,6 +1565,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [eatenFoods, setEatenFoods] = useState([]);
   const [scoreBonus, setScoreBonus] = useState(null);
   const [unlockBanner, setUnlockBanner] = useState(null); // { image, key } while SUSHI UNLOCKED is shown.
+  const [foodScrollOffset, setFoodScrollOffset] = useState(0); // Row index of the first visible sushi row in the result prompt.
   const unlockTimeoutRef = useRef(null);
   const unlockFadeRef = useRef(null);
   const [noSushiLosses, setNoSushiLosses] = useState(0);
@@ -1575,8 +1576,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const autoPlayRef = useRef(false);
   const autoManualUntilRef = useRef(0); // performance.now() until which auto is blocked after manual input
   const runAteSushiRef = useRef(false);
-  const [soundOn, setSoundOn] = useState(true);
-  const soundOnRef = useRef(true);
+  const [soundOn, setSoundOn] = useState(false); // Muted by default.
+  const soundOnRef = useRef(false);
   const musicRef = useRef(null);
   const deathSourcesRef = useRef([]);
   const recentEatsRef = useRef([]); // Timestamps of recent sushis, used to decide when to burp.
@@ -1883,20 +1884,23 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           setScoreBonus({ id: now, amount: calorieChange });
           scoreBonusTimeoutRef.current = setTimeout(() => setScoreBonus(null), SCORE_BONUS_DURATION_MS);
         }
-        // Briefly replace the calorie total with "X WASABIS" or "X SOY SAUCE" when drinking.
+        // Briefly replace the calorie total with "X WASABI" / "X SOY SAUCE" (desktop)
+        // or just the count + icon (mobile) when drinking.
         if (eatenWasabi || eatenSauce) {
           clearTimeout(unlockTimeoutRef.current);
           clearTimeout(unlockFadeRef.current);
           const count = eatenWasabi ? wasabiEaten : sauceEaten;
           const label = eatenWasabi
-            ? `${count} WASABI!`
-            : `${count} SOY SAUCE!`;
+            ? `${count} WASABI`
+            : `${count} SOY SAUCE`;
           setUnlockBanner({
             key: now,
             visible: true,
             kind: eatenWasabi ? "wasabi" : "sauce",
             label,
-            image: null,
+            count,
+            image: eatenWasabi ? WASABI_IMAGE : SAUCE_IMAGE,
+            size: eatenWasabi ? WASABI_SIZE : SAUCE_SIZE,
           });
           unlockTimeoutRef.current = setTimeout(() => {
             setUnlockBanner((b) => (b ? { ...b, visible: false } : b));
@@ -1905,16 +1909,21 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         }
         fillAnimRef.current = { from: hungerShownRef.current, start: now };
         // Show the eaten food in the hunger bar; each one fades on its own, side by side.
-        setEatenFoods((prev) => [...prev, { image: eatenItem.image, key: now }].slice(-EATEN_FOOD_MAX));
+        // The size is stored so the icon keeps the same relative size as it has everywhere else.
+        setEatenFoods((prev) => [
+          ...prev,
+          { image: eatenItem.image, key: now, size: eatenItem.size ?? DEFAULT_FOOD_SIZE },
+        ].slice(-EATEN_FOOD_MAX));
         eatenTimeoutsRef.current.push(
           setTimeout(() => {
             setEatenFoods((prev) => prev.filter((f) => f.key !== now));
           }, EATEN_FOOD_FADE_MS)
         );
-        // Sauce drains the hunger bar down to SAUCE_HUNGER_LEVEL; everything else fills it.
+        // Sauce applies a permanent hunger-depletion boost and does not change the bar level;
+        // everything else fills it (wasabi fully, ordinary food by its satiation).
         hunger = {
           level: eatenSauce
-            ? Math.min(hungerLevel(g.hunger, now, drainMs), SAUCE_HUNGER_LEVEL)
+            ? hungerLevel(g.hunger, now, drainMs)
             : Math.min(
                 1,
                 hungerLevel(g.hunger, now, drainMs) + (eatenItem.satiation ?? DEFAULT_FOOD_SATIATION)
@@ -1934,7 +1943,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           ) {
             clearTimeout(unlockTimeoutRef.current);
             clearTimeout(unlockFadeRef.current);
-            setUnlockBanner({ image: eatenFood.image, key: now, visible: true, kind: "sushi" });
+            setUnlockBanner({
+              image: eatenFood.image,
+              key: now,
+              visible: true,
+              kind: "sushi",
+              size: eatenFood.size ?? DEFAULT_FOOD_SIZE,
+            });
             unlockTimeoutRef.current = setTimeout(() => {
               setUnlockBanner((b) => (b ? { ...b, visible: false } : b)); // Starts the fade back to the score.
               unlockFadeRef.current = setTimeout(() => setUnlockBanner(null), UNLOCK_FADE_MS);
@@ -1942,7 +1957,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
           }
           if (eatenFood.image) {
             const before = runFoodsRef.current.get(eatenFood.name);
-            runFoodsRef.current.set(eatenFood.name, { image: eatenFood.image, count: (before?.count ?? 0) + 1 });
+            runFoodsRef.current.set(eatenFood.name, {
+              image: eatenFood.image,
+              count: (before?.count ?? 0) + 1,
+              size: eatenFood.size ?? before?.size ?? DEFAULT_FOOD_SIZE,
+            });
           }
           setNoSushiLosses(0);
           recentEatsRef.current = [...recentEatsRef.current.filter((ts) => ts > now - BURP_WINDOW_MS), now];
@@ -2652,6 +2671,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     clearTimeout(unlockTimeoutRef.current);
     clearTimeout(unlockFadeRef.current);
     setUnlockBanner(null);
+    setFoodScrollOffset(0);
     setFrame(REST_FRAME);
     setDeathElapsed(0);
     setActiveDirection(null);
@@ -2882,12 +2902,24 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : 2 * keySize + keyGap;
 
   // Calorie text is doubled but shrinks if the narrower score rectangle needs it.
-  const scoreW = boxW - (mobileMode ? 4 : 3) * (rowH + GAP);
+  // Top-right buttons: mobile = DPAD toggle + pause + leave; desktop = pause + leave.
+  // (Sound lives in the pause / game-over prompts.)
+  const scoreW = boxW - (mobileMode ? 3 : 2) * (rowH + GAP);
   const scoreFontPx = Math.floor(Math.min(textPx, (scoreW - 16) / 6));
   // "SUSHI UNLOCKED" + the sushi image must fit the same score rectangle.
   const unlockImgPx = Math.round(rowH * 0.55);
   const unlockGapPx = 14; // Space between the text and the sushi image.
-  const unlockFontPx = Math.floor(Math.min(scoreFontPx, (scoreW - 16 - unlockImgPx - unlockGapPx) / (14 * MONO_CHAR_EM)));
+  // On mobile the banner text ("NEW", or the wasabi / sauce count) keeps the same size as the
+  // CALS text, so only the icon's relative size changes. Desktop still shrinks to fit the full text.
+  const unlockFontPx = mobileMode
+    ? scoreFontPx
+    : Math.floor(Math.min(scoreFontPx, (scoreW - 16 - unlockImgPx - unlockGapPx) / (14 * MONO_CHAR_EM)));
+
+  // The wasabi / soy sauce icons keep the same coloured highlight in the banner as on the arena.
+  const bannerGlowFilter = (kind) => {
+    const rgb = kind === "wasabi" ? WASABI_GLOW_RGB : SAUCE_GLOW_RGB;
+    return `drop-shadow(0 0 ${unlockImgPx * 0.12 * WASABI_ARENA_GLOW}px rgba(${rgb}, ${0.95 * WASABI_ARENA_GLOW})) drop-shadow(0 0 ${unlockImgPx * 0.3 * WASABI_ARENA_GLOW}px rgba(${rgb}, ${0.7 * WASABI_ARENA_GLOW}))`;
+  };
 
   // Panel height = whole stack minus score row, hunger row, the two stack gaps and the border.
   // The grid gets what is left after the controller and three spacing gaps. Desktop uses half the
@@ -3065,6 +3097,17 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     );
   }
   const scoreGlow = glowParts.length ? glowParts.join(", ") : "none";
+  // Same layers as scoreGlow, but as a filter so the banner icons glow exactly like the text.
+  const scoreGlowFilter = glowParts.length
+    ? glowParts.map((part) => `drop-shadow(${part})`).join(" ")
+    : "none";
+  // Mobile: every banner icon uses the text's glow. Desktop keeps the arena-style glow.
+  const bannerIconFilter = (kind) =>
+    mobileMode
+      ? scoreGlowFilter
+      : kind === "wasabi" || kind === "sauce"
+        ? bannerGlowFilter(kind)
+        : "none";
   const scoreStyle = {
     fontFamily: FONT_FAMILY,
     fontWeight: 700,
@@ -3109,7 +3152,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   };
 
   const hungerIcon = Math.round(hungerH * HUNGER_BAR_FRAC * 0.75);
-  const eatenSlot = hungerIcon + 4; // Icon plus a small gap to the next food.
 
   const hungerFillStyle = {
     position: "absolute",
@@ -3287,7 +3329,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // What the prompt says. Keep what it showed while it fades, so the game-over
   // text never appears behind the start popup.
   // Sushi types eaten this game, most frequently eaten first.
-  const foodsNow = Array.from(runFoodsRef.current, ([name, v]) => ({ name, image: v.image, count: v.count })).sort(
+  const foodsNow = Array.from(runFoodsRef.current, ([name, v]) => ({
+    name,
+    image: v.image,
+    count: v.count,
+    size: v.size ?? FOOD_CONFIG[name]?.size ?? DEFAULT_FOOD_SIZE,
+  })).sort(
     (a, b) => b.count - a.count
   );
   if (game.status === "choose" || game.status === "dead" || game.status === "won") {
@@ -3311,16 +3358,17 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     : showHelp
       ? { status: "help", reason: null, score: 0, wasabi: 0, sauce: 0, botGame: false, foods: [], eatenCount: 0 }
       : popupInfoRef.current;
+  // The difficulty is shown in the title of the pause / result prompts instead of a button.
   const popupTitle =
     popupInfo.status === "choose"
       ? "CHOOSE MODE"
       : popupInfo.status === "help"
         ? "HELP"
-      : popupInfo.status === "paused"
-        ? "PAUSED"
-        : popupInfo.status === "won"
-          ? `WINNER`
-          : `GAME OVER`;
+        : popupInfo.status === "paused"
+          ? `PAUSED (${cfg.label})`
+          : popupInfo.status === "won"
+            ? `WINNER (${cfg.label})`
+            : `GAMEOVER (${cfg.label})`;
   // Wasabis / soy sauce are only mentioned if at least one was eaten.
   const wasabiText = popupInfo.wasabi > 0
     ? ` AND ${popupInfo.wasabi} WASABI`
@@ -3395,7 +3443,15 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = GAP; // Match the horizontal gap between the top-right control buttons.
   const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
-  const popupButtonCount = popupInfo.status === "choose" ? Object.keys(DIFFICULTIES).length + 1 : popupInfo.status === "help" ? 2 : 1 + (popupInfo.status === "paused" ? 1 : (showAutoButton ? 3 : 2)); // +1: the disabled difficulty button.
+  // Choose: one button per difficulty + help. Help: 2. Pause: play + sound.
+  // Results: retry + sound + (bot) + modes.
+  const popupButtonCount = popupInfo.status === "choose"
+    ? Object.keys(DIFFICULTIES).length + 1
+    : popupInfo.status === "help"
+      ? 2
+      : popupInfo.status === "paused"
+        ? 2
+        : (showAutoButton ? 4 : 3);
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
     const longestWord = Math.max(...label.split(" ").map((word) => word.length));
@@ -3418,26 +3474,27 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     return lines;
   };
 
-  // Show up to three rows of sushi types (4 per row on mobile, 6 on desktop).
-  const popupFoodsPerRow = mobileMode ? 4 : 6;
-  const popupFoodsShown = (popupInfo.foods ?? [])
-    .filter((f) => f.image)
-    .slice(0, popupFoodsPerRow * 3);
-  const popupFoodRows = (() => {
-    if (!popupFoodsShown.length) return [];
-    if (popupFoodsShown.length <= popupFoodsPerRow) return [popupFoodsShown];
-    if (popupFoodsShown.length <= popupFoodsPerRow * 2) {
-      const top = Math.ceil(popupFoodsShown.length / 2);
-      return [popupFoodsShown.slice(0, top), popupFoodsShown.slice(top)].filter((r) => r.length);
+  // Sushi types: fixed 6 per row, up to 3 rows visible. Extra rows scroll with 12px arrows.
+  const popupFoodsPerRow = 6;
+  const popupFoodMaxVisibleRows = 3;
+  const POPUP_FOOD_ARROW_H = 12; // Vertical space each scroll arrow occupies.
+  const popupFoodsAll = (popupInfo.foods ?? []).filter((f) => f.image);
+  const popupFoodAllRows = (() => {
+    const rows = [];
+    for (let i = 0; i < popupFoodsAll.length; i += popupFoodsPerRow) {
+      rows.push(popupFoodsAll.slice(i, i + popupFoodsPerRow));
     }
-    // Three rows: distribute as evenly as possible.
-    const per = Math.ceil(popupFoodsShown.length / 3);
-    return [
-      popupFoodsShown.slice(0, per),
-      popupFoodsShown.slice(per, per * 2),
-      popupFoodsShown.slice(per * 2),
-    ].filter((r) => r.length);
+    return rows;
   })();
+  const popupFoodScrollMax = Math.max(0, popupFoodAllRows.length - popupFoodMaxVisibleRows);
+  const popupFoodScroll = Math.min(Math.max(0, foodScrollOffset), popupFoodScrollMax);
+  const popupFoodRows = popupFoodAllRows.slice(
+    popupFoodScroll,
+    popupFoodScroll + popupFoodMaxVisibleRows
+  );
+  const popupFoodCanScrollUp = popupFoodScroll > 0;
+  const popupFoodCanScrollDown = popupFoodScroll < popupFoodScrollMax;
+  const popupFoodsShown = popupFoodsAll; // Used for "has any sushi" checks.
   const popupImgGap = 4;
   const popupImgBoxPad = 8;
   const popupImgBoxBottomPad = popupImgBoxPad + 4; // Extra breathing room below the sushi images.
@@ -3445,10 +3502,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupEatenLabel = `SUSHIS EATEN (${popupInfo.eatenCount ?? 0})`;
   const popupLabelPx = Math.max(7, Math.round(popupBodyFont * 0.8));
   const popupLabelGap = 4; // Between the label and the sushi rows inside the box.
-  const popupFoodsGridW = (imgPx) => Math.max(
-    0,
-    ...popupFoodRows.map((row) => row.length * imgPx + (row.length - 1) * popupImgGap)
-  );
+  // Width is always based on a full 6-wide row so the box does not jump as you scroll.
+  const popupFoodsGridW = (imgPx) =>
+    popupFoodAllRows.length
+      ? popupFoodsPerRow * imgPx + (popupFoodsPerRow - 1) * popupImgGap
+      : 0;
   const popupFoodsBoxW = (imgPx) =>
     Math.max(popupFoodsGridW(imgPx), Math.ceil(popupEatenLabel.length * MONO_CHAR_EM * popupLabelPx)) + 2 * popupImgBoxPad + 2; // Include the sushi container's 1px border on each side.
   const popupWidthCap =
@@ -3457,9 +3515,22 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     typeof window !== "undefined" ? Math.max(160, window.innerHeight - 16) : Infinity;
   const popupParas = popupInfo.status === "help" ? helpParagraphsPlain : [popupBody];
   const longestWord = Math.max(...popupBody.split(" ").map((x) => x.length));
-  const popupBoxHeight = (imgPx) => popupFoodRows.length
-    ? popupLabelPx * 1.2 + popupLabelGap + popupFoodRows.length * imgPx + (popupFoodRows.length - 1) * popupImgGap + popupImgBoxPad + popupImgBoxBottomPad + 2 // Include the sushi container's top and bottom borders.
-    : 0;
+  const popupBoxHeight = (imgPx) => {
+    if (!popupFoodAllRows.length) return 0;
+    const visibleRows = Math.min(popupFoodMaxVisibleRows, popupFoodAllRows.length);
+    const rowsH = visibleRows * imgPx + (visibleRows - 1) * popupImgGap;
+    // Reserve arrow slots only when there are more than 3 rows (scrolling is possible).
+    const arrowSlots = popupFoodAllRows.length > popupFoodMaxVisibleRows ? 2 * POPUP_FOOD_ARROW_H : 0;
+    return (
+      popupLabelPx * 1.2 +
+      popupLabelGap +
+      arrowSlots +
+      rowsH +
+      popupImgBoxPad +
+      popupImgBoxBottomPad +
+      2
+    ); // Include the sushi container's top and bottom borders.
+  };
   const popupWidthNeeded = (bodyFontPx, imgPx) => Math.max(
     popupTitle.length * TITLE_CHAR_EM * popupFont,
     popupButtonCount * popupButtonSize + (popupButtonCount - 1) * popupBtnGap,
@@ -3622,7 +3693,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     flexShrink: 0,
   };
 
-  // Most recently unlocked sushis in a rounded box with a label on top; two rows at most, each centred.
+  // Most recently unlocked sushis in a rounded box with a label on top; 3 rows of 6, with scroll arrows when needed.
   const popupFoodBoxStyle = {
     display: "flex",
     flexDirection: "column",
@@ -3642,11 +3713,13 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     fontWeight: 400,
     whiteSpace: "nowrap",
   };
+  // overflow is visible so the count badges, which hang 4px outside each sushi, are never clipped.
   const popupFoodGridStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: popupImgGap,
+    overflow: "visible",
   };
   const popupFoodRowStyle = {
     display: "flex",
@@ -3655,11 +3728,36 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     justifyContent: "center",
     gap: popupImgGap,
   };
+  const popupFoodArrowStyle = {
+    width: "100%",
+    height: POPUP_FOOD_ARROW_H,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    margin: 0,
+    border: "none",
+    background: "transparent",
+    color: "var(--colour-7)",
+    cursor: "pointer",
+    lineHeight: 1,
+    fontSize: Math.max(8, POPUP_FOOD_ARROW_H - 2),
+    opacity: 0.85,
+  };
+  const popupFoodArrowSpacerStyle = {
+    width: "100%",
+    height: POPUP_FOOD_ARROW_H,
+    flexShrink: 0,
+  };
   const popupFoodItemStyle = {
     position: "relative",
     width: popupImgPx,
     height: popupImgPx,
     flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
   // Small filled circle on the corner of each sushi showing how many were eaten.
   const popupBadgePx = Math.max(10, Math.round(popupImgPx * 0.45));
@@ -3681,14 +3779,19 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     textAlign: "center",
     pointerEvents: "none",
   };
-  const popupFoodImgStyle = {
-    display: "block",
-    width: popupImgPx,
-    height: popupImgPx,
-    flexShrink: 0,
-    objectFit: "contain",
-    filter: "drop-shadow(0 1px 1.5px var(--colour-5))",
-    pointerEvents: "none",
+  // Matches arena scaling: food.size is the same 0–1 factor used on the grid.
+  const popupFoodImgStyle = (size) => {
+    const scale = Math.max(0.15, Number(size) || DEFAULT_FOOD_SIZE);
+    const px = popupImgPx * scale;
+    return {
+      display: "block",
+      width: px,
+      height: px,
+      flexShrink: 0,
+      objectFit: "contain",
+      filter: "drop-shadow(0 1px 1.5px var(--colour-5))",
+      pointerEvents: "none",
+    };
   };
 
   const popupButtonIconStyle = {
@@ -3765,23 +3868,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     minHeight: popupModeBtn,
     overflow: "visible", // Lets the larger icons spill past the button edge.
   };
-
-  // Disabled button on the left of the pause / results buttons showing the difficulty.
-  const difficultyButton = (
-    <button
-      type="button"
-      className="imm-btn"
-      style={{ ...modeButtonStyle, cursor: "default", opacity: 0.45 }} // Faded and disabled, like the pause button: it only shows the difficulty.
-      disabled
-      aria-label={`${cfg.label} mode`}
-      title={cfg.label}
-    >
-      <div style={popupModeButtonIconStyle}>
-        <img src={icons[cfg.icon]} alt="" aria-hidden="true" draggable={false} style={popupModeIconImageStyle} />
-      </div>
-      <span style={popupButtonLabelStyle(cfg.label)}>{cfg.label}</span>
-    </button>
-  );
 
   // Disabled, faded HELP button shown on the help prompt itself.
   const helpButtonDisabled = (
@@ -4050,8 +4136,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       @media (hover: hover) { .imm-btn:hover:not(:disabled) { background-color: var(--colour-2); } }
       @media (hover: hover) { .imm-key:hover { background: var(--colour-4) !important; } }
       @keyframes hungerFoodFade {
-        0% { opacity: 1; width: ${eatenSlot}px; }
-        55% { opacity: 1; width: ${eatenSlot}px; }
+        0% { opacity: 1; width: var(--slot); }
+        55% { opacity: 1; width: var(--slot); }
         100% { opacity: 0; width: 0px; }
       }
       @keyframes swallowFood {
@@ -4123,17 +4209,40 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                 }}
               >
                 {unlockBanner.kind === "wasabi" || unlockBanner.kind === "sauce" ? (
-                  <span>{unlockBanner.label}</span>
-                ) : (
                   <>
-                    <span>SUSHI UNLOCKED!</span>
+                    <span>{mobileMode ? unlockBanner.count : unlockBanner.label}</span>
                     {unlockBanner.image && (
                       <img
                         src={unlockBanner.image}
                         alt=""
                         aria-hidden="true"
                         draggable={false}
-                        style={{ width: unlockImgPx, height: unlockImgPx, objectFit: "contain", flexShrink: 0 }}
+                        style={{
+                          width: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
+                          height: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
+                          objectFit: "contain",
+                          flexShrink: 0,
+                          filter: bannerIconFilter(unlockBanner.kind),
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span>{mobileMode ? "NEW" : "NEW SUSHI UNLOCKED"}</span>
+                    {unlockBanner.image && (
+                      <img
+                        src={unlockBanner.image}
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        style={{
+                          width: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
+                          height: unlockImgPx * (unlockBanner.size ?? DEFAULT_FOOD_SIZE),
+                          objectFit: "contain",
+                          flexShrink: 0,
+                          filter: bannerIconFilter(unlockBanner.kind),
+                        }}
                       />
                     )}
                   </>
@@ -4159,21 +4268,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               <span style={popupButtonLabelStyle(toggleLabel)}>{toggleLabel}</span>
             </button>
           )}
-
-          <button
-            type="button"
-            className="imm-btn"
-            style={toggleButtonStyle}
-            onClick={toggleSound}
-            aria-label={soundOn ? "Mute sound" : "Turn sound on"}
-            aria-pressed={!soundOn}
-            title={soundOn ? "Mute sound" : "Turn sound on"}
-          >
-            <div style={popupButtonIconStyle}>{renderIcon(soundOn ? icons.sound : icons.muted)}</div>
-            <span style={popupButtonLabelStyle(soundOn ? "SOUND" : "MUTED")}>
-              {soundOn ? "SOUND" : "MUTED"}
-            </span>
-          </button>
 
           <button
             type="button"
@@ -4214,7 +4308,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
         <div style={hungerTrackStyle}>
           <div style={hungerFillStyle} />
 
-          {/* Eaten foods appear side by side at the left of the bar; each fades away on its own. */}
+          {/* Eaten foods appear side by side at the left of the bar; each fades away on its own.
+              Each icon is scaled by the food's own size, like everywhere else. */}
           {eatenFoods.length > 0 && (
             <div
               style={{
@@ -4228,30 +4323,36 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                 pointerEvents: "none",
               }}
             >
-              {eatenFoods.map((f) => (
-                <div
-                  key={f.key}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexShrink: 0,
-                    overflow: "hidden",
-                    width: eatenSlot,
-                    animation: `hungerFoodFade ${EATEN_FOOD_FADE_MS}ms ease-out forwards`,
-                  }}
-                >
-                  {f.image ? (
-                    <img
-                      src={f.image}
-                      alt=""
-                      draggable={false}
-                      style={{ width: hungerIcon, height: hungerIcon, objectFit: "contain" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: hungerIcon, lineHeight: 1 }}>{FOOD_EMOJI}</span>
-                  )}
-                </div>
-              ))}
+              {eatenFoods.map((f) => {
+                const px = hungerIcon * Math.max(0.15, Number(f.size) || DEFAULT_FOOD_SIZE);
+                const slot = px + 4; // Icon plus a small gap to the next food.
+                return (
+                  <div
+                    key={f.key}
+                    style={{
+                      "--slot": `${slot}px`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      overflow: "hidden",
+                      width: slot,
+                      animation: `hungerFoodFade ${EATEN_FOOD_FADE_MS}ms ease-out forwards`,
+                    }}
+                  >
+                    {f.image ? (
+                      <img
+                        src={f.image}
+                        alt=""
+                        draggable={false}
+                        style={{ width: px, height: px, objectFit: "contain" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: px, lineHeight: 1 }}>{FOOD_EMOJI}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -4434,18 +4535,52 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             {popupFoodsShown.length > 0 && (
               <div style={popupFoodBoxStyle} aria-label="Sushis eaten">
                 <div style={popupFoodLabelStyle}>{popupEatenLabel}</div>
+                {popupFoodAllRows.length > popupFoodMaxVisibleRows ? (
+                  popupFoodCanScrollUp ? (
+                    <button
+                      type="button"
+                      style={popupFoodArrowStyle}
+                      aria-label="Previous sushi rows"
+                      onClick={() => setFoodScrollOffset((o) => Math.max(0, o - 1))}
+                    >
+                      ▲
+                    </button>
+                  ) : (
+                    <div style={popupFoodArrowSpacerStyle} aria-hidden="true" />
+                  )
+                ) : null}
                 <div style={popupFoodGridStyle}>
                   {popupFoodRows.map((row, ri) => (
-                    <div key={ri} style={popupFoodRowStyle}>
+                    <div key={`${popupFoodScroll}-${ri}-${row[0]?.name ?? ri}`} style={popupFoodRowStyle}>
                       {row.map((f) => (
                         <div key={f.name} style={popupFoodItemStyle}>
-                          <img src={f.image} alt="" aria-hidden="true" draggable={false} style={popupFoodImgStyle} />
+                          <img
+                            src={f.image}
+                            alt=""
+                            aria-hidden="true"
+                            draggable={false}
+                            style={popupFoodImgStyle(f.size ?? FOOD_CONFIG[f.name]?.size ?? DEFAULT_FOOD_SIZE)}
+                          />
                           <div style={popupBadgeStyle}>{f.count}</div>
                         </div>
                       ))}
                     </div>
                   ))}
                 </div>
+                {popupFoodAllRows.length > popupFoodMaxVisibleRows ? (
+                  popupFoodCanScrollDown ? (
+                    <button
+                      type="button"
+                      style={popupFoodArrowStyle}
+                      aria-label="Next sushi rows"
+                      onClick={() => setFoodScrollOffset((o) => Math.min(popupFoodScrollMax, o + 1))}
+                    >
+                      ▼
+                    </button>
+                  ) : (
+                    <div style={popupFoodArrowSpacerStyle} aria-hidden="true" />
+                  )
+                ) : null}
               </div>
             )}
 
@@ -4489,7 +4624,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               </div>
             ) : popupInfo.status === "help" ? (
               <div style={popupButtonRowStyle}>
-                {helpButtonDisabled}
                 <button
                   type="button"
                   className="imm-btn"
@@ -4503,10 +4637,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   </div>
                   <span style={popupButtonLabelStyle("MODES")}>MODES</span>
                 </button>
+                {helpButtonDisabled}
               </div>
             ) : popupInfo.status === "paused" ? (
               <div style={popupButtonRowStyle}>
-                {difficultyButton}
                 <button
                   type="button"
                   className="imm-btn"
@@ -4520,10 +4654,23 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   </div>
                   <span style={popupButtonLabelStyle("PLAY")}>PLAY</span>
                 </button>
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  onClick={toggleSound}
+                  aria-label={soundOn ? "Mute sound" : "Turn sound on"}
+                  aria-pressed={!soundOn}
+                  title={soundOn ? "Mute sound" : "Turn sound on"}
+                >
+                  <div style={popupButtonIconStyle}>{renderIcon(soundOn ? icons.sound : icons.muted)}</div>
+                  <span style={popupButtonLabelStyle(soundOn ? "SOUND" : "MUTED")}>
+                    {soundOn ? "SOUND" : "MUTED"}
+                  </span>
+                </button>
               </div>
             ) : (
               <div style={popupButtonRowStyle}>
-                {difficultyButton}
                 <button
                   type="button"
                   className="imm-btn"
@@ -4552,6 +4699,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     <span style={popupButtonLabelStyle("BOT")}>BOT</span>
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  onClick={toggleSound}
+                  aria-label={soundOn ? "Mute sound" : "Turn sound on"}
+                  aria-pressed={!soundOn}
+                  title={soundOn ? "Mute sound" : "Turn sound on"}
+                >
+                  <div style={popupButtonIconStyle}>{renderIcon(soundOn ? icons.sound : icons.muted)}</div>
+                  <span style={popupButtonLabelStyle(soundOn ? "SOUND" : "MUTED")}>
+                    {soundOn ? "SOUND" : "MUTED"}
+                  </span>
+                </button>
                 <button
                   type="button"
                   className="imm-btn"
