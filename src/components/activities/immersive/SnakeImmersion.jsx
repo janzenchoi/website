@@ -29,8 +29,10 @@ import icon_hard_light from "../../../assets/activities/symbols/hard_light.png";
 import icon_hard_dark from "../../../assets/activities/symbols/hard_dark.png";
 import icon_vhard_light from "../../../assets/activities/symbols/vhard_light.png";
 import icon_vhard_dark from "../../../assets/activities/symbols/vhard_dark.png";
-import icon_auto_light from "../../../assets/activities/symbols/auto_light.png";
-import icon_auto_dark from "../../../assets/activities/symbols/auto_dark.png";
+import icon_bot_on_light from "../../../assets/activities/symbols/bot_on_light.png";
+import icon_bot_on_dark from "../../../assets/activities/symbols/bot_on_dark.png";
+import icon_bot_off_light from "../../../assets/activities/symbols/bot_off_light.png";
+import icon_bot_off_dark from "../../../assets/activities/symbols/bot_off_dark.png";
 import icon_pause_light from "../../../assets/activities/symbols/pause_light.png";
 import icon_pause_dark from "../../../assets/activities/symbols/pause_dark.png";
 import icon_play_light from "../../../assets/activities/symbols/play_light.png";
@@ -52,7 +54,8 @@ const THEME_ICONS = {
     normal: icon_normal_light,
     hard: icon_hard_light,
     vhard: icon_vhard_light,
-    auto: icon_auto_light,
+    botOn: icon_bot_on_light,
+    botOff: icon_bot_off_light,
     pause: icon_pause_light,
     play: icon_play_light,
     sound: icon_sound_light,
@@ -68,7 +71,8 @@ const THEME_ICONS = {
     normal: icon_normal_dark,
     hard: icon_hard_dark,
     vhard: icon_vhard_dark,
-    auto: icon_auto_dark,
+    botOn: icon_bot_on_dark,
+    botOff: icon_bot_off_dark,
     pause: icon_pause_dark,
     play: icon_play_dark,
     sound: icon_sound_dark,
@@ -315,8 +319,8 @@ const WASABI_ARENA_GLOW = 0.4; // Glow of the wasabi on the arena. 1 = previous 
 const WASABI_SHRINK_MS = 1200; // Doubled (was 600): the shrink takes twice as long.
 const EATEN_FOOD_VISIBLE_FRAC = 0.65; // Fraction of the move during which an eaten food stays visible (1 = until the move ends).
 const EATEN_FOOD_FADE_FRAC = 0.1; // Fraction of the move over which it then fades out.
-const WASABI_TEXT_LIGHT_COLOUR = "#11801c"; // Darker green for the "X WASABI" text on the result prompt.
-const WASABI_TEXT_DARK_COLOUR = "#4bcf58"; // Darker green for the "X WASABI" text on the result prompt.
+const WASABI_TEXT_LIGHT_COLOUR = "#095f12"; // Darker green for the "X WASABI" text on the result prompt.
+const WASABI_TEXT_DARK_COLOUR = "#89e092"; // Darker green for the "X WASABI" text on the result prompt.
 // On death, each body segment also bursts into green particles: this many per wasabi eaten.
 const WASABI_DEATH_PARTICLES_PER_WASABI = 3;
 const WASABI_DEATH_PARTICLE_COLOURS = ["#19a419", "#4fb833", "#27bc38"];
@@ -334,11 +338,11 @@ const SAUCE_GLOW_RGB = "255, 170, 60";
 const SAUCE_SPEED_BOOST = 0; // +5% speed per sauce (permanent for the run).
 const SAUCE_CALORIE_BOOST = WASABI_CALORIE_BOOST; // Same calorie multiplier as wasabi.
 const SAUCE_HUNGER_BOOST = 0.10; // +10% hunger depletion rate per sauce (permanent for the run).
-const SAUCE_TEXT_LIGHT_COLOUR = "#5c3317"; // Dark brown for the "X SOY SAUCE" text on the result prompt.
-const SAUCE_TEXT_DARK_COLOUR = "#a06a3a"; // Darker brown for the "X SOY SAUCE" text on the result prompt (dark mode).
+const SAUCE_TEXT_LIGHT_COLOUR = "#46240e"; // Dark brown for the "X SOY SAUCE" text on the result prompt.
+const SAUCE_TEXT_DARK_COLOUR = "#ca9e78cb"; // Darker brown for the "X SOY SAUCE" text on the result prompt (dark mode).
 // On death, each body segment also bursts into dark-brown particles: this many per sauce eaten.
 const SAUCE_DEATH_PARTICLES_PER_SAUCE = 3;
-const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8b5a2b"];
+const SAUCE_DEATH_PARTICLE_COLOURS = ["#5c3317", "#7a4a22", "#8f5b2b"];
 const HUNGER_PULSE_MS = 700; // Length of one pulse of the hunger bar after drinking wasabi / soy sauce.
 const HUNGER_PULSE_COUNT = 1; // How many pulses play.
 const HUNGER_PULSE_STRENGTH = 30; // % of the green / brown mixed into the bar at the peak of a pulse (lower = more faded).
@@ -415,7 +419,7 @@ const playSfx = (name) => {
    SETTINGS: SCREEN, PANELS AND CONTROLS
 ===================================== */
 const JOYSTICK_SIZE = 170;
-const AUTO_MANUAL_OVERRIDE_MS = 1000; // After a manual turn in auto mode, ignore AI for this long.
+const AUTO_MANUAL_OVERRIDE_MS = 1000; // After a manual turn in bot mode, ignore AI for this long.
 const FONT_FAMILY = "'Courier New', Courier, monospace";
 const GRID_SCALE = 0.925; // Mobile keeps its existing 7.5% inset; desktop uses the full available grid area.
 const OUTER_PAD = 5; // Gap between the outer border and the wall ring around the grid.
@@ -1601,8 +1605,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // Each wasabi / sauce eaten permanently adds to the speed for the rest of the run (additive).
   const speedMult = cfg.speedMult * (1 + WASABI_SPEED_BOOST * game.wasabiEaten + SAUCE_SPEED_BOOST * game.sauceEaten);
   const tickMs = Math.round(BASE_TICK_MS / speedMult);
-  // +5% overall hunger depletion rate, plus a further +5% per soy sauce eaten (permanent).
-  const drainMs = BASE_HUNGER_DRAIN_MS / (cfg.hungerMult * 1.05 * (1 + SAUCE_HUNGER_BOOST * (game.sauceEaten ?? 0)));
+  // +10% per soy sauce eaten (permanent).
+  const drainMs = BASE_HUNGER_DRAIN_MS / (cfg.hungerMult * (1 + SAUCE_HUNGER_BOOST * (game.sauceEaten ?? 0)));
   const openDist = openDistance(tickMs);
 
   // Timers and the draw loop read the current settings from here, so they follow the chosen mode.
@@ -1628,14 +1632,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const [foodPage, setFoodPage] = useState(0); // Page of sushis shown in the result prompt (15 per page).
   const unlockTimeoutRef = useRef(null);
   const unlockFadeRef = useRef(null);
-  const [noSushiLosses, setNoSushiLosses] = useState(0);
-  const [autoUnlocked, setAutoUnlocked] = useState(false);
+  const [botEnabled, setBotEnabled] = useState(false); // Bot is opt-in and stays selected until toggled off.
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
   const pausedAtRef = useRef(0); // performance.now() when the current pause began
-  const autoPlayRef = useRef(false);
+  const botEnabledRef = useRef(false);
   const autoManualUntilRef = useRef(0); // performance.now() until which auto is blocked after manual input
-  const runAteSushiRef = useRef(false);
   const [soundOn, setSoundOn] = useState(false); // Muted by default.
   const soundOnRef = useRef(false);
   const musicRef = useRef(null);
@@ -1730,15 +1732,11 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       DEATH_FADE_MS;
 
     if (next.status === "dead" && previousStatus !== "dead") {
-      // Preserve whether this run was controlled by AUTO for the game-over prompt.
-      const wasBotGame = autoPlayRef.current;
-      next.botGame = wasBotGame;
-      if (wasBotGame) setAutoUnlocked(true);
+      // Preserve whether this run was controlled by the bot for the game-over prompt.
+      next.botGame = botEnabledRef.current;
       playDeathSounds(deadSegments);
       burpPendingRef.current = false;
       recentEatsRef.current = [];
-      if (!runAteSushiRef.current) setNoSushiLosses((count) => count + 1);
-      autoPlayRef.current = false;
     }
     if (next.status === "dead" || next.status === "won" || next.status === "choose") {
       clearTimeout(popupTimeoutRef.current);
@@ -1820,7 +1818,7 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       const queued = dirQueueRef.current.shift();
       if (queued && !isOpposite(queued, dir)) {
         dir = queued;
-      } else if (autoPlayRef.current && now >= autoManualUntilRef.current) {
+      } else if (botEnabledRef.current && now >= autoManualUntilRef.current) {
         const planned = autoDirection(g, {
           tickMs,
           timeLeftMs: hungerLevel(g.hunger, now, drainMs) * drainMs,
@@ -1995,7 +1993,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
         // Only normal food triggers respawns; wasabi lives outside the food-group limit.
         if (eatenFood) {
-          runAteSushiRef.current = true;
           runEatCountRef.current += 1;
           // A sushi not eaten in this game or any earlier game of the session replaces the score for a moment.
           if (
@@ -2027,7 +2024,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
               size: eatenFood.size ?? before?.size ?? DEFAULT_FOOD_SIZE,
             });
           }
-          setNoSushiLosses(0);
           recentEatsRef.current = [...recentEatsRef.current.filter((ts) => ts > now - BURP_WINDOW_MS), now];
           if (recentEatsRef.current.length >= BURP_EAT_COUNT) {
             recentEatsRef.current = [];
@@ -2765,7 +2761,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     autoManualUntilRef.current = 0;
     pausedRef.current = false;
     setPaused(false);
-    runAteSushiRef.current = false;
     mouthRef.current = newMouth();
     burpPendingRef.current = false;
     burpUntilRef.current = 0;
@@ -2801,18 +2796,18 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   };
 
   // Playing again builds a brand-new game in the same mode, with a fresh set of walls.
+  // The current bot setting is retained, so it can be selected from the result prompt.
   const playAgain = () => {
-    autoPlayRef.current = false;
     resetRun();
     dismissStartPopup();
     commit(activateGame(createGame(cfg), cfg));
   };
 
-  const playAutomatically = () => {
-    autoPlayRef.current = true;
-    resetRun();
-    dismissStartPopup();
-    commit(activateGame(createGame(cfg), cfg));
+  const toggleBot = () => {
+    const next = !botEnabledRef.current;
+    botEnabledRef.current = next;
+    setBotEnabled(next);
+    autoManualUntilRef.current = 0;
   };
 
   // The key listener below is registered once, so it calls the latest playAgain through this ref.
@@ -2861,8 +2856,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     const g = gameRef.current;
     if (g.status !== "playing" || pausedRef.current) return;
 
-    // In auto mode, any manual turn blocks the AI for a few seconds.
-    if (autoPlayRef.current) {
+    // In bot mode, any manual turn briefly overrides the AI.
+    if (botEnabledRef.current) {
       autoManualUntilRef.current = performance.now() + AUTO_MANUAL_OVERRIDE_MS;
     }
 
@@ -3501,12 +3496,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
             ? `WINNER (${cfg.label})`
             : `GAMEOVER (${cfg.label})`;
   // Wasabis / soy sauce are only mentioned if at least one was eaten.
-  const wasabiText = popupInfo.wasabi > 0
-    ? ` AND ${popupInfo.wasabi} WASABI`
-    : "";
-  const sauceText = (popupInfo.sauce ?? 0) > 0
-    ? ` AND ${popupInfo.sauce} SOY SAUCE`
-    : "";
+  // Worded as "500 CALORIES WITH 15 WASABI AND 7 SOY SAUCE" (or just one of them).
+  const extrasText = [
+    popupInfo.wasabi > 0 ? `${popupInfo.wasabi} WASABI` : null,
+    (popupInfo.sauce ?? 0) > 0 ? `${popupInfo.sauce} SOY SAUCE` : null,
+  ].filter(Boolean).join(" AND ");
+  const withText = extrasText ? ` WITH ${extrasText}` : "";
   // Help text: the goal, wasabi, sushi upgrades, sauce and what each difficulty changes.
   const wallsOf = (d) => {
     const n = d.straightWalls + d.cornerWalls;
@@ -3518,20 +3513,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
     "EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY AND AVOID HITTING WALLS OR YOURSELF",
     <>
       <span style={{ color: helpWasabiColour, fontWeight: 700 }}>WASABI</span>
-      {" MAKES YOU MOVE FASTER (+10%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+100%)"}
+      {" UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+100%) BUT MAKES YOU "}
+      <span style={{ color: "var(--red-3)", fontWeight: 700 }}>MOVE FASTER (+10%)</span>
     </>,
     <>
       <span style={{ color: helpSauceColour, fontWeight: 700 }}>SOY SAUCE</span>
-      {" MAKES YOU STARVE SOONER (+10%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+100%)"}
+      {" SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+100%) BUT MAKES YOU "}
+      <span style={{ color: "var(--red-3)", fontWeight: 700 }}>STARVE SOONER (+10%)</span>
     </>,
-    "DIE THREE TIMES WITHOUT EATING TO UNLOCK BOT MODE",
   ];
   // Plain-string versions for width/height estimates (no JSX).
   const helpParagraphsPlain = [
     "EAT SUSHI TO STOP YOURSELF FROM GOING HUNGRY AND AVOID HITTING WALLS OR YOURSELF",
     "WASABI MAKES YOU MOVE FASTER (+5%) BUT UNLOCKS BETTER SUSHIS AND INCREASES YOUR CALORIE MULTIPLIER (+50%)",
     "SOY SAUCE MAKES YOU STARVE SOONER (+5%) BUT SHRINKS YOU AND INCREASES YOUR CALORIE MULTIPLIER (+50%)",
-    "DIE THREE TIMES WITHOUT EATING TO UNLOCK BOT MODE",
   ];
   const popupBody =
     popupInfo.status === "choose"
@@ -3539,16 +3534,20 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : popupInfo.status === "help"
         ? helpParagraphsPlain.join(" ")
       : popupInfo.status === "paused"
-        ? `YOU HAVE CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText}`
+        ? `YOU HAVE CONSUMED ${formatPoints(popupInfo.score)} CALORIES${withText}`
       : popupInfo.status === "won"
-        ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText}`
-        : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${wasabiText}${sauceText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
+        ? `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${withText}`
+        : `YOU CONSUMED ${formatPoints(popupInfo.score)} CALORIES${withText} BEFORE ${DEATH_REASONS[popupInfo.reason]}`;
   // Coloured + bold nodes for wasabi (green) and soy sauce (dark brown) on pause / results.
-  const popupWasabiNode = popupInfo.wasabi > 0
-    ? <>{" AND "}<span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.wasabi} WASABI`}</span></>
+  const popupWasabiPart = popupInfo.wasabi > 0
+    ? <span style={{ color: darkMode ? WASABI_TEXT_DARK_COLOUR : WASABI_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.wasabi} WASABI`}</span>
     : null;
-  const popupSauceNode = (popupInfo.sauce ?? 0) > 0
-    ? <>{" AND "}<span style={{ color: darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.sauce} SOY SAUCE`}</span></>
+  const popupSaucePart = (popupInfo.sauce ?? 0) > 0
+    ? <span style={{ color: darkMode ? SAUCE_TEXT_DARK_COLOUR : SAUCE_TEXT_LIGHT_COLOUR, fontWeight: 700 }}>{`${popupInfo.sauce} SOY SAUCE`}</span>
+    : null;
+  // " WITH 15 WASABI AND 7 SOY SAUCE", with the wasabi / soy sauce parts still coloured.
+  const popupExtrasNode = popupWasabiPart || popupSaucePart
+    ? <>{" WITH "}{popupWasabiPart}{popupWasabiPart && popupSaucePart ? " AND " : null}{popupSaucePart}</>
     : null;
   const calorieBold = { fontWeight: 700 };
   const caloriesPhrase = (
@@ -3560,10 +3559,10 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
       : popupInfo.status === "help"
         ? <>{helpParagraphs.map((para, i) => <div key={i} style={{ marginTop: i ? POPUP_PARA_GAP : 0 }}>{para}</div>)}</>
       : popupInfo.status === "paused"
-        ? <>{`YOU HAVE CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}</>
+        ? <>{`YOU HAVE CONSUMED `}{caloriesPhrase}{popupExtrasNode}</>
       : popupInfo.status === "won"
-        ? <>{`YOU CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}</>
-        : <>{`YOU CONSUMED `}{caloriesPhrase}{popupWasabiNode}{popupSauceNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
+        ? <>{`YOU CONSUMED `}{caloriesPhrase}{popupExtrasNode}</>
+        : <>{`YOU CONSUMED `}{caloriesPhrase}{popupExtrasNode}{` BEFORE ${DEATH_REASONS[popupInfo.reason]}`}</>;
 
   // Fonts stay at full size; the square grows to fit them instead.
   const popupFont = Math.round(textPx);
@@ -3573,16 +3572,16 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   const popupModeBtn = popupBtn; // Difficulty buttons are the same size as every other button.
   const popupButtonSize = popupInfo.status === "choose" ? popupModeBtn : popupBtn;
   const popupBtnGap = GAP; // Match the horizontal gap between the top-right control buttons.
-  const showAutoButton = popupInfo.status === "dead" && (autoUnlocked || noSushiLosses >= 3 || popupInfo.botGame);
-  // Choose: one button per difficulty + help. Help: 1 (modes). Pause: play + sound.
-  // Results: retry + sound + (bot) + modes.
+  const showBotButton = popupInfo.status === "paused" || popupInfo.status === "dead";
+  // Choose: one button per difficulty + help. Help: 1 (modes).
+  // Pause: play + sound + modes + bot. Game over: retry + sound + modes + bot.
   const popupButtonCount = popupInfo.status === "choose"
     ? Object.keys(DIFFICULTIES).length + 1
     : popupInfo.status === "help"
       ? 1
-      : popupInfo.status === "paused"
-        ? 2
-        : (showAutoButton ? 4 : 3);
+      : showBotButton
+        ? 4
+        : 3;
   const popupLabelMaxFont = Math.min(10, Math.round(popupBtn * 0.2));
   const popupLabelFont = (label) => {
     const longestWord = Math.max(...label.split(" ").map((word) => word.length));
@@ -4754,6 +4753,35 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                     {soundOn ? "SOUND" : "MUTED"}
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  aria-label="Choose game mode"
+                  title="Choose game mode"
+                  onClick={quitToStart}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(icons.change)}
+                  </div>
+                  <span style={popupButtonLabelStyle("MODES")}>MODES</span>
+                </button>
+                <button
+                  type="button"
+                  className="imm-btn"
+                  style={popupButtonStyle}
+                  aria-label={botEnabled ? "Deactivate bot" : "Activate bot"}
+                  aria-pressed={botEnabled}
+                  title={botEnabled ? "Deactivate bot" : "Activate bot"}
+                  onClick={toggleBot}
+                >
+                  <div style={popupButtonIconStyle}>
+                    {renderIcon(botEnabled ? icons.botOn : icons.botOff)}
+                  </div>
+                  <span style={popupButtonLabelStyle(botEnabled ? "BOT" : "SELF")}>
+                    {botEnabled ? "BOT" : "SELF"}
+                  </span>
+                </button>
               </div>
             ) : (
               <div style={popupButtonRowStyle}>
@@ -4770,21 +4798,6 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   </div>
                   <span style={popupButtonLabelStyle("RETRY")}>{"RETRY"}</span>
                 </button>
-                {showAutoButton && (
-                  <button
-                    type="button"
-                    className="imm-btn"
-                    style={popupButtonStyle}
-                    aria-label="Play automatically"
-                    title="Play automatically"
-                    onClick={playAutomatically}
-                  >
-                    <div style={popupButtonIconStyle}>
-                      {renderIcon(icons.auto)}
-                    </div>
-                    <span style={popupButtonLabelStyle("BOT")}>BOT</span>
-                  </button>
-                )}
                 <button
                   type="button"
                   className="imm-btn"
@@ -4812,6 +4825,24 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
                   </div>
                   <span style={popupButtonLabelStyle("MODES")}>MODES</span>
                 </button>
+                {showBotButton && (
+                  <button
+                    type="button"
+                    className="imm-btn"
+                    style={popupButtonStyle}
+                    aria-label={botEnabled ? "Deactivate bot" : "Activate bot"}
+                    aria-pressed={botEnabled}
+                    title={botEnabled ? "Deactivate bot" : "Activate bot"}
+                    onClick={toggleBot}
+                  >
+                    <div style={popupButtonIconStyle}>
+                      {renderIcon(botEnabled ? icons.botOn : icons.botOff)}
+                    </div>
+                    <span style={popupButtonLabelStyle(botEnabled ? "BOT" : "SELF")}>
+                      {botEnabled ? "BOT" : "SELF"}
+                    </span>
+                  </button>
+                )}
               </div>
             )}
           </div>
