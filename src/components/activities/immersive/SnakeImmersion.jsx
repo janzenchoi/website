@@ -122,8 +122,8 @@ const DEATH_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("death")).map((s
 const BURP_SOUNDS = ALL_SOUNDS.filter((s) => s.name.startsWith("burp")).map((s) => s.src);
 
 // Background cue sounds live in the shared activities/sounds folder (not the snake one).
-// "success" plays underneath the eating sound when a NEW sushi is eaten; "up" plays underneath
-// the drink sound when wasabi or soy sauce is eaten. The extension is matched loosely (mp3 / mp4 / ...).
+// "success" plays underneath the eating sound when a NEW sushi is eaten; "up" plays after
+// the drink sound finishes when wasabi or soy sauce is eaten. The extension is matched loosely (mp3 / mp4 / ...).
 const cueContext = require.context(
   "../../../assets/activities/sounds",
   false,
@@ -390,12 +390,14 @@ const BURP_WINDOW_MS = 4000;
 const BURP_MS = 300; // How long the mouth stays slightly open for the burp.
 
 const SUCCESS_SFX_VOLUME = 0.01; // Volume of the "success" cue (new sushi). Keep it lower than SFX_VOLUME so it sits behind the crunch.
-const UP_SFX_VOLUME = 0.03; // Volume of the "up" cue (wasabi / soy sauce). Keep it lower than SFX_VOLUME so it sits behind the drink sound.
+const UP_SFX_VOLUME = 0.03; // Volume of the "up" cue (wasabi / soy sauce). It now plays after the drink sound, so raise this if it is too quiet.
 
 // "eat" = a random crunch_ file, "drink" = the drink file (wasabi and sauce), "burp" = a random burp_ file.
-// "success" / "up" = the background cues (new sushi / wasabi or soy sauce), played quietly alongside the eating sound.
+// "success" = the background cue for a new sushi, played quietly alongside the eating sound.
+// "up" = the cue for wasabi / soy sauce, played right AFTER the drink sound finishes (see the "drink" call in the game loop).
+// `onEnd` (optional) runs when the sound has finished playing.
 // A new Audio object is made for each play, so quick repeats and different sounds can overlap.
-const playSfx = (name) => {
+const playSfx = (name, onEnd) => {
   const src =
     name === "eat"
       ? CRUNCH_SOUNDS[Math.floor(Math.random() * CRUNCH_SOUNDS.length)]
@@ -408,10 +410,14 @@ const playSfx = (name) => {
             : name === "up"
               ? BOOST_CUE
               : null;
-  if (!src) return;
+  if (!src) {
+    if (onEnd) onEnd(); // Nothing to play, so continue straight to whatever was meant to follow.
+    return;
+  }
 
   const audio = new Audio(src);
   audio.volume = name === "success" ? SUCCESS_SFX_VOLUME : name === "up" ? UP_SFX_VOLUME : SFX_VOLUME;
+  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
   audio.play().catch(() => {});
 };
 
@@ -1688,8 +1694,8 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   };
 
   // Reads a ref, so timers and the game loop always see the current setting.
-  const sfx = (name) => {
-    if (soundOnRef.current) playSfx(name);
+  const sfx = (name, onEnd) => {
+    if (soundOnRef.current) playSfx(name, onEnd);
   };
 
   const popupTimeoutRef = useRef(null);
@@ -1928,8 +1934,9 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
 
       if (eating) {
         swallowing = eatenItem;
-        sfx(eatenWasabi || eatenSauce ? "drink" : "eat");
-        if (eatenWasabi || eatenSauce) sfx("up"); // Quiet background cue under the drink sound.
+        // Wasabi / soy sauce: the "up" cue plays after the drink sound has finished (and only if still unmuted).
+        if (eatenWasabi || eatenSauce) sfx("drink", () => sfx("up"));
+        else sfx("eat");
         const baseCalories = Number(eatenItem.calories ?? DEFAULT_FOOD_CALORIES) || 0;
         // Permanent calorie multipliers from wasabi and sauce stack additively.
         const calorieChange = roundPoints(

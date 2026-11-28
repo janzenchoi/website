@@ -9,6 +9,16 @@ import { HEADER_HEIGHT, MAX_WIDTH } from "../helper/constant";
 import { setStoredValue } from "../helper/storage";
 
 /**
+ * Navigation links shown in both desktop and mobile menus
+ */
+const NAV_ITEMS = [
+  { label: "Home", path: "/home" },
+  { label: "Resumé", path: "/resume" },
+  { label: "Portfollio", path: "/portfollio" },
+  { label: "Activities", path: "/activities" },
+];
+
+/**
  * Fixed header
  * @param {boolean} mobileMode whether to use mobile or desktop view
  * @param {boolean} forceMobile whether to force mobile mode
@@ -36,7 +46,7 @@ export const Header = ({
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-  }
+  };
   const headerStyle = {
     maxWidth: MAX_WIDTH,
     width: "100%",
@@ -65,7 +75,7 @@ export const Header = ({
     position: "relative",
     marginLeft: "auto",
   };
-  
+
   // Define tab styles
   const tabMenuStyle = {
     position: "absolute",
@@ -94,67 +104,56 @@ export const Header = ({
     pointerEvents: mobileMode ? "auto" : "none",
   };
 
-  // Dropdown items
-  const DropdownItems = () => {
-    return (
-      <div style={{ marginLeft: "-0.3rem" }}>
-        <DropdownItem>
-          <DarkModeItem colourTheme={colourTheme} setColourTheme={setColourTheme}/>
-        </DropdownItem>
-        <DropdownItem>
-          <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
-        </DropdownItem>
-      </div>
-    );
-  };
+  /*
+   * NOTE: these are plain render helpers, NOT components.
+   * Defining components inside Header (e.g. `const DesktopObject = () => ...`
+   * and rendering `<DesktopObject/>`) creates a new component type on every
+   * render. When the theme changes, React would unmount and remount the whole
+   * subtree, wiping the dropdown's open state and closing the popup.
+   * Calling them as functions keeps the element types stable.
+   */
+
+  // Dropdown items (settings)
+  const renderDropdownItems = () => (
+    <div style={{ marginLeft: "-0.3rem" }}>
+      <DropdownItem>
+        <DarkModeItem colourTheme={colourTheme} setColourTheme={setColourTheme}/>
+      </DropdownItem>
+      <DropdownItem>
+        <MobileModeItem forceMobile={forceMobile} setForceMobile={setForceMobile}/>
+      </DropdownItem>
+    </div>
+  );
 
   // Desktop mode object
-  const DesktopObject = () => {
-    return (
-      <div style={tabMenuStyle}>
-        <TabItem>
-          <div style={itemTextStyle} onClick={() => navigate("/home")}>Home</div>
+  const renderDesktop = () => (
+    <div style={tabMenuStyle}>
+      {NAV_ITEMS.map(({ label, path }) => (
+        <TabItem key={path}>
+          <div style={itemTextStyle} onClick={() => navigate(path)}>{label}</div>
         </TabItem>
-        <TabItem>
-          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
-        </TabItem>
-        <TabItem>
-          <div style={itemTextStyle} onClick={() => navigate("/portfollio")}>Portfollio</div>
-        </TabItem>
-        <TabItem>
-          <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>
-        </TabItem>
-        <div style={tabDividerStyle}/>
-        <TabItem>
-          <TextDropdown text={"Settings"} style={textStyle}>
-            <DropdownItems/>
-          </TextDropdown>
-        </TabItem>
-      </div>
-    );
-  };
+      ))}
+      <div style={tabDividerStyle}/>
+      <TabItem>
+        <TextDropdown text={"Settings"} style={textStyle}>
+          {renderDropdownItems()}
+        </TextDropdown>
+      </TabItem>
+    </div>
+  );
 
   // Mobile mode object
-  const MobileObject = () => {
-    return (
-      <BurgerDropdown style={burgerTransitionStyle}>
-        <DropdownItem>
-          <div style={itemTextStyle} onClick={() => navigate("/home")}>Home</div>
+  const renderMobile = () => (
+    <BurgerDropdown style={burgerTransitionStyle}>
+      {NAV_ITEMS.map(({ label, path }) => (
+        <DropdownItem key={path}>
+          <div style={itemTextStyle} onClick={() => navigate(path)}>{label}</div>
         </DropdownItem>
-        <DropdownItem>
-          <div style={itemTextStyle} onClick={() => navigate("/resume")}>Resumé</div>
-        </DropdownItem>
-        <DropdownItem>
-          <div style={itemTextStyle} onClick={() => navigate("/portfollio")}>Portfollio</div>
-        </DropdownItem>
-        <DropdownItem>
-          <div style={itemTextStyle} onClick={() => navigate("/activities")}>Activities</div>
-        </DropdownItem>
-        <div style={dropdownDividerStyle}/>
-        <DropdownItems/>
-      </BurgerDropdown>
-    );
-  };
+      ))}
+      <div style={dropdownDividerStyle}/>
+      {renderDropdownItems()}
+    </BurgerDropdown>
+  );
 
   // Return header object
   return (
@@ -164,8 +163,8 @@ export const Header = ({
           <div style={logoStyle}>JANZEN</div>
         </Link>
         <div style={rightMenuStyle}>
-          <DesktopObject/>
-          <MobileObject/>
+          {renderDesktop()}
+          {renderMobile()}
         </div>
       </div>
     </div>
@@ -236,12 +235,12 @@ const DarkModeItem = ({ colourTheme, setColourTheme }) => {
       <ColourThemeToggle colourTheme={colourTheme} setColourTheme={setColourTheme}/>
     </div>
   );
-}
+};
 
 /**
  * Item containing toggle for mobile mode
  * @param {boolean} forceMobile whether to force mobile mode
- * @param {function} setForceMobile function for forcing mobile mode 
+ * @param {function} setForceMobile function for forcing mobile mode
  * @returns mobile mode toggle item
  */
 const MobileModeItem = ({ forceMobile, setForceMobile }) => {
@@ -264,4 +263,4 @@ const MobileModeItem = ({ forceMobile, setForceMobile }) => {
       />
     </div>
   );
-}
+};
