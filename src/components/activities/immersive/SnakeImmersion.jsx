@@ -467,7 +467,7 @@ const START_CLEAR_ROWS = 1; // Rows above and below the starting row kept free o
 const HEAD_SIZE = 2.2;
 const HEAD_OFFSET = { x: 0.3, y: 0 };
 const HEAD_ANGLE_OFFSET = 0;
-const HEAD_LIFT_ANGLE = 12; // Keep the eating nod subtle to avoid unnecessary head movement.
+const HEAD_LIFT_ANGLE = 45; // Degrees the head tilts upwards while the mouth is open for eating.
 const TURN_MS = 190; // Longer, softer quarter-turns. The actual duration is capped by the move time.
 
 /* =====================================
@@ -4116,7 +4116,12 @@ const SnakeGame = ({ mobileMode, darkMode, leaveActivities }) => {
   // of the head during the eating animation. The row offset preserves food depth ordering.
   const HEAD_Z = 500;
   const OVERLAY_Z = 900;
-  const foodZ = (food) => (frame === FULL_OPEN_FRAME ? 600 : 10) + food.y;
+  // Food sits between the head (janzen_5) and the mouth overlay (janzen_5b) while the mouth is
+  // fully open, and the food being eaten stays there for its whole swallow animation. Before this,
+  // it dropped behind the head as soon as the mouth started closing, so it never looked like it
+  // went into the mouth.
+  const foodZ = (food) =>
+    (frame === FULL_OPEN_FRAME || food === game.swallowing ? 600 : 10) + food.y;
 
   const foodLayer = (food, key, extraStyle = null) => {
     // Each food scales the FOOD_SIZE constant by its own 0 to 1 size.
