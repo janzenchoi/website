@@ -390,7 +390,7 @@ const BURP_WINDOW_MS = 4000;
 const BURP_MS = 300; // How long the mouth stays slightly open for the burp.
 
 const SUCCESS_SFX_VOLUME = 0.01; // Volume of the "success" cue (new sushi). Keep it lower than SFX_VOLUME so it sits behind the crunch.
-const UP_SFX_VOLUME = 0.05; // Volume of the "up" cue (wasabi / soy sauce). Keep it lower than SFX_VOLUME so it sits behind the drink sound.
+const UP_SFX_VOLUME = 0.03; // Volume of the "up" cue (wasabi / soy sauce). Keep it lower than SFX_VOLUME so it sits behind the drink sound.
 
 // "eat" = a random crunch_ file, "drink" = the drink file (wasabi and sauce), "burp" = a random burp_ file.
 // "success" / "up" = the background cues (new sushi / wasabi or soy sauce), played quietly alongside the eating sound.
